@@ -40,6 +40,7 @@
   "header": {
     "dashboard": "Painel",
     "selectRestaurant": "Selecionar Restaurante",
+    "createNewRestaurant": "Criar Novo Restaurante",
     "profile": "Perfil",
     "settings": "Configurações",
     "logout": "Sair"

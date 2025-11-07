@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, User, LogOut } from 'lucide-react';
+import { ChevronDown, User, LogOut, Plus } from 'lucide-react';
 import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
 import { useUserRestaurants } from '@/hooks/useRestaurants';
 import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMenuSeparator } from '@/components/ui';
@@ -63,6 +63,21 @@ export default function PrivateHeader() {
                     </div>
                   </DropdownMenuItem>
                 ))}
+              </div>
+              
+              <DropdownMenuSeparator />
+              
+              <div className="py-1">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setRestaurantMenuOpen(false);
+                    router.push('/setup');
+                  }}
+                  className="text-brand-navy font-medium"
+                >
+                  <Plus className="mr-2 w-4 h-4" />
+                  {t('createNewRestaurant')}
+                </DropdownMenuItem>
               </div>
             </DropdownMenu>
           </div>

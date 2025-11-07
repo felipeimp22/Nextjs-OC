@@ -15,10 +15,8 @@
     "docker:prune": "docker volume prune -f",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    "seed:badges": "tsx seeds/seedBadges.ts",
-    "seed:testProfile": "tsx seeds/seedTestData.ts",
-    "seed:essentials": "tsx seeds/seedProfileEssentials.ts",
-    "seed:cosmetics": "tsx seeds/seedUserCosmetics.ts"
+    
+    "seed:essentials": "tsx seeds/seedProfileEssentials.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import PrivateHeader from './PrivateHeader';
 import PrivateSidebar from './PrivateSidebar';
@@ -10,6 +10,14 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const pathname = usePathname();
   const { data: user, isLoading } = useCurrentUser();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    if (saved) {
+      setIsCollapsed(JSON.parse(saved));
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -34,8 +42,8 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <PrivateSidebar />
-      <div className="flex-1 ml-64 transition-all duration-300">
+      <PrivateSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
         <PrivateHeader />
         <main className="p-6">
           {children}

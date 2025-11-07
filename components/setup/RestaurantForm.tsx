@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCreateRestaurant } from '@/hooks/useRestaurants';
+import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { Button } from '@/components/ui';
 
 interface FormData {
@@ -26,6 +27,7 @@ export default function RestaurantForm() {
   const t = useTranslations('restaurantForm');
   const router = useRouter();
   const createRestaurantMutation = useCreateRestaurant();
+  const { setSelectedRestaurant } = useRestaurantStore();
 
   const [step, setStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState('');
@@ -75,7 +77,10 @@ export default function RestaurantForm() {
 
     try {
       const restaurant = await createRestaurantMutation.mutateAsync(formData);
-      router.push(`/dashboard`);
+      if (restaurant) {
+        setSelectedRestaurant(restaurant.id, restaurant.name);
+        router.push(`/${restaurant.id}/dashboard`);
+      }
     } catch (error) {
       console.error('Error creating restaurant:', error);
     }

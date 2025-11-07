@@ -52,6 +52,8 @@ const config: Config = {
         },
         // Brand colors for restaurant management app
         brand: {
+          white:"#FFFFFF",
+          lightGray:"#e6e6e6",
           red: "#ea384c",
           navy: "#221F26",
           darkNavy: "#1A1F2C",

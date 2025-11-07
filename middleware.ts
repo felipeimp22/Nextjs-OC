@@ -8,9 +8,7 @@ export default auth((req) => {
   const isAuthenticated = !!req.auth;
 
   const publicRoutes = ['/', '/auth', '/book-demo', '/pricing'];
-  const isPublicRoute = publicRoutes.includes(pathname);
-
-  const protectedRoutes = ['/dashboard', '/settings', '/profile'];
+  const protectedRoutes = ['/setup', '/dashboard', '/settings', '/profile'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (!isAuthenticated && isProtectedRoute) {
@@ -18,7 +16,7 @@ export default auth((req) => {
   }
 
   if (isAuthenticated && pathname === '/auth') {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+    return NextResponse.redirect(new URL('/setup', req.url));
   }
 
   return NextResponse.next();
