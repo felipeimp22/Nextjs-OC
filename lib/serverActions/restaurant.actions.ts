@@ -3,6 +3,8 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { StorageFactory } from "@/lib/storage";
+import crypto from "crypto";
 
 interface CreateRestaurantData {
   name: string;
@@ -15,6 +17,11 @@ interface CreateRestaurantData {
   phone: string;
   email: string;
   logo?: string;
+  logoFile?: {
+    data: string;
+    mimeType: string;
+    fileName: string;
+  };
   primaryColor?: string;
   secondaryColor?: string;
   accentColor?: string;
@@ -63,7 +70,6 @@ export async function createRestaurant(data: CreateRestaurantData) {
         country: data.country || 'US',
         phone: data.phone.trim(),
         email: data.email.trim(),
-        logo: data.logo,
         primaryColor: data.primaryColor || '#282e59',
         secondaryColor: data.secondaryColor || '#f03e42',
         accentColor: data.accentColor || '#ffffff',
@@ -77,6 +83,52 @@ export async function createRestaurant(data: CreateRestaurantData) {
         role: 'owner',
       },
     });
+
+    console.log('[DEBUG] logoFile present:', !!data.logoFile);
+    console.log('[DEBUG] Environment check - WASABI_ACCESS_KEY exists:', !!process.env.WASABI_ACCESS_KEY);
+    console.log('[DEBUG] Environment check - WASABI_BUCKET:', process.env.WASABI_BUCKET);
+
+    if (data.logoFile) {
+      try {
+        console.log('[DEBUG] Starting logo upload for restaurant:', restaurant.id);
+        console.log('[DEBUG] File type:', data.logoFile.mimeType);
+        console.log('[DEBUG] File name:', data.logoFile.fileName);
+
+        const storage = StorageFactory.getProvider();
+        const base64Data = data.logoFile.data.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        const fileExtension = data.logoFile.mimeType.split('/')[1];
+        const hash = crypto.randomBytes(8).toString('hex');
+        const fileName = `logo-${hash}.${fileExtension}`;
+        const folder = `${restaurant.id}/restaurant`;
+
+        console.log('[DEBUG] Uploading to:', `${folder}/${fileName}`);
+
+        const uploadResult = await storage.upload({
+          file: buffer,
+          fileName,
+          mimeType: data.logoFile.mimeType,
+          folder,
+        });
+
+        console.log('[DEBUG] Upload successful, URL:', uploadResult.url);
+
+        await prisma.restaurant.update({
+          where: { id: restaurant.id },
+          data: { logo: uploadResult.url },
+        });
+
+        console.log('[DEBUG] Database updated with logo URL');
+
+        restaurant.logo = uploadResult.url;
+      } catch (uploadError) {
+        console.error('[ERROR] Error uploading logo:', uploadError);
+        console.error('[ERROR] Error details:', uploadError instanceof Error ? uploadError.message : String(uploadError));
+      }
+    } else {
+      console.log('[DEBUG] No logoFile provided in request');
+    }
 
     revalidatePath('/dashboard');
     revalidatePath('/getting-started');
