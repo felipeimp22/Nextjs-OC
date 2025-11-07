@@ -23,7 +23,7 @@ export default function RestaurantSearch() {
       setRequestedIds(prev => new Set(prev).add(restaurantId));
       setSelectedRestaurant(restaurantId, restaurantName);
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(`/${restaurantId}/dashboard`);
       }, 1000);
     } catch (error) {
       console.error('Error requesting access:', error);

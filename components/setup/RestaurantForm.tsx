@@ -79,7 +79,7 @@ export default function RestaurantForm() {
       const restaurant = await createRestaurantMutation.mutateAsync(formData);
       if (restaurant) {
         setSelectedRestaurant(restaurant.id, restaurant.name);
-        router.push('/dashboard');
+        router.push(`/${restaurant.id}/dashboard`);
       }
     } catch (error) {
       console.error('Error creating restaurant:', error);
