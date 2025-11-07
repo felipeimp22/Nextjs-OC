@@ -86,7 +86,6 @@ export default function GeneralSettingsPage() {
       });
 
       if (response.ok) {
-        // Show success message
         alert('Settings saved successfully!');
       }
     } catch (error) {
@@ -100,7 +99,7 @@ export default function GeneralSettingsPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-traces-gold-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
       </div>
     );
   }
@@ -109,12 +108,12 @@ export default function GeneralSettingsPage() {
     <div className="p-6 space-y-8">
       {/* Restaurant Information */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
           {t('restaurantInfo')}
-        </h2>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('name')}
             </label>
             <Input
@@ -125,7 +124,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('phone')}
             </label>
             <Input
@@ -136,7 +135,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('description')}
             </label>
             <textarea
@@ -144,12 +143,12 @@ export default function GeneralSettingsPage() {
               onChange={(e) => setData({ ...data, description: e.target.value })}
               placeholder={t('descriptionPlaceholder')}
               rows={3}
-              className="w-full bg-black/20 border border-traces-gold-900/30 rounded-sm px-4 py-2.5 text-traces-gold-100 placeholder-traces-dark-300 focus:outline-none focus:border-traces-gold-600"
+              className="w-full bg-white border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('email')}
             </label>
             <Input
@@ -164,12 +163,12 @@ export default function GeneralSettingsPage() {
 
       {/* Location */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
           {t('location')}
-        </h2>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('street')}
             </label>
             <Input
@@ -180,7 +179,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('city')}
             </label>
             <Input
@@ -191,7 +190,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('state')}
             </label>
             <Input
@@ -202,7 +201,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('zipCode')}
             </label>
             <Input
@@ -213,7 +212,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('country')}
             </label>
             <Input
@@ -227,12 +226,12 @@ export default function GeneralSettingsPage() {
 
       {/* Branding */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
           {t('branding')}
-        </h2>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('primaryColor')}
             </label>
             <div className="flex gap-2">
@@ -240,7 +239,7 @@ export default function GeneralSettingsPage() {
                 type="color"
                 value={data.primaryColor}
                 onChange={(e) => setData({ ...data, primaryColor: e.target.value })}
-                className="h-10 w-20 rounded-sm border border-traces-gold-900/30 bg-black/20 cursor-pointer"
+                className="h-10 w-20 rounded-md border border-gray-300 cursor-pointer"
               />
               <Input
                 value={data.primaryColor}
@@ -251,7 +250,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('secondaryColor')}
             </label>
             <div className="flex gap-2">
@@ -259,7 +258,7 @@ export default function GeneralSettingsPage() {
                 type="color"
                 value={data.secondaryColor}
                 onChange={(e) => setData({ ...data, secondaryColor: e.target.value })}
-                className="h-10 w-20 rounded-sm border border-traces-gold-900/30 bg-black/20 cursor-pointer"
+                className="h-10 w-20 rounded-md border border-gray-300 cursor-pointer"
               />
               <Input
                 value={data.secondaryColor}
@@ -270,7 +269,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('accentColor')}
             </label>
             <div className="flex gap-2">
@@ -278,7 +277,7 @@ export default function GeneralSettingsPage() {
                 type="color"
                 value={data.accentColor}
                 onChange={(e) => setData({ ...data, accentColor: e.target.value })}
-                className="h-10 w-20 rounded-sm border border-traces-gold-900/30 bg-black/20 cursor-pointer"
+                className="h-10 w-20 rounded-md border border-gray-300 cursor-pointer"
               />
               <Input
                 value={data.accentColor}
@@ -291,11 +290,11 @@ export default function GeneralSettingsPage() {
       </section>
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t border-traces-gold-900/30">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-traces-burgundy-600 hover:bg-traces-burgundy-700 text-white px-6"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
         >
           {saving ? t('saving') : t('saveChanges')}
         </Button>

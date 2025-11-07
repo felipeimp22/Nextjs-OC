@@ -216,7 +216,7 @@ export default function UsersSettingsPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-traces-gold-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
       </div>
     );
   }
@@ -225,13 +225,13 @@ export default function UsersSettingsPage() {
     <div className="p-6 space-y-8">
       {/* Team Members */}
       <section>
-        <div className="flex items-center justify-between mb-4 border-b border-traces-gold-900/30 pb-2">
-          <h2 className="text-xl font-light tracking-wider text-traces-gold-100">
+        <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-3">
+          <h3 className="text-base font-semibold text-gray-900">
             {t('teamMembers')}
-          </h2>
+          </h3>
           <Button
             onClick={() => setShowInviteForm(!showInviteForm)}
-            className="bg-traces-gold-600 hover:bg-traces-gold-700 text-black text-sm px-4 py-2"
+            className="bg-brand-red hover:bg-brand-red/90 text-white text-sm px-4 py-2"
           >
             + {t('addUser')}
           </Button>
@@ -239,9 +239,9 @@ export default function UsersSettingsPage() {
 
         {/* Invite Form */}
         {showInviteForm && (
-          <div className="bg-black/40 border border-traces-gold-600 rounded-sm p-4 mb-4 space-y-4">
+          <div className="bg-gray-100 border border-brand-red rounded-sm p-4 mb-4 space-y-4">
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('inviteEmail')}
               </label>
               <Input
@@ -253,13 +253,13 @@ export default function UsersSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('inviteRole')}
               </label>
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value)}
-                className="w-full bg-black/20 border border-traces-gold-900/30 rounded-sm px-4 py-2.5 text-traces-gold-100 focus:outline-none focus:border-traces-gold-600"
+                className="w-full bg-gray-50 border border-gray-200 rounded-sm px-4 py-2.5 text-gray-900 focus:outline-none focus:border-brand-red"
               >
                 <option value="manager">{t('manager')}</option>
                 <option value="kitchen">{t('kitchen')}</option>
@@ -270,13 +270,13 @@ export default function UsersSettingsPage() {
             <div className="flex gap-2 justify-end">
               <Button
                 onClick={() => setShowInviteForm(false)}
-                className="bg-traces-dark-700 hover:bg-traces-dark-600 text-traces-gold-100"
+                className="bg-gray-500 hover:bg-gray-600 text-white"
               >
                 {t('cancel')}
               </Button>
               <Button
                 onClick={handleInviteUser}
-                className="bg-traces-gold-600 hover:bg-traces-gold-700 text-black"
+                className="bg-brand-red hover:bg-brand-red/90 text-white"
               >
                 {t('sendInvite')}
               </Button>
@@ -288,20 +288,20 @@ export default function UsersSettingsPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-traces-gold-900/30">
-                <th className="text-left py-3 px-4 text-sm font-light text-traces-dark-300">
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
                   {t('name')}
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-light text-traces-dark-300">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
                   {t('email')}
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-light text-traces-dark-300">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
                   {t('role')}
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-light text-traces-dark-300">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
                   {t('status')}
                 </th>
-                <th className="text-right py-3 px-4 text-sm font-light text-traces-dark-300">
+                <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">
                   {t('actions')}
                 </th>
               </tr>
@@ -310,12 +310,12 @@ export default function UsersSettingsPage() {
               {users.map((user) => (
                 <tr
                   key={user.id}
-                  className="border-b border-traces-gold-900/10 hover:bg-black/20"
+                  className="border-b border-gray-100 hover:bg-gray-50"
                 >
-                  <td className="py-3 px-4 text-traces-gold-100">{user.name}</td>
-                  <td className="py-3 px-4 text-traces-dark-300">{user.email}</td>
+                  <td className="py-3 px-4 text-gray-900">{user.name}</td>
+                  <td className="py-3 px-4 text-gray-600">{user.email}</td>
                   <td className="py-3 px-4">
-                    <span className="inline-block px-2 py-1 bg-traces-gold-900/20 text-traces-gold-100 text-xs rounded-sm capitalize">
+                    <span className="inline-block px-2 py-1 bg-gray-100 text-gray-900 text-xs rounded-sm capitalize">
                       {t(user.role)}
                     </span>
                   </td>
@@ -336,7 +336,7 @@ export default function UsersSettingsPage() {
                     {user.role !== 'owner' && (
                       <button
                         onClick={() => handleDeleteUser(user.id)}
-                        className="text-traces-burgundy-600 hover:text-traces-burgundy-500 text-sm"
+                        className="text-red-600 hover:text-red-700 text-sm"
                       >
                         {t('delete')}
                       </button>
@@ -347,7 +347,7 @@ export default function UsersSettingsPage() {
 
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-traces-dark-300">
+                  <td colSpan={5} className="py-8 text-center text-gray-600">
                     No team members yet. Invite users to get started.
                   </td>
                 </tr>
@@ -359,22 +359,22 @@ export default function UsersSettingsPage() {
 
       {/* Role Permissions */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
           {t('permissions')}
-        </h2>
+        </h3>
 
         <div className="space-y-3">
           {rolePermissions.map((rp) => (
             <div key={rp.role}>
               <button
                 onClick={() => setSelectedRole(selectedRole === rp.role ? null : rp.role)}
-                className="w-full bg-black/20 border border-traces-gold-900/30 rounded-sm p-4 flex items-center justify-between hover:bg-black/30 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-sm p-4 flex items-center justify-between hover:bg-gray-100 transition-colors"
               >
-                <span className="text-traces-gold-100 font-light capitalize">
+                <span className="text-gray-900 font-light capitalize">
                   {t(rp.role)}
                 </span>
                 <svg
-                  className={`w-5 h-5 text-traces-gold-600 transition-transform ${
+                  className={`w-5 h-5 text-brand-red transition-transform ${
                     selectedRole === rp.role ? 'rotate-180' : ''
                   }`}
                   fill="none"
@@ -391,13 +391,13 @@ export default function UsersSettingsPage() {
               </button>
 
               {selectedRole === rp.role && (
-                <div className="bg-black/40 border border-traces-gold-900/30 border-t-0 rounded-b-sm p-4 space-y-3">
+                <div className="bg-gray-100 border border-gray-200 border-t-0 rounded-b-sm p-4 space-y-3">
                   {Object.entries(rp.permissions).map(([permission, enabled]) => (
                     <div
                       key={permission}
-                      className="flex items-center justify-between py-2 px-3 bg-black/20 rounded-sm"
+                      className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-sm"
                     >
-                      <span className="text-traces-gold-100 text-sm">
+                      <span className="text-gray-900 text-sm">
                         {t(permission)}
                       </span>
                       <Toggle
@@ -415,11 +415,11 @@ export default function UsersSettingsPage() {
       </section>
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t border-traces-gold-900/30">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <Button
           onClick={handleSavePermissions}
           disabled={saving}
-          className="bg-traces-burgundy-600 hover:bg-traces-burgundy-700 text-white px-6"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
         >
           {saving ? t('saving') : t('saveChanges')}
         </Button>

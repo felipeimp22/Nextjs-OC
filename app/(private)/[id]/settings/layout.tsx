@@ -16,42 +16,32 @@ export default function SettingsLayout({
   const restaurantId = params.id as string;
 
   const tabs = [
-    { id: 'general', href: `/private/${restaurantId}/settings`, label: t('tabs.general') },
-    { id: 'financial', href: `/private/${restaurantId}/settings/financial`, label: t('tabs.financial') },
-    { id: 'delivery', href: `/private/${restaurantId}/settings/delivery`, label: t('tabs.delivery') },
-    { id: 'hours', href: `/private/${restaurantId}/settings/hours`, label: t('tabs.hours') },
-    { id: 'users', href: `/private/${restaurantId}/settings/users`, label: t('tabs.users') },
+    { id: 'general', href: `/${restaurantId}/settings`, label: t('tabs.general') },
+    { id: 'financial', href: `/${restaurantId}/settings/financial`, label: t('tabs.financial') },
+    { id: 'delivery', href: `/${restaurantId}/settings/delivery`, label: t('tabs.delivery') },
+    { id: 'hours', href: `/${restaurantId}/settings/hours`, label: t('tabs.hours') },
+    { id: 'users', href: `/${restaurantId}/settings/users`, label: t('tabs.users') },
   ];
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-semibold text-traces-gold-100 mb-2">
-          {t('title')}
-        </h1>
-        <p className="text-traces-dark-300">
-          {t('description')}
-        </p>
-      </div>
-
       {/* Tabs Navigation */}
-      <div className="border-b border-traces-gold-900/30 mb-6 overflow-x-auto">
-        <nav className="flex gap-2 min-w-max">
+      <div className="bg-white border-b border-gray-200 -mx-6 px-6 mb-6">
+        <nav className="flex gap-2 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href ||
-                            (tab.id === 'general' && pathname === `/private/${restaurantId}/settings`);
+                            (tab.id === 'general' && pathname === `/${restaurantId}/settings`);
 
             return (
               <Link
                 key={tab.id}
                 href={tab.href}
                 className={`
-                  px-4 py-3 font-light tracking-wider text-sm whitespace-nowrap
+                  px-4 py-3 font-medium text-sm whitespace-nowrap
                   border-b-2 transition-colors
                   ${isActive
-                    ? 'border-traces-gold-600 text-traces-gold-100'
-                    : 'border-transparent text-traces-dark-300 hover:text-traces-gold-100 hover:border-traces-gold-900/50'
+                    ? 'border-brand-red text-gray-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }
                 `}
               >
@@ -63,7 +53,7 @@ export default function SettingsLayout({
       </div>
 
       {/* Settings Content */}
-      <div className="bg-black/40 border border-traces-gold-900/30 rounded-sm">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {children}
       </div>
     </div>

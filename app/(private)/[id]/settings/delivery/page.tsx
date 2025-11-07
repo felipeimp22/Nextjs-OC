@@ -143,7 +143,7 @@ export default function DeliverySettingsPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-traces-gold-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
       </div>
     );
   }
@@ -152,18 +152,18 @@ export default function DeliverySettingsPage() {
     <div className="p-6 space-y-8">
       {/* Provider Settings */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
           {t('provider')}
-        </h2>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('deliveryProvider')}
             </label>
             <select
               value={data.provider}
               onChange={(e) => setData({ ...data, provider: e.target.value })}
-              className="w-full bg-black/20 border border-traces-gold-900/30 rounded-sm px-4 py-2.5 text-traces-gold-100 focus:outline-none focus:border-traces-gold-600"
+              className="w-full bg-gray-50 border border-gray-200 rounded-sm px-4 py-2.5 text-gray-900 focus:outline-none focus:border-brand-red"
             >
               <option value="shipday">{t('shipday')}</option>
               <option value="internal">{t('internal')}</option>
@@ -176,12 +176,12 @@ export default function DeliverySettingsPage() {
 
       {/* Delivery Zones */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
           {t('zones')}
-        </h2>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('maxDeliveryRadius')}
             </label>
             <Input
@@ -196,7 +196,7 @@ export default function DeliverySettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('distanceUnit')}
             </label>
             <select
@@ -204,7 +204,7 @@ export default function DeliverySettingsPage() {
               onChange={(e) =>
                 setData({ ...data, distanceUnit: e.target.value as 'km' | 'miles' })
               }
-              className="w-full bg-black/20 border border-traces-gold-900/30 rounded-sm px-4 py-2.5 text-traces-gold-100 focus:outline-none focus:border-traces-gold-600"
+              className="w-full bg-gray-50 border border-gray-200 rounded-sm px-4 py-2.5 text-gray-900 focus:outline-none focus:border-brand-red"
             >
               <option value="miles">{t('miles')}</option>
               <option value="kilometers">{t('kilometers')}</option>
@@ -215,13 +215,13 @@ export default function DeliverySettingsPage() {
 
       {/* Pricing Tiers */}
       <section>
-        <div className="flex items-center justify-between mb-4 border-b border-traces-gold-900/30 pb-2">
-          <h2 className="text-xl font-light tracking-wider text-traces-gold-100">
+        <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-3">
+          <h3 className="text-base font-semibold text-gray-900">
             {t('pricingTiers')}
-          </h2>
+          </h3>
           <Button
             onClick={handleAddTier}
-            className="bg-traces-gold-600 hover:bg-traces-gold-700 text-black text-sm px-4 py-2"
+            className="bg-brand-red hover:bg-brand-red/90 text-white text-sm px-4 py-2"
           >
             + {t('addTier')}
           </Button>
@@ -236,21 +236,21 @@ export default function DeliverySettingsPage() {
             return (
               <div
                 key={tier.id}
-                className="bg-black/20 border border-traces-gold-900/30 rounded-sm p-4"
+                className="bg-gray-50 border border-gray-200 rounded-sm p-4"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-traces-gold-100 font-light text-lg">
+                      <span className="text-gray-900 font-light text-lg">
                         {tier.name}
                       </span>
                       {tier.isDefault && (
-                        <span className="bg-traces-gold-600 text-black text-xs px-2 py-0.5 rounded-sm">
+                        <span className="bg-brand-red text-black text-xs px-2 py-0.5 rounded-sm">
                           {t('default')}
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-traces-dark-300 mt-1">
+                    <div className="text-sm text-gray-600 mt-1">
                       {t('tierDescription', {
                         distance: tier.distanceCovered,
                         unit: data.distanceUnit,
@@ -265,13 +265,13 @@ export default function DeliverySettingsPage() {
                         setEditingTier(tier);
                         setShowTierForm(true);
                       }}
-                      className="text-traces-gold-600 hover:text-traces-gold-500 text-sm"
+                      className="text-brand-red hover:text-brand-red/90 text-sm"
                     >
                       {t('edit')}
                     </button>
                     <button
                       onClick={() => handleDeleteTier(tier.id!)}
-                      className="text-traces-burgundy-600 hover:text-traces-burgundy-500 text-sm"
+                      className="text-red-600 hover:text-red-700 text-sm"
                     >
                       {t('delete')}
                     </button>
@@ -279,15 +279,15 @@ export default function DeliverySettingsPage() {
                 </div>
 
                 {/* Example Calculation */}
-                <div className="bg-black/40 rounded-sm p-3 border border-traces-gold-900/20">
-                  <div className="text-xs text-traces-dark-300 mb-1">
+                <div className="bg-gray-100 rounded-sm p-3 border border-gray-200">
+                  <div className="text-xs text-gray-600 mb-1">
                     {t('exampleCalculation', {
                       distance: exampleDistance,
                       unit: data.distanceUnit,
                       total: exampleCost.toFixed(2),
                     })}
                   </div>
-                  <div className="text-xs text-traces-gold-100">
+                  <div className="text-xs text-gray-900">
                     ${tier.baseFee.toFixed(2)} (base) + $
                     {((exampleDistance - tier.distanceCovered) * tier.additionalFeePerUnit).toFixed(2)}{' '}
                     ({exampleDistance - tier.distanceCovered} × $
@@ -299,7 +299,7 @@ export default function DeliverySettingsPage() {
           })}
 
           {data.pricingTiers.length === 0 && (
-            <div className="text-center py-8 text-traces-dark-300">
+            <div className="text-center py-8 text-gray-600">
               No pricing tiers configured. Click "Add Pricing Tier" to create one.
             </div>
           )}
@@ -307,9 +307,9 @@ export default function DeliverySettingsPage() {
 
         {/* Tier Form */}
         {showTierForm && editingTier && (
-          <div className="bg-black/40 border border-traces-gold-600 rounded-sm p-4 space-y-4">
+          <div className="bg-gray-100 border border-brand-red rounded-sm p-4 space-y-4">
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('tierName')}
               </label>
               <Input
@@ -322,7 +322,7 @@ export default function DeliverySettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('distanceCovered')} ({data.distanceUnit})
               </label>
               <Input
@@ -337,13 +337,13 @@ export default function DeliverySettingsPage() {
                 }
                 placeholder="5"
               />
-              <div className="text-xs text-traces-dark-300 mt-1">
+              <div className="text-xs text-gray-600 mt-1">
                 Base coverage area radius
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('baseFee')} ($)
               </label>
               <Input
@@ -358,13 +358,13 @@ export default function DeliverySettingsPage() {
                 }
                 placeholder="5.00"
               />
-              <div className="text-xs text-traces-dark-300 mt-1">
+              <div className="text-xs text-gray-600 mt-1">
                 Fee for deliveries within coverage area
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('additionalFee')} ($)
               </label>
               <Input
@@ -379,14 +379,14 @@ export default function DeliverySettingsPage() {
                 }
                 placeholder="1.00"
               />
-              <div className="text-xs text-traces-dark-300 mt-1">
+              <div className="text-xs text-gray-600 mt-1">
                 Additional fee per {data.distanceUnit === 'miles' ? 'mile' : 'kilometer'}{' '}
                 beyond coverage area
               </div>
             </div>
 
-            <div className="flex items-center justify-between py-2 px-3 bg-black/20 rounded-sm border border-traces-gold-900/30">
-              <span className="text-traces-gold-100 text-sm">{t('default')}</span>
+            <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-sm border border-gray-200">
+              <span className="text-gray-900 text-sm">{t('default')}</span>
               <Toggle
                 checked={editingTier.isDefault}
                 onChange={(checked) =>
@@ -401,13 +401,13 @@ export default function DeliverySettingsPage() {
                   setEditingTier(null);
                   setShowTierForm(false);
                 }}
-                className="bg-traces-dark-700 hover:bg-traces-dark-600 text-traces-gold-100"
+                className="bg-gray-500 hover:bg-gray-600 text-white"
               >
                 {t('cancel')}
               </Button>
               <Button
                 onClick={handleSaveTier}
-                className="bg-traces-gold-600 hover:bg-traces-gold-700 text-black"
+                className="bg-brand-red hover:bg-brand-red/90 text-white"
               >
                 {t('save')}
               </Button>
@@ -417,11 +417,11 @@ export default function DeliverySettingsPage() {
       </section>
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t border-traces-gold-900/30">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-traces-burgundy-600 hover:bg-traces-burgundy-700 text-white px-6"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
         >
           {saving ? t('saving') : t('saveChanges')}
         </Button>

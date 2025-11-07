@@ -171,7 +171,7 @@ export default function FinancialSettingsPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-traces-gold-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
       </div>
     );
   }
@@ -180,12 +180,12 @@ export default function FinancialSettingsPage() {
     <div className="p-6 space-y-8">
       {/* Currency */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
           {t('currency')}
-        </h2>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('currencyCode')}
             </label>
             <Input
@@ -196,7 +196,7 @@ export default function FinancialSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('currencySymbol')}
             </label>
             <Input
@@ -210,13 +210,13 @@ export default function FinancialSettingsPage() {
 
       {/* Taxes */}
       <section>
-        <div className="flex items-center justify-between mb-4 border-b border-traces-gold-900/30 pb-2">
-          <h2 className="text-xl font-light tracking-wider text-traces-gold-100">
+        <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-3">
+          <h3 className="text-base font-semibold text-gray-900">
             {t('taxes')}
-          </h2>
+          </h3>
           <Button
             onClick={handleAddTax}
-            className="bg-traces-gold-600 hover:bg-traces-gold-700 text-black text-sm px-4 py-2"
+            className="bg-brand-red hover:bg-brand-red/90 text-white text-sm px-4 py-2"
           >
             + {t('addTax')}
           </Button>
@@ -227,11 +227,11 @@ export default function FinancialSettingsPage() {
           {data.taxes.map((tax) => (
             <div
               key={tax.id}
-              className="bg-black/20 border border-traces-gold-900/30 rounded-sm p-4 flex items-center justify-between"
+              className="bg-gray-50 border border-gray-200 rounded-sm p-4 flex items-center justify-between"
             >
               <div>
-                <div className="text-traces-gold-100 font-light">{tax.name}</div>
-                <div className="text-sm text-traces-dark-300">
+                <div className="text-gray-900 font-light">{tax.name}</div>
+                <div className="text-sm text-gray-600">
                   {tax.type === 'percentage'
                     ? `${tax.rate}%`
                     : `$${tax.fixedAmount?.toFixed(2)}`}
@@ -245,13 +245,13 @@ export default function FinancialSettingsPage() {
                     setEditingTax(tax);
                     setShowTaxForm(true);
                   }}
-                  className="text-traces-gold-600 hover:text-traces-gold-500 text-sm"
+                  className="text-brand-red hover:text-brand-red/90 text-sm"
                 >
                   {t('edit')}
                 </button>
                 <button
                   onClick={() => handleDeleteTax(tax.id!)}
-                  className="text-traces-burgundy-600 hover:text-traces-burgundy-500 text-sm"
+                  className="text-red-600 hover:text-red-700 text-sm"
                 >
                   {t('delete')}
                 </button>
@@ -260,7 +260,7 @@ export default function FinancialSettingsPage() {
           ))}
 
           {data.taxes.length === 0 && (
-            <div className="text-center py-8 text-traces-dark-300">
+            <div className="text-center py-8 text-gray-600">
               No taxes configured. Click "Add Tax" to create one.
             </div>
           )}
@@ -268,9 +268,9 @@ export default function FinancialSettingsPage() {
 
         {/* Tax Form */}
         {showTaxForm && editingTax && (
-          <div className="bg-black/40 border border-traces-gold-600 rounded-sm p-4 space-y-4">
+          <div className="bg-gray-100 border border-brand-red rounded-sm p-4 space-y-4">
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('taxName')}
               </label>
               <Input
@@ -283,7 +283,7 @@ export default function FinancialSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('taxType')}
               </label>
               <select
@@ -294,7 +294,7 @@ export default function FinancialSettingsPage() {
                     type: e.target.value as 'percentage' | 'fixed',
                   })
                 }
-                className="w-full bg-black/20 border border-traces-gold-900/30 rounded-sm px-4 py-2.5 text-traces-gold-100 focus:outline-none focus:border-traces-gold-600"
+                className="w-full bg-gray-50 border border-gray-200 rounded-sm px-4 py-2.5 text-gray-900 focus:outline-none focus:border-brand-red"
               >
                 <option value="percentage">{t('percentage')}</option>
                 <option value="fixed">{t('fixed')}</option>
@@ -303,7 +303,7 @@ export default function FinancialSettingsPage() {
 
             {editingTax.type === 'percentage' ? (
               <div>
-                <label className="block text-sm font-light text-traces-dark-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('rate')} (%)
                 </label>
                 <Input
@@ -318,7 +318,7 @@ export default function FinancialSettingsPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-light text-traces-dark-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('amount')} ($)
                 </label>
                 <Input
@@ -337,7 +337,7 @@ export default function FinancialSettingsPage() {
             )}
 
             <div>
-              <label className="block text-sm font-light text-traces-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('applyTo')}
               </label>
               <select
@@ -348,7 +348,7 @@ export default function FinancialSettingsPage() {
                     applyToEntireOrder: e.target.value === 'entire',
                   })
                 }
-                className="w-full bg-black/20 border border-traces-gold-900/30 rounded-sm px-4 py-2.5 text-traces-gold-100 focus:outline-none focus:border-traces-gold-600"
+                className="w-full bg-gray-50 border border-gray-200 rounded-sm px-4 py-2.5 text-gray-900 focus:outline-none focus:border-brand-red"
               >
                 <option value="entire">{t('entireOrder')}</option>
                 <option value="perItem">{t('perItem')}</option>
@@ -361,13 +361,13 @@ export default function FinancialSettingsPage() {
                   setEditingTax(null);
                   setShowTaxForm(false);
                 }}
-                className="bg-traces-dark-700 hover:bg-traces-dark-600 text-traces-gold-100"
+                className="bg-gray-500 hover:bg-gray-600 text-white"
               >
                 {t('cancel')}
               </Button>
               <Button
                 onClick={handleSaveTax}
-                className="bg-traces-gold-600 hover:bg-traces-gold-700 text-black"
+                className="bg-brand-red hover:bg-brand-red/90 text-white"
               >
                 {t('save')}
               </Button>
@@ -378,12 +378,12 @@ export default function FinancialSettingsPage() {
 
       {/* Tips */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
           {t('tips')}
-        </h2>
+        </h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-traces-gold-100">{t('enableTips')}</span>
+            <span className="text-gray-900">{t('enableTips')}</span>
             <Toggle
               checked={data.tipsEnabled}
               onChange={(checked) => setData({ ...data, tipsEnabled: checked })}
@@ -393,7 +393,7 @@ export default function FinancialSettingsPage() {
           {data.tipsEnabled && (
             <>
               <div>
-                <label className="block text-sm font-light text-traces-dark-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('presetPercentages')} (comma-separated)
                 </label>
                 <Input
@@ -412,7 +412,7 @@ export default function FinancialSettingsPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-traces-gold-100">{t('customTip')}</span>
+                <span className="text-gray-900">{t('customTip')}</span>
                 <Toggle
                   checked={data.allowCustomTip}
                   onChange={(checked) => setData({ ...data, allowCustomTip: checked })}
@@ -425,12 +425,12 @@ export default function FinancialSettingsPage() {
 
       {/* Platform Fee */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
           {t('platformFee')}
-        </h2>
+        </h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-traces-gold-100">{t('enablePlatformFee')}</span>
+            <span className="text-gray-900">{t('enablePlatformFee')}</span>
             <Toggle
               checked={data.platformFeeEnabled}
               onChange={(checked) =>
@@ -442,7 +442,7 @@ export default function FinancialSettingsPage() {
           {data.platformFeeEnabled && (
             <>
               <div>
-                <label className="block text-sm font-light text-traces-dark-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('threshold')} ($)
                 </label>
                 <Input
@@ -460,7 +460,7 @@ export default function FinancialSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-light text-traces-dark-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('belowThreshold')}
                 </label>
                 <Input
@@ -478,7 +478,7 @@ export default function FinancialSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-light text-traces-dark-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('aboveThreshold')} ($)
                 </label>
                 <Input
@@ -501,12 +501,12 @@ export default function FinancialSettingsPage() {
 
       {/* Payment Provider */}
       <section>
-        <h2 className="text-xl font-light tracking-wider text-traces-gold-100 mb-4 border-b border-traces-gold-900/30 pb-2">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
           {t('payment')}
-        </h2>
+        </h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-light text-traces-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('paymentProvider')}
             </label>
             <select
@@ -514,7 +514,7 @@ export default function FinancialSettingsPage() {
               onChange={(e) =>
                 setData({ ...data, paymentProvider: e.target.value })
               }
-              className="w-full bg-black/20 border border-traces-gold-900/30 rounded-sm px-4 py-2.5 text-traces-gold-100 focus:outline-none focus:border-traces-gold-600"
+              className="w-full bg-gray-50 border border-gray-200 rounded-sm px-4 py-2.5 text-gray-900 focus:outline-none focus:border-brand-red"
             >
               <option value="stripe">{t('stripe')}</option>
               <option value="mercadopago">{t('mercadopago')}</option>
@@ -535,7 +535,7 @@ export default function FinancialSettingsPage() {
                     </svg>
                     <span>{t('stripeConnected')}</span>
                   </div>
-                  <div className="text-sm text-traces-dark-300 mt-2">
+                  <div className="text-sm text-gray-600 mt-2">
                     Account ID: {data.stripeConnectedAccountId}
                   </div>
                 </div>
@@ -551,7 +551,7 @@ export default function FinancialSettingsPage() {
           )}
 
           <div className="flex items-center justify-between">
-            <span className="text-traces-gold-100">{t('testMode')}</span>
+            <span className="text-gray-900">{t('testMode')}</span>
             <Toggle
               checked={data.testMode}
               onChange={(checked) => setData({ ...data, testMode: checked })}
@@ -561,11 +561,11 @@ export default function FinancialSettingsPage() {
       </section>
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t border-traces-gold-900/30">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-traces-burgundy-600 hover:bg-traces-burgundy-700 text-white px-6"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
         >
           {saving ? t('saving') : t('saveChanges')}
         </Button>
