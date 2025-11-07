@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -22,7 +22,12 @@ import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { Toggle } from '@/components/ui';
 
-export default function PrivateSidebar() {
+interface PrivateSidebarProps {
+  isCollapsed: boolean;
+  setIsCollapsed: (value: boolean) => void;
+}
+
+export default function PrivateSidebar({ isCollapsed, setIsCollapsed }: PrivateSidebarProps) {
   const t = useTranslations('sidebar');
   const pathname = usePathname();
   const params = useParams();
@@ -31,7 +36,6 @@ export default function PrivateSidebar() {
   const { selectedRestaurantName } = useRestaurantStore();
   const signOutMutation = useSignOut();
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isPauseOrderingActive, setIsPauseOrderingActive] = useState(false);
 
   const menuItems = [
@@ -44,13 +48,6 @@ export default function PrivateSidebar() {
     { icon: BarChart3, label: t('analytics'), path: `/${restaurantId}/analytics`, roles: ['owner', 'manager'] },
     { icon: Settings, label: t('settings'), path: `/${restaurantId}/settings`, roles: ['owner', 'manager'] },
   ];
-
-  useEffect(() => {
-    const saved = localStorage.getItem('sidebarCollapsed');
-    if (saved) {
-      setIsCollapsed(JSON.parse(saved));
-    }
-  }, []);
 
   const toggleSidebar = () => {
     const newState = !isCollapsed;

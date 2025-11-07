@@ -40,6 +40,7 @@
   "header": {
     "dashboard": "Dashboard",
     "selectRestaurant": "Select Restaurant",
+    "createNewRestaurant": "Create New Restaurant",
     "profile": "Profile",
     "settings": "Settings",
     "logout": "Logout"
