@@ -376,52 +376,6 @@ export default function FinancialSettingsPage() {
         )}
       </section>
 
-      {/* Tips */}
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
-          {t('tips')}
-        </h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-900">{t('enableTips')}</span>
-            <Toggle
-              checked={data.tipsEnabled}
-              onChange={(checked) => setData({ ...data, tipsEnabled: checked })}
-            />
-          </div>
-
-          {data.tipsEnabled && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('presetPercentages')} (comma-separated)
-                </label>
-                <Input
-                  value={data.tipPresets.join(', ')}
-                  onChange={(e) =>
-                    setData({
-                      ...data,
-                      tipPresets: e.target.value
-                        .split(',')
-                        .map((v) => parseInt(v.trim()))
-                        .filter((v) => !isNaN(v)),
-                    })
-                  }
-                  placeholder="15, 18, 20"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-900">{t('customTip')}</span>
-                <Toggle
-                  checked={data.allowCustomTip}
-                  onChange={(checked) => setData({ ...data, allowCustomTip: checked })}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      </section>
 
       {/* Platform Fee */}
       <section>
