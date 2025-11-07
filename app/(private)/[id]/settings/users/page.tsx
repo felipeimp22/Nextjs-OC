@@ -2,46 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { Button, Input, Toggle } from '@/components/ui';
+import { Button, useToast, Toggle } from '@/components/ui';
+import { getRestaurantUsers, updateRolePermissions } from '@/lib/serverActions/settings.actions';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-}
+const PAGES = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'menu', label: 'Menu Management' },
+  { id: 'orders', label: 'Orders' },
+  { id: 'kitchen', label: 'Kitchen' },
+  { id: 'customers', label: 'Customers' },
+  { id: 'marketing', label: 'Marketing' },
+  { id: 'analytics', label: 'Analytics' },
+  { id: 'settings', label: 'Settings' },
+];
+
+const ROLES = ['manager', 'kitchen', 'staff'];
 
 interface RolePermissions {
   role: string;
-  permissions: {
-    viewOrders: boolean;
-    createOrders: boolean;
-    editOrders: boolean;
-    cancelOrders: boolean;
-    viewMenu: boolean;
-    editMenu: boolean;
-    viewCustomers: boolean;
-    editCustomers: boolean;
-    viewAnalytics: boolean;
-    editSettings: boolean;
-  };
+  permissions: Record<string, boolean>;
 }
 
 export default function UsersSettingsPage() {
   const params = useParams();
-  const t = useTranslations('settings.users');
+  const { showToast } = useToast();
   const restaurantId = params.id as string;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions[]>([]);
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('staff');
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -49,168 +38,70 @@ export default function UsersSettingsPage() {
 
   const fetchData = async () => {
     try {
-      // Fetch users
-      const usersResponse = await fetch(`/api/settings/users?restaurantId=${restaurantId}`);
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
-        setUsers(usersData.users || []);
-        setRolePermissions(usersData.rolePermissions || getDefaultRolePermissions());
+      const result = await getRestaurantUsers(restaurantId);
+      
+      if (result.success && result.data) {
+        const perms = result.data.rolePermissions || [];
+        
+        // Initialize with defaults if empty
+        if (perms.length === 0) {
+          setRolePermissions(ROLES.map(role => ({
+            role,
+            permissions: {
+              dashboard: true,
+              menu: role === 'manager',
+              orders: true,
+              kitchen: role !== 'staff',
+              customers: role !== 'kitchen',
+              marketing: role === 'manager',
+              analytics: role === 'manager',
+              settings: role === 'manager',
+            },
+          })));
+        } else {
+          setRolePermissions(perms);
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch data:', error);
-      setRolePermissions(getDefaultRolePermissions());
+      showToast('error', 'Failed to load settings');
     } finally {
       setLoading(false);
     }
   };
 
-  const getDefaultRolePermissions = (): RolePermissions[] => [
-    {
-      role: 'owner',
-      permissions: {
-        viewOrders: true,
-        createOrders: true,
-        editOrders: true,
-        cancelOrders: true,
-        viewMenu: true,
-        editMenu: true,
-        viewCustomers: true,
-        editCustomers: true,
-        viewAnalytics: true,
-        editSettings: true,
-      },
-    },
-    {
-      role: 'manager',
-      permissions: {
-        viewOrders: true,
-        createOrders: true,
-        editOrders: true,
-        cancelOrders: true,
-        viewMenu: true,
-        editMenu: true,
-        viewCustomers: true,
-        editCustomers: true,
-        viewAnalytics: true,
-        editSettings: false,
-      },
-    },
-    {
-      role: 'kitchen',
-      permissions: {
-        viewOrders: true,
-        createOrders: false,
-        editOrders: true,
-        cancelOrders: false,
-        viewMenu: true,
-        editMenu: false,
-        viewCustomers: false,
-        editCustomers: false,
-        viewAnalytics: false,
-        editSettings: false,
-      },
-    },
-    {
-      role: 'staff',
-      permissions: {
-        viewOrders: true,
-        createOrders: true,
-        editOrders: false,
-        cancelOrders: false,
-        viewMenu: true,
-        editMenu: false,
-        viewCustomers: true,
-        editCustomers: false,
-        viewAnalytics: false,
-        editSettings: false,
-      },
-    },
-  ];
-
-  const handleInviteUser = async () => {
-    if (!inviteEmail) return;
-
-    try {
-      const response = await fetch(`/api/settings/users/invite`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          restaurantId,
-          email: inviteEmail,
-          role: inviteRole,
-        }),
-      });
-
-      if (response.ok) {
-        alert('User invited successfully!');
-        setShowInviteForm(false);
-        setInviteEmail('');
-        setInviteRole('staff');
-        await fetchData();
-      }
-    } catch (error) {
-      console.error('Failed to invite user:', error);
-      alert('Failed to invite user');
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to remove this user?')) return;
-
-    try {
-      const response = await fetch(`/api/settings/users/${userId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ restaurantId }),
-      });
-
-      if (response.ok) {
-        await fetchData();
-      }
-    } catch (error) {
-      console.error('Failed to delete user:', error);
-      alert('Failed to delete user');
-    }
-  };
-
-  const handleSavePermissions = async () => {
-    setSaving(true);
-    try {
-      const response = await fetch(`/api/settings/users/permissions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          restaurantId,
-          rolePermissions,
-        }),
-      });
-
-      if (response.ok) {
-        alert('Permissions saved successfully!');
-        setSelectedRole(null);
-      }
-    } catch (error) {
-      console.error('Failed to save permissions:', error);
-      alert('Failed to save permissions');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleTogglePermission = (role: string, permission: string) => {
-    setRolePermissions((prev) =>
-      prev.map((rp) =>
+  const handleToggle = (role: string, page: string) => {
+    setRolePermissions(prev => 
+      prev.map(rp => 
         rp.role === role
           ? {
               ...rp,
               permissions: {
                 ...rp.permissions,
-                [permission]: !rp.permissions[permission as keyof typeof rp.permissions],
+                [page]: !rp.permissions[page],
               },
             }
           : rp
       )
     );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const result = await updateRolePermissions(restaurantId, rolePermissions);
+
+      if (!result.success) {
+        showToast('error', result.error || 'Failed to save permissions');
+        return;
+      }
+
+      showToast('success', 'Permissions saved successfully!');
+      await fetchData();
+    } catch (error) {
+      showToast('error', 'Failed to save permissions');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -223,205 +114,72 @@ export default function UsersSettingsPage() {
 
   return (
     <div className="p-6 space-y-8">
-      {/* Team Members */}
       <section>
-        <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            {t('teamMembers')}
-          </h3>
-          <Button
-            onClick={() => setShowInviteForm(!showInviteForm)}
-            className="bg-brand-red hover:bg-brand-red/90 text-white text-sm px-4 py-2"
-          >
-            + {t('addUser')}
-          </Button>
-        </div>
+        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
+          Role Permissions
+        </h3>
+        <p className="text-sm text-gray-600 mb-6">
+          Control which pages each role can access. If a role has access to a page, they have full access to that page.
+        </p>
 
-        {/* Invite Form */}
-        {showInviteForm && (
-          <div className="bg-gray-100 border border-brand-red rounded-sm p-4 mb-4 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('inviteEmail')}
-              </label>
-              <Input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="user@example.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('inviteRole')}
-              </label>
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-sm px-4 py-2.5 text-gray-900 focus:outline-none focus:border-brand-red"
-              >
-                <option value="manager">{t('manager')}</option>
-                <option value="kitchen">{t('kitchen')}</option>
-                <option value="staff">{t('staff')}</option>
-              </select>
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button
-                onClick={() => setShowInviteForm(false)}
-                className="bg-gray-500 hover:bg-gray-600 text-white"
-              >
-                {t('cancel')}
-              </Button>
-              <Button
-                onClick={handleInviteUser}
-                className="bg-brand-red hover:bg-brand-red/90 text-white"
-              >
-                {t('sendInvite')}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Users List */}
-        <div className="overflow-x-auto">
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                  {t('name')}
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Page
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                  {t('email')}
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                  {t('role')}
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                  {t('status')}
-                </th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">
-                  {t('actions')}
-                </th>
+                {ROLES.map(role => (
+                  <th key={role} className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    {role}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-gray-100 hover:bg-gray-50"
-                >
-                  <td className="py-3 px-4 text-gray-900">{user.name}</td>
-                  <td className="py-3 px-4 text-gray-600">{user.email}</td>
-                  <td className="py-3 px-4">
-                    <span className="inline-block px-2 py-1 bg-gray-100 text-gray-900 text-xs rounded-sm capitalize">
-                      {t(user.role)}
-                    </span>
+            <tbody className="divide-y divide-gray-200">
+              {PAGES.map(page => (
+                <tr key={page.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {page.label}
                   </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`inline-block px-2 py-1 text-xs rounded-sm ${
-                        user.status === 'active'
-                          ? 'bg-green-900/20 text-green-400'
-                          : user.status === 'pending'
-                          ? 'bg-yellow-900/20 text-yellow-400'
-                          : 'bg-red-900/20 text-red-400'
-                      }`}
-                    >
-                      {t(user.status)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    {user.role !== 'owner' && (
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="text-red-600 hover:text-red-700 text-sm"
-                      >
-                        {t('delete')}
-                      </button>
-                    )}
-                  </td>
+                  {ROLES.map(role => {
+                    const roleData = rolePermissions.find(rp => rp.role === role);
+                    const hasAccess = roleData?.permissions?.[page.id] || false;
+
+                    return (
+                      <td key={role} className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex justify-center">
+                          <Toggle
+                            id={`${role}-${page.id}`}
+                            checked={hasAccess}
+                            onChange={() => handleToggle(role, page.id)}
+                            size="sm"
+                          />
+                        </div>
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
-
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-600">
-                    No team members yet. Invite users to get started.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
-      </section>
 
-      {/* Role Permissions */}
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3">
-          {t('permissions')}
-        </h3>
-
-        <div className="space-y-3">
-          {rolePermissions.map((rp) => (
-            <div key={rp.role}>
-              <button
-                onClick={() => setSelectedRole(selectedRole === rp.role ? null : rp.role)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-sm p-4 flex items-center justify-between hover:bg-gray-100 transition-colors"
-              >
-                <span className="text-gray-900 font-light capitalize">
-                  {t(rp.role)}
-                </span>
-                <svg
-                  className={`w-5 h-5 text-brand-red transition-transform ${
-                    selectedRole === rp.role ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-
-              {selectedRole === rp.role && (
-                <div className="bg-gray-100 border border-gray-200 border-t-0 rounded-b-sm p-4 space-y-3">
-                  {Object.entries(rp.permissions).map(([permission, enabled]) => (
-                    <div
-                      key={permission}
-                      className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-sm"
-                    >
-                      <span className="text-gray-900 text-sm">
-                        {t(permission)}
-                      </span>
-                      <Toggle
-                        checked={enabled}
-                        onChange={() => handleTogglePermission(rp.role, permission)}
-                        disabled={rp.role === 'owner'}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="text-sm font-medium text-blue-900 mb-1">Note:</div>
+          <div className="text-sm text-blue-700">
+            Owner role has full access to everything by default and cannot be modified.
+          </div>
         </div>
       </section>
 
-      {/* Save Button */}
       <div className="flex justify-end pt-4 border-t border-gray-200">
         <Button
-          onClick={handleSavePermissions}
+          onClick={handleSave}
           disabled={saving}
           className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
         >
-          {saving ? t('saving') : t('saveChanges')}
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
     </div>
