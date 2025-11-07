@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { 
-  Home, 
-  Utensils, 
-  ShoppingCart, 
-  Users, 
+import {
+  Home,
+  Utensils,
+  ShoppingCart,
+  Users,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -19,29 +19,30 @@ import {
   Shield
 } from 'lucide-react';
 import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
-import { useUserRestaurants } from '@/hooks/useRestaurants';
+import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { Toggle } from '@/components/ui';
 
 export default function PrivateSidebar() {
   const t = useTranslations('sidebar');
   const pathname = usePathname();
+  const params = useParams();
+  const restaurantId = params.id as string;
   const { data: user } = useCurrentUser();
-  const { data: restaurants = [] } = useUserRestaurants();
+  const { selectedRestaurantName } = useRestaurantStore();
   const signOutMutation = useSignOut();
-  
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isPauseOrderingActive, setIsPauseOrderingActive] = useState(false);
 
   const menuItems = [
-    { icon: Home, label: t('dashboard'), path: '/dashboard', roles: ['admin', 'manager', 'kitchen', 'staff'] },
-    { icon: Utensils, label: t('menuManagement'), path: '/menu', roles: ['admin', 'manager'] },
-    { icon: ShoppingCart, label: t('orders'), path: '/orders', roles: ['admin', 'manager', 'kitchen', 'staff'] },
-    { icon: ChefHat, label: t('kitchen'), path: '/kitchen', roles: ['admin', 'manager', 'kitchen'] },
-    { icon: Users, label: t('customers'), path: '/customers', roles: ['admin', 'manager', 'staff'] },
-    { icon: Megaphone, label: t('marketing'), path: '/marketing', roles: ['admin', 'manager'] },
-    { icon: BarChart3, label: t('analytics'), path: '/analytics', roles: ['admin', 'manager'] },
-    { icon: Settings, label: t('settings'), path: '/settings', roles: ['admin'] },
-    { icon: Shield, label: t('adminDashboard'), path: '/admin', roles: ['admin'] },
+    { icon: Home, label: t('dashboard'), path: `/${restaurantId}/dashboard`, roles: ['owner', 'manager', 'kitchen', 'staff'] },
+    { icon: Utensils, label: t('menuManagement'), path: `/${restaurantId}/menu`, roles: ['owner', 'manager'] },
+    { icon: ShoppingCart, label: t('orders'), path: `/${restaurantId}/orders`, roles: ['owner', 'manager', 'kitchen', 'staff'] },
+    { icon: ChefHat, label: t('kitchen'), path: `/${restaurantId}/kitchen`, roles: ['owner', 'manager', 'kitchen'] },
+    { icon: Users, label: t('customers'), path: `/${restaurantId}/customers`, roles: ['owner', 'manager', 'staff'] },
+    { icon: Megaphone, label: t('marketing'), path: `/${restaurantId}/marketing`, roles: ['owner', 'manager'] },
+    { icon: BarChart3, label: t('analytics'), path: `/${restaurantId}/analytics`, roles: ['owner', 'manager'] },
+    { icon: Settings, label: t('settings'), path: `/${restaurantId}/settings`, roles: ['owner', 'manager'] },
   ];
 
   useEffect(() => {
@@ -61,25 +62,20 @@ export default function PrivateSidebar() {
     signOutMutation.mutate();
   };
 
-  const currentRestaurant = restaurants[0];
-  const userRole = currentRestaurant?.role || 'staff';
-
-  const filteredMenuItems = menuItems.filter(item => 
-    item.roles.includes(userRole)
-  );
+  const filteredMenuItems = menuItems;
 
   return (
-    <aside 
+    <aside
       className={`fixed left-0 top-0 h-screen bg-brand-navy text-white transition-all duration-300 z-40 flex flex-col ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
       <div className={`flex items-center p-4 flex-shrink-0 ${isCollapsed ? 'justify-center' : ''}`}>
         <div className="flex items-center bg-white rounded-lg p-2">
-          <img 
-            src="/images/iconLogo.png" 
-            alt="OrderChop Icon" 
-            className="w-8 h-8" 
+          <img
+            src="/images/iconLogo.png"
+            alt="OrderChop Icon"
+            className="w-8 h-8"
           />
         </div>
         {!isCollapsed && (
@@ -99,7 +95,7 @@ export default function PrivateSidebar() {
       }`}>
         {!isCollapsed && <span className="text-sm">{t('pauseOrdering')}</span>}
         <div className={isCollapsed ? 'mx-auto' : ''}>
-          <Toggle 
+          <Toggle
             id="pause-ordering"
             checked={isPauseOrderingActive}
             onChange={setIsPauseOrderingActive}
@@ -111,7 +107,7 @@ export default function PrivateSidebar() {
         {filteredMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path;
-          
+
           return (
             <Link
               key={item.path}
@@ -119,8 +115,8 @@ export default function PrivateSidebar() {
               className={`flex items-center py-3 transition-colors duration-200 ${
                 isCollapsed ? 'px-0 justify-center' : 'px-5'
               } ${
-                isActive 
-                  ? 'text-brand-red font-semibold bg-white/5' 
+                isActive
+                  ? 'text-brand-red font-semibold bg-white/5'
                   : 'text-white hover:bg-white/10'
               }`}
               title={isCollapsed ? item.label : ''}
@@ -137,15 +133,12 @@ export default function PrivateSidebar() {
           <>
             <p className="text-xs text-white/60 mb-2">{t('account')}</p>
             <div className="mb-4">
-              <h3 className="font-medium text-sm">{currentRestaurant?.name || t('demoRestaurant')}</h3>
-              <p className="text-xs text-white/60 truncate">{user?.email || 'demo@example.com'}</p>
-              <p className="text-xs text-white/60 mt-1 capitalize">
-                {currentRestaurant ? `${currentRestaurant.role}` : 'superadmin'}
-              </p>
+              <h3 className="font-medium text-sm">{selectedRestaurantName || 'Restaurant'}</h3>
+              <p className="text-xs text-white/60 truncate">{user?.email || ''}</p>
             </div>
           </>
         )}
-        <button 
+        <button
           onClick={handleLogout}
           disabled={signOutMutation.isPending}
           className={`flex items-center text-white/70 hover:text-white text-sm transition-colors ${
