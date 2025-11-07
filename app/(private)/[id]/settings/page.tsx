@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, useToast } from '@/components/ui';
+import { Upload } from 'lucide-react';
+import { getRestaurant, updateRestaurant } from '@/lib/serverActions/restaurant.actions';
+import { uploadRestaurantPhoto } from '@/lib/serverActions/settings.actions';
 
 interface RestaurantData {
   name: string;
@@ -24,10 +27,12 @@ interface RestaurantData {
 export default function GeneralSettingsPage() {
   const params = useParams();
   const t = useTranslations('settings.general');
+  const { showToast } = useToast();
   const restaurantId = params.id as string;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [data, setData] = useState<RestaurantData>({
     name: '',
     description: '',
@@ -50,47 +55,95 @@ export default function GeneralSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch(`/api/restaurants/${restaurantId}`);
-      if (response.ok) {
-        const restaurant = await response.json();
-        setData({
-          name: restaurant.name || '',
-          description: restaurant.description || '',
-          phone: restaurant.phone || '',
-          email: restaurant.email || '',
-          street: restaurant.street || '',
-          city: restaurant.city || '',
-          state: restaurant.state || '',
-          zipCode: restaurant.zipCode || '',
-          country: restaurant.country || 'US',
-          logo: restaurant.logo || '',
-          primaryColor: restaurant.primaryColor || '#282e59',
-          secondaryColor: restaurant.secondaryColor || '#f03e42',
-          accentColor: restaurant.accentColor || '#ffffff',
-        });
+      const result = await getRestaurant(restaurantId);
+      
+      if (!result.success || !result.data) {
+        showToast('error', result.error || 'Failed to load settings');
+        return;
       }
+
+      const restaurant = result.data;
+      setData({
+        name: restaurant.name || '',
+        description: restaurant.description || '',
+        phone: restaurant.phone || '',
+        email: restaurant.email || '',
+        street: restaurant.street || '',
+        city: restaurant.city || '',
+        state: restaurant.state || '',
+        zipCode: restaurant.zipCode || '',
+        country: restaurant.country || 'US',
+        logo: restaurant.logo || '',
+        primaryColor: restaurant.primaryColor || '#282e59',
+        secondaryColor: restaurant.secondaryColor || '#f03e42',
+        accentColor: restaurant.accentColor || '#ffffff',
+      });
     } catch (error) {
-      console.error('Failed to fetch settings:', error);
+      showToast('error', 'Failed to load settings');
+      console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('error', 'Image must be less than 5MB');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Please select an image file');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target?.result as string;
+
+        const result = await uploadRestaurantPhoto(restaurantId, {
+          data: base64Data,
+          mimeType: file.type,
+          fileName: file.name,
+        });
+
+        if (!result.success || !result.data) {
+          showToast('error', result.error || 'Failed to upload photo');
+          return;
+        }
+
+        setData({ ...data, logo: result.data.url });
+        showToast('success', 'Photo uploaded successfully');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      showToast('error', 'Failed to upload photo');
+      console.error('Upload error:', error);
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch(`/api/restaurants/${restaurantId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const result = await updateRestaurant(restaurantId, data);
 
-      if (response.ok) {
-        alert('Settings saved successfully!');
+      if (!result.success) {
+        showToast('error', result.error || 'Failed to save settings');
+        return;
       }
+
+      showToast('success', 'Settings saved successfully!');
+      await fetchSettings();
     } catch (error) {
-      console.error('Failed to save settings:', error);
-      alert('Failed to save settings');
+      showToast('error', 'Failed to save settings');
+      console.error('Save error:', error);
     } finally {
       setSaving(false);
     }
@@ -106,6 +159,40 @@ export default function GeneralSettingsPage() {
 
   return (
     <div className="p-6 space-y-8">
+      {/* Restaurant Logo */}
+      <section>
+        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
+          {t('logo')}
+        </h3>
+        <div className="flex items-center gap-4">
+          {data.logo && (
+            <img
+              src={data.logo}
+              alt="Restaurant logo"
+              className="w-24 h-24 rounded-lg object-cover border-2 border-gray-200"
+            />
+          )}
+          <div>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                disabled={uploading}
+              />
+              <div className="flex items-center gap-2 px-4 py-2 bg-brand-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                <Upload className="w-4 h-4" />
+                <span className="text-sm font-medium text-gray-700">
+                  {uploading ? 'Uploading...' : t('uploadLogo')}
+                </span>
+              </div>
+            </label>
+            <p className="text-xs text-gray-500 mt-1">Max 5MB, JPG or PNG</p>
+          </div>
+        </div>
+      </section>
+
       {/* Restaurant Information */}
       <section>
         <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
@@ -143,7 +230,7 @@ export default function GeneralSettingsPage() {
               onChange={(e) => setData({ ...data, description: e.target.value })}
               placeholder={t('descriptionPlaceholder')}
               rows={3}
-              className="w-full bg-white border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent"
+              className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent"
             />
           </div>
 
