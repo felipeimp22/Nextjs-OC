@@ -87,6 +87,15 @@ export default function RestaurantForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log('[DEBUG] Submitting form with data:', {
+      ...formData,
+      logoFile: formData.logoFile ? {
+        mimeType: formData.logoFile.mimeType,
+        fileName: formData.logoFile.fileName,
+        dataLength: formData.logoFile.data.length,
+      } : null,
+    });
+
     try {
       const restaurant = await createRestaurantMutation.mutateAsync(formData);
       if (restaurant) {
