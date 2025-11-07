@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, User, LogOut, Plus } from 'lucide-react';
 import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
@@ -10,11 +10,13 @@ import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMen
 
 export default function PrivateHeader() {
   const t = useTranslations('header');
+  const tSettings = useTranslations('settings');
   const router = useRouter();
+  const pathname = usePathname();
   const { data: user } = useCurrentUser();
   const { data: restaurants = [] } = useUserRestaurants();
   const signOutMutation = useSignOut();
-  
+
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [restaurantMenuOpen, setRestaurantMenuOpen] = useState(false);
 
@@ -24,10 +26,18 @@ export default function PrivateHeader() {
 
   const userInitial = user?.name?.charAt(0).toUpperCase() || 'U';
 
+  // Determine page title based on pathname
+  const getPageTitle = () => {
+    if (pathname?.includes('/settings')) {
+      return t('settings');
+    }
+    return t('dashboard');
+  };
+
   return (
     <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6">
       <h1 className="text-xl font-semibold text-brand-navy">
-        {t('dashboard')}
+        {getPageTitle()}
       </h1>
       
       <div className="flex items-center space-x-6">

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import PrivateHeader from './PrivateHeader';
 import PrivateSidebar from './PrivateSidebar';
 import { useCurrentUser } from '@/hooks/useAuth';
+import { ToastProvider } from '@/components/ui';
 
 export default function PrivateLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -41,14 +42,16 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <PrivateSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-      <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
-        <PrivateHeader />
-        <main className="p-6">
-          {children}
-        </main>
+    <ToastProvider>
+      <div className="flex min-h-screen bg-gray-100">
+        <PrivateSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+        <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+          <PrivateHeader />
+          <main className="p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

@@ -34,6 +34,21 @@ model Restaurant {
 
   users UserRestaurant[]
 
+  // Settings Relations (from settings.prisma)
+  financialSettings FinancialSettings?
+  deliverySettings  DeliverySettings?
+  storeHours        StoreHours?
+  rolePermissions   RolePermissions[]
+
+  // Menu Relations (from menu.prisma)
+  menuCategories   MenuCategory[] @relation("MenuCategories")
+  menuItems        MenuItem[] @relation("MenuItems")
+  optionCategories OptionCategory[] @relation("OptionCategories")
+  options          Option[] @relation("Options")
+  menuRules        MenuRules[] @relation("MenuRules")
+  orders           Order[] @relation("Orders")
+  customers        Customer[] @relation("Customers")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

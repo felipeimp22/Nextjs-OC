@@ -1,0 +1,343 @@
+// ========================================
+// MENU SYSTEM WITH MODIFIERS
+// ========================================
+
+// ==================== MENU CATEGORIES ====================
+
+model MenuCategory {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("MenuCategories", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+  description String?
+  image String?
+
+  order Int @default(0)
+  highlight Boolean @default(false)
+
+  // Availability scheduling
+  seasonalAvailability SeasonalPeriod[]
+  weekdayAvailability WeekdaySchedule?
+
+  items MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@map("menu_categories")
+}
+
+type SeasonalPeriod {
+  startDate DateTime
+  endDate DateTime
+}
+
+type WeekdaySchedule {
+  monday DaySchedule
+  tuesday DaySchedule
+  wednesday DaySchedule
+  thursday DaySchedule
+  friday DaySchedule
+  saturday DaySchedule
+  sunday DaySchedule
+}
+
+type DaySchedule {
+  available Boolean @default(true)
+  start String @default("09:00")
+  end String @default("22:00")
+}
+
+// ==================== MENU ITEMS ====================
+
+model MenuItem {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("MenuItems", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  categoryId String @db.ObjectId
+  category MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name String
+  description String?
+  image String?
+
+  price Float
+  cost Float?
+
+  nutrition Nutrition?
+
+  isAvailable Boolean @default(true)
+  isVisible Boolean @default(true)
+  allowSpecialNotes Boolean @default(false)
+
+  // Inventory management
+  disableWhenFinishInventory Boolean @default(false)
+  inventoryCount Int @default(0)
+
+  // Additional fees (e.g., packaging fee)
+  fees ItemFee[]
+
+  // Tags for filtering (vegetarian, gluten-free, etc.)
+  tags String[] @default([])
+
+  // Relation to menu rules (for modifiers)
+  rules MenuRules?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId, categoryId])
+  @@index([restaurantId, isAvailable])
+  @@map("menu_items")
+}
+
+type Nutrition {
+  calories Int @default(0)
+  fat Float @default(0)
+  protein Float @default(0)
+  carbs Float @default(0)
+}
+
+type ItemFee {
+  name String
+  price Float
+}
+
+// ==================== OPTIONS (MODIFIERS) ====================
+
+model OptionCategory {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("OptionCategories", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+  description String?
+
+  order Int @default(0)
+
+  options Option[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@map("option_categories")
+}
+
+model Option {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("Options", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  categoryId String @db.ObjectId
+  category OptionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name String
+  description String?
+  image String?
+
+  // Choice configuration
+  choices Choice[]
+
+  multiSelect Boolean @default(false)
+  minSelections Int @default(1)
+  maxSelections Int @default(1)
+
+  // Quantity per choice
+  allowQuantity Boolean @default(false)
+  minQuantity Int @default(0)
+  maxQuantity Int @default(1)
+
+  isAvailable Boolean @default(true)
+  isVisible Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId, categoryId])
+  @@map("options")
+}
+
+type Choice {
+  id String @default(uuid())
+  name String
+  basePrice Float @default(0)
+  useNewPrice Boolean @default(false)
+  isDefault Boolean @default(false)
+  disableWhenFinishInventory Boolean @default(false)
+  isAvailable Boolean @default(true)
+  inventoryCount Int @default(0)
+}
+
+// ==================== MENU RULES (Item-Option Relationships) ====================
+
+model MenuRules {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  menuItemId String @unique @db.ObjectId
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("MenuRules", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Applied options with their adjustments
+  appliedOptions AppliedOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@index([menuItemId])
+  @@map("menu_rules")
+}
+
+type AppliedOption {
+  optionId String @db.ObjectId
+  required Boolean @default(false)
+  order Int @default(0)
+  choiceAdjustments ChoiceAdjustment[]
+}
+
+type ChoiceAdjustment {
+  choiceId String
+  priceAdjustment Float @default(0)
+  isAvailable Boolean @default(true)
+  isDefault Boolean @default(false)
+  adjustments PriceAdjustment[] // Cross-option price adjustments
+}
+
+type PriceAdjustment {
+  targetOptionId String @db.ObjectId
+  targetChoiceId String? // Optional - if null, applies to all choices
+  adjustmentType String // multiplier, addition, fixed
+  value Float
+}
+
+// ==================== ORDERS ====================
+
+model Order {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("Orders", fields: [restaurantId], references: [id])
+
+  orderNumber String @unique
+
+  // Customer information
+  customerId String? @db.ObjectId
+  customerName String
+  customerEmail String
+  customerPhone String
+  customerAddress Json?
+
+  // Restaurant info snapshot
+  restaurantInfo Json
+
+  // Order items
+  items OrderItem[]
+
+  // Order details
+  orderType String // pickup, delivery, dine_in
+  status String @default("pending") // pending, confirmed, preparing, ready, out_for_delivery, delivered, completed, cancelled
+
+  // Payment
+  paymentStatus String @default("pending") // pending, paid, failed, refunded, partially_refunded
+  paymentMethod String // card, cash, other
+  paymentIntentId String?
+  paymentClientSecret String?
+  chargeId String?
+
+  // Pricing
+  subtotal Float
+  tax Float
+  taxBreakdown Json? // Detailed tax breakdown
+  tip Float @default(0)
+  deliveryFee Float @default(0)
+  platformFee Float @default(0)
+  total Float
+
+  // Delivery details
+  deliveryDistance Float?
+  deliveryInfo Json? // { provider, externalId, trackingUrl, status }
+
+  // Special instructions
+  specialInstructions String?
+
+  // Timezone and local time
+  timezone String @default("UTC")
+  localDate String? // YYYY-MM-DD in restaurant's timezone
+  localDateTime DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId, status])
+  @@index([restaurantId, orderType])
+  @@index([orderNumber])
+  @@index([paymentIntentId])
+  @@map("orders")
+}
+
+type OrderItem {
+  menuItemId String @db.ObjectId
+  name String
+  price Float
+  quantity Int
+  options SelectedOption[]
+  specialInstructions String?
+}
+
+type SelectedOption {
+  name String
+  choice String
+  priceAdjustment Float
+}
+
+// ==================== CUSTOMERS ====================
+
+model Customer {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("Customers", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+  email String
+  phone Json? // { countryCode, number }
+
+  address Json?
+
+  orderCount Int @default(0)
+  totalSpent Float @default(0)
+  lastOrderDate DateTime?
+
+  orderHistory String[] @default([]) // Array of Order IDs
+
+  tags String[] @default([])
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, email])
+  @@index([restaurantId])
+  @@map("customers")
+}
+
+// Update Restaurant model to include menu relations
+// Add these to your existing Restaurant model:
+//
+// menuCategories   MenuCategory[] @relation("MenuCategories")
+// menuItems        MenuItem[] @relation("MenuItems")
+// optionCategories OptionCategory[] @relation("OptionCategories")
+// options          Option[] @relation("Options")
+// menuRules        MenuRules[] @relation("MenuRules")
+// orders           Order[] @relation("Orders")
+// customers        Customer[] @relation("Customers")
