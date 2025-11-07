@@ -8,8 +8,7 @@ export default auth((req) => {
   const isAuthenticated = !!req.auth;
 
   const publicRoutes = ['/', '/auth', '/book-demo', '/pricing'];
-  const isPublicRoute = publicRoutes.includes(pathname);
-
+  const restaurantSetupRoutes = ['/select-restaurant', '/getting-started'];
   const protectedRoutes = ['/dashboard', '/settings', '/profile'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
@@ -17,8 +16,12 @@ export default auth((req) => {
     return NextResponse.redirect(new URL('/auth', req.url));
   }
 
+  if (!isAuthenticated && restaurantSetupRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL('/auth', req.url));
+  }
+
   if (isAuthenticated && pathname === '/auth') {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+    return NextResponse.redirect(new URL('/select-restaurant', req.url));
   }
 
   return NextResponse.next();

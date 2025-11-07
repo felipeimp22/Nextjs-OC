@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useSearchRestaurants, useRequestRestaurantAccess } from '@/hooks/useRestaurants';
+import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { Button } from '@/components/ui';
 
 export default function RestaurantSearch() {
@@ -14,11 +15,13 @@ export default function RestaurantSearch() {
 
   const { data: restaurants = [], isLoading } = useSearchRestaurants(query);
   const requestAccessMutation = useRequestRestaurantAccess();
+  const { setSelectedRestaurant } = useRestaurantStore();
 
-  const handleRequestAccess = async (restaurantId: string) => {
+  const handleRequestAccess = async (restaurantId: string, restaurantName: string) => {
     try {
       await requestAccessMutation.mutateAsync(restaurantId);
       setRequestedIds(prev => new Set(prev).add(restaurantId));
+      setSelectedRestaurant(restaurantId, restaurantName);
       setTimeout(() => {
         router.push('/dashboard');
       }, 1000);
@@ -80,7 +83,7 @@ export default function RestaurantSearch() {
                   </div>
 
                   <Button
-                    onClick={() => handleRequestAccess(restaurant.id)}
+                    onClick={() => handleRequestAccess(restaurant.id, restaurant.name)}
                     disabled={hasRequested || requestAccessMutation.isPending}
                     className={
                       hasRequested
