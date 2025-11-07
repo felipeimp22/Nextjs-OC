@@ -1,40 +1,42 @@
+'use client';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getRestaurants,
-  getRestaurant,
+  getUserRestaurants,
   createRestaurant,
+  searchRestaurants,
+  requestRestaurantAccess,
+  getRestaurant,
   updateRestaurant,
-  deleteRestaurant,
-  getRestaurantStats,
-  getUserRestaurants
 } from '@/lib/serverActions/restaurant.actions';
-
-interface Restaurant {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 interface CreateRestaurantData {
   name: string;
-  address: string;
+  description?: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country?: string;
   phone: string;
+  email: string;
+  logo?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
 }
 
-export function useRestaurants() {
+export function useUserRestaurants() {
   return useQuery({
-    queryKey: ['restaurants'],
+    queryKey: ['user-restaurants'],
     queryFn: async () => {
-      const result = await getRestaurants();
+      const result = await getUserRestaurants();
       if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch restaurants');
+        throw new Error('Failed to fetch restaurants');
       }
-      return result.data;
+      return result.restaurants;
     },
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -54,7 +56,7 @@ export function useRestaurant(id: string) {
 
 export function useCreateRestaurant() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateRestaurantData) => {
       const result = await createRestaurant(data);
@@ -64,14 +66,46 @@ export function useCreateRestaurant() {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['restaurants'] });
+      queryClient.invalidateQueries({ queryKey: ['user-restaurants'] });
+    },
+  });
+}
+
+export function useSearchRestaurants(query: string) {
+  return useQuery({
+    queryKey: ['search-restaurants', query],
+    queryFn: async () => {
+      const result = await searchRestaurants(query);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to search restaurants');
+      }
+      return result.data;
+    },
+    enabled: query.length > 2,
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useRequestRestaurantAccess() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (restaurantId: string) => {
+      const result = await requestRestaurantAccess(restaurantId);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to request access');
+      }
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-restaurants'] });
     },
   });
 }
 
 export function useUpdateRestaurant() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CreateRestaurantData> }) => {
       const result = await updateRestaurant(id, data);
@@ -82,52 +116,7 @@ export function useUpdateRestaurant() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['restaurant', data?.id] });
-      queryClient.invalidateQueries({ queryKey: ['restaurants'] });
+      queryClient.invalidateQueries({ queryKey: ['user-restaurants'] });
     },
-  });
-}
-
-export function useDeleteRestaurant() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const result = await deleteRestaurant(id);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to delete restaurant');
-      }
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['restaurants'] });
-    },
-  });
-}
-
-export function useRestaurantStats(restaurantId: string) {
-  return useQuery({
-    queryKey: ['restaurant-stats', restaurantId],
-    queryFn: async () => {
-      const result = await getRestaurantStats(restaurantId);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch stats');
-      }
-      return result.data;
-    },
-    enabled: !!restaurantId,
-  });
-}
-
-export function useUserRestaurants() {
-  return useQuery({
-    queryKey: ['user-restaurants'],
-    queryFn: async () => {
-      const result = await getUserRestaurants();
-      if (!result.success) {
-        throw new Error('Failed to fetch restaurants');
-      }
-      return result.restaurants;
-    },
-    staleTime: 1000 * 60 * 5,
   });
 }
