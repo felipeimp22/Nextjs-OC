@@ -1,0 +1,199 @@
+{
+  "auth": {
+    "signIn": "SignIn",
+    "signUp": "Create Account",
+    "welcomeBack": "Welcome Back!",
+    "createAccount": "Create your account",
+    "continueWith": "Continue with",
+    "orContinueWith": "Or continue with",
+    "facebook": "Facebook",
+    "google": "Google",
+    "name": "Name",
+    "enterName": "Enter your name",
+    "email": "Email",
+    "enterEmail": "Enter your email",
+    "password": "Password",
+    "enterPassword": "Enter your password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already registered",
+    "switchToSignUp": "Sign up",
+    "switchToSignIn": "Sign In",
+    "minCharacters": "Minimum 8 characters",
+    "creatingAccount": "Creating Account...",
+    "signingIn": "Signing In..."
+  },
+  "sidebar": {
+    "pauseOrdering": "Pause Ordering",
+    "dashboard": "Dashboard",
+    "menuManagement": "Menu Management",
+    "orders": "Orders",
+    "kitchen": "Kitchen",
+    "customers": "Customers",
+    "marketing": "Marketing",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "adminDashboard": "Admin Dashboard",
+    "account": "Account",
+    "logout": "Logout",
+    "demoRestaurant": "Demo Restaurant"
+  },
+  "header": {
+    "dashboard": "Dashboard",
+    "selectRestaurant": "Select Restaurant",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "common": {
+    "login": "Login",
+    "logout": "Logout",
+    "home": "Home",
+    "features": "Features",
+    "results": "Results",
+    "pricing": "Pricing",
+    "contact": "Contact",
+    "bookDemo": "Book a Demo",
+    "getStarted": "Get Started",
+    "signIn": "Sign In"
+  },
+  "hero": {
+    "badge": "Restaurant Tech Revolution",
+    "title": "Turn Your Restaurant Into a",
+    "titleHighlight": "Profit Machine",
+    "description": "Big chains dominate with technology, not just food. Now you can too.",
+    "descriptionFull": "OrderChop gives independent restaurants the tech edge with AI-powered ordering, zero-commission online sales, and complete customer data ownership. Everything you need to compete with the big players and dominate your local market.",
+    "bookDemo": "Book a Demo",
+    "getStarted": "Let's Get Started",
+    "socialProof": "Join",
+    "socialProofCount": "350+",
+    "socialProofText": "restaurant owners",
+    "socialProofSubtext": "increasing profits today",
+    "revenueIncrease": "Monthly Revenue",
+    "revenueValue": "+62%",
+    "allInOne": "All in one platform",
+    "allInOneSubtext": "Let's go!",
+    "ownApp": "Your",
+    "ownAppHighlight": "own",
+    "ownAppText": "app",
+    "ownAppSubtext": "No third-party commissions"
+  },
+  "features": {
+    "sectionBadge": "FEATURES",
+    "title": "Why",
+    "titleHighlight": "OrderChop",
+    "subtitle": "The all-in-one platform that gives you complete control of your restaurant's online presence and profits.",
+    "commissionFree": {
+      "title": "Commission-Free Online Ordering",
+      "description": "Keep 100% of your hard-earned revenue. Never pay 30% to third-party apps again."
+    },
+    "seo": {
+      "title": "First-Page Google Ranking",
+      "description": "Your restaurant's website optimized to dominate local searches."
+    },
+    "app": {
+      "title": "Your Own Restaurant App",
+      "description": "Let customers order directly from an app built just for you."
+    },
+    "aiPhone": {
+      "title": "AI Phone Ordering",
+      "description": "Tired of missed calls? Our AI handles phone orders 24/7. English now, Spanish in beta!"
+    },
+    "crm": {
+      "title": "CRM & Customer Data Ownership",
+      "description": "Own your customer list. Send promos. Build loyalty. No more relying on third-party platforms."
+    },
+    "marketing": {
+      "title": "Automated Marketing",
+      "description": "We handle promotions, SMS, email, and telemarketing, so you can focus on food."
+    },
+    "choppy": {
+      "title": "Meet Choppy: Your AI-Powered Secret Weapon",
+      "subtitle": "Not just another AI tool. It's your",
+      "subtitleHighlight": "analytics manager, strategist, and cost-saving genius",
+      "subtitleEnd": "rolled into one.",
+      "analysis": {
+        "title": "Smart Sales Analysis",
+        "description": "Analyzes data to craft custom marketing strategies that boost revenue"
+      },
+      "costCutting": {
+        "title": "Cost-Cutting AI",
+        "description": "Identifies hidden savings and optimizes margins automatically"
+      },
+      "trends": {
+        "title": "Market Trend Insights",
+        "description": "Predicts price changes and suggests menu adjustments to maintain profits"
+      },
+      "automation": {
+        "title": "Decision Automation",
+        "description": "Implements changes that maximize profits without you lifting a finger"
+      },
+      "quote": "Choppy handles the analytics so you can focus on what you do best. Delivering exceptional dining experiences.",
+      "cta": "Sounds good doesn't it? Let's get started."
+    }
+  },
+  "testimonials": {
+    "sectionBadge": "TESTIMONIALS",
+    "title": "Real Results from Restaurant Owners",
+    "subtitle": "See how restaurants across the country are taking back control and increasing profits with OrderChop.",
+    "testimonial1": {
+      "name": "Maria Garcia",
+      "role": "Owner, La Cocina Auténtica",
+      "text": "Since switching to OrderChop, my profits have increased by 32%. We're no longer giving away one-third of our revenue to delivery apps. The AI phone ordering system has been a game-changer for our busy nights."
+    },
+    "testimonial2": {
+      "name": "David Chen",
+      "role": "Manager, Fusion Express",
+      "text": "We've reclaimed our customer relationships and marketing control. The personalized app has helped us build loyalty like never before. Our online orders are up 47% and we're keeping all the profits."
+    },
+    "testimonial3": {
+      "name": "James Williams",
+      "role": "Owner, Riverside Grill",
+      "text": "The SEO boost got us to the top of local searches within weeks. We're getting direct orders instead of through expensive platforms. Customer data ownership means we can market directly to our regulars."
+    },
+    "statsTitle": "The numbers speak for themselves",
+    "revenueIncrease": "Revenue Increase",
+    "revenueValue": "43%",
+    "retention": "Customer Retention",
+    "retentionValue": "78%",
+    "savings": "Monthly Savings",
+    "savingsValue": "$2,845",
+    "ctaText": "Ready to see these results for your restaurant?",
+    "ctaButton": "Book a Demo"
+  },
+  "footerCta": {
+    "title": "Let's Make Your Restaurant a",
+    "titleHighlight": "Predictably Profitable Machine",
+    "subtitle": "Join hundreds of restaurant owners who have taken back control of their profits with OrderChop's all-in-one platform.",
+    "bookDemo": "Book a Demo",
+    "getStarted": "Let's Get Started",
+    "liveDemo": "Live Demo",
+    "setupTime": "Setup Time",
+    "setupValue": "Under 60 mins"
+  },
+  "footer": {
+    "tagline": "The all-in-one solution for restaurant owners to take back control of their profits.",
+    "features": "Features",
+    "onlineOrdering": "Online Ordering",
+    "mobileApp": "Mobile App",
+    "aiPhone": "AI Phone Ordering",
+    "seo": "SEO Optimization",
+    "customerData": "Customer Data",
+    "resources": "Resources",
+    "blog": "Blog",
+    "successStories": "Success Stories",
+    "helpCenter": "Help Center",
+    "pricing": "Pricing",
+    "contact": "Contact",
+    "phone": "(555) 123-4567",
+    "email": "hello@orderchop.com",
+    "address": "123 Main St, San Francisco, CA 94105",
+    "copyright": "OrderChop. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "cookies": "Cookies"
+  },
+  "socialProof": {
+    "signedUp": "just signed up with OrderChop",
+    "ago": "ago!"
+  }
+}

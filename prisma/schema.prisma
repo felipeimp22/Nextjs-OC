@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// restaurant.prisma
+// ========================================
+
+// Restaurant model (basic structure)
+model Restaurant {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  address     String
+  phone       String
+  
+  // Relations
+  users UserRestaurant[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("restaurants")
+}
+
+// ========================================
+// user.prisma
+// ========================================
+
+// User model
+model User {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String    @unique
+  password  String?   // Optional for social login
+  image     String    @default("")
+  status    String    @default("pending") // active, pending, inactive
+  
+  // User restaurants and roles
+  restaurants UserRestaurant[]
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  @@map("users")
+}
+
+// User-Restaurant relationship with roles
+model UserRestaurant {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  restaurantId String   @db.ObjectId
+  role         String   @default("staff") // admin, manager, kitchen, staff
+  
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, restaurantId])
+  @@map("user_restaurants")
+}
+
+
+

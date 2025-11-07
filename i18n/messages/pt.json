@@ -1,0 +1,199 @@
+{
+  "auth": {
+    "signIn": "Entrar",
+    "signUp": "Criar Conta",
+    "welcomeBack": "Bem-vindo de volta!",
+    "createAccount": "Crie sua conta",
+    "continueWith": "Continuar com",
+    "orContinueWith": "Ou continue com",
+    "facebook": "Facebook",
+    "google": "Google",
+    "name": "Nome",
+    "enterName": "Digite seu nome",
+    "email": "E-mail",
+    "enterEmail": "Digite seu e-mail",
+    "password": "Senha",
+    "enterPassword": "Digite sua senha",
+    "noAccount": "Não tem uma conta?",
+    "hasAccount": "Já registrado",
+    "switchToSignUp": "Cadastre-se",
+    "switchToSignIn": "Entrar",
+    "minCharacters": "Mínimo 8 caracteres",
+    "creatingAccount": "Criando Conta...",
+    "signingIn": "Entrando..."
+  },
+  "sidebar": {
+    "pauseOrdering": "Pausar Pedidos",
+    "dashboard": "Painel",
+    "menuManagement": "Gestão de Cardápio",
+    "orders": "Pedidos",
+    "kitchen": "Cozinha",
+    "customers": "Clientes",
+    "marketing": "Marketing",
+    "analytics": "Análises",
+    "settings": "Configurações",
+    "adminDashboard": "Painel Admin",
+    "account": "Conta",
+    "logout": "Sair",
+    "demoRestaurant": "Restaurante Demo"
+  },
+  "header": {
+    "dashboard": "Painel",
+    "selectRestaurant": "Selecionar Restaurante",
+    "profile": "Perfil",
+    "settings": "Configurações",
+    "logout": "Sair"
+  },
+  "common": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "home": "Início",
+    "features": "Recursos",
+    "results": "Resultados",
+    "pricing": "Preços",
+    "contact": "Contato",
+    "bookDemo": "Agendar Demo",
+    "getStarted": "Começar",
+    "signIn": "Entrar"
+  },
+  "hero": {
+    "badge": "Revolução Tecnológica em Restaurantes",
+    "title": "Transforme Seu Restaurante em uma",
+    "titleHighlight": "Máquina de Lucro",
+    "description": "Grandes redes dominam com tecnologia, não apenas comida. Agora você também pode.",
+    "descriptionFull": "OrderChop oferece aos restaurantes independentes a vantagem tecnológica com pedidos com IA, vendas online sem comissão e propriedade completa dos dados dos clientes. Tudo que você precisa para competir com os grandes players e dominar seu mercado local.",
+    "bookDemo": "Agendar Demo",
+    "getStarted": "Vamos Começar",
+    "socialProof": "Junte-se a",
+    "socialProofCount": "350+",
+    "socialProofText": "donos de restaurantes",
+    "socialProofSubtext": "aumentando lucros hoje",
+    "revenueIncrease": "Receita Mensal",
+    "revenueValue": "+62%",
+    "allInOne": "Plataforma tudo-em-um",
+    "allInOneSubtext": "Vamos lá!",
+    "ownApp": "Seu",
+    "ownAppHighlight": "próprio",
+    "ownAppText": "app",
+    "ownAppSubtext": "Sem comissões de terceiros"
+  },
+  "features": {
+    "sectionBadge": "RECURSOS",
+    "title": "Por que",
+    "titleHighlight": "OrderChop",
+    "subtitle": "A plataforma completa que oferece controle total da presença online e lucros do seu restaurante.",
+    "commissionFree": {
+      "title": "Pedidos Online Sem Comissão",
+      "description": "Mantenha 100% da sua receita conquistada. Nunca mais pague 30% para aplicativos de terceiros."
+    },
+    "seo": {
+      "title": "Primeira Página do Google",
+      "description": "O site do seu restaurante otimizado para dominar buscas locais."
+    },
+    "app": {
+      "title": "Seu Próprio App de Restaurante",
+      "description": "Deixe os clientes pedirem diretamente de um app feito só para você."
+    },
+    "aiPhone": {
+      "title": "Pedidos por Telefone com IA",
+      "description": "Cansado de perder ligações? Nossa IA gerencia pedidos por telefone 24/7. Português agora, Espanhol em beta!"
+    },
+    "crm": {
+      "title": "CRM e Propriedade dos Dados",
+      "description": "Seja dono da sua lista de clientes. Envie promoções. Construa fidelidade. Sem depender de plataformas de terceiros."
+    },
+    "marketing": {
+      "title": "Marketing Automatizado",
+      "description": "Cuidamos de promoções, SMS, e-mail e telemarketing, para você focar na comida."
+    },
+    "choppy": {
+      "title": "Conheça o Choppy: Sua Arma Secreta com IA",
+      "subtitle": "Não é apenas mais uma ferramenta de IA. É seu",
+      "subtitleHighlight": "gerente de análises, estrategista e gênio em redução de custos",
+      "subtitleEnd": "tudo em um.",
+      "analysis": {
+        "title": "Análise Inteligente de Vendas",
+        "description": "Analisa dados para criar estratégias de marketing personalizadas que aumentam receita"
+      },
+      "costCutting": {
+        "title": "IA de Redução de Custos",
+        "description": "Identifica economias ocultas e otimiza margens automaticamente"
+      },
+      "trends": {
+        "title": "Insights de Tendências de Mercado",
+        "description": "Prevê mudanças de preços e sugere ajustes no cardápio para manter lucros"
+      },
+      "automation": {
+        "title": "Automação de Decisões",
+        "description": "Implementa mudanças que maximizam lucros sem você mexer um dedo"
+      },
+      "quote": "Choppy cuida das análises para você focar no que faz de melhor. Proporcionar experiências gastronômicas excepcionais.",
+      "cta": "Parece bom, não é? Vamos começar."
+    }
+  },
+  "testimonials": {
+    "sectionBadge": "DEPOIMENTOS",
+    "title": "Resultados Reais de Donos de Restaurantes",
+    "subtitle": "Veja como restaurantes em todo o país estão retomando o controle e aumentando lucros com OrderChop.",
+    "testimonial1": {
+      "name": "Maria Garcia",
+      "role": "Proprietária, La Cocina Auténtica",
+      "text": "Desde que mudamos para OrderChop, meus lucros aumentaram 32%. Não estamos mais dando um terço da nossa receita para apps de delivery. O sistema de pedidos por telefone com IA mudou o jogo nas nossas noites movimentadas."
+    },
+    "testimonial2": {
+      "name": "David Chen",
+      "role": "Gerente, Fusion Express",
+      "text": "Recuperamos nossos relacionamentos com clientes e controle de marketing. O app personalizado nos ajudou a construir fidelidade como nunca. Nossos pedidos online subiram 47% e estamos mantendo todos os lucros."
+    },
+    "testimonial3": {
+      "name": "James Williams",
+      "role": "Proprietário, Riverside Grill",
+      "text": "O impulso no SEO nos colocou no topo das buscas locais em semanas. Estamos recebendo pedidos diretos em vez de plataformas caras. Propriedade dos dados significa que podemos fazer marketing diretamente para nossos clientes regulares."
+    },
+    "statsTitle": "Os números falam por si",
+    "revenueIncrease": "Aumento de Receita",
+    "revenueValue": "43%",
+    "retention": "Retenção de Clientes",
+    "retentionValue": "78%",
+    "savings": "Economia Mensal",
+    "savingsValue": "$2.845",
+    "ctaText": "Pronto para ver esses resultados no seu restaurante?",
+    "ctaButton": "Agendar Demo"
+  },
+  "footerCta": {
+    "title": "Vamos Fazer Seu Restaurante uma",
+    "titleHighlight": "Máquina Previsível de Lucros",
+    "subtitle": "Junte-se a centenas de donos de restaurantes que retomaram o controle de seus lucros com a plataforma completa da OrderChop.",
+    "bookDemo": "Agendar Demo",
+    "getStarted": "Vamos Começar",
+    "liveDemo": "Demo ao Vivo",
+    "setupTime": "Tempo de Configuração",
+    "setupValue": "Menos de 60 min"
+  },
+  "footer": {
+    "tagline": "A solução completa para donos de restaurantes retomarem o controle de seus lucros.",
+    "features": "Recursos",
+    "onlineOrdering": "Pedidos Online",
+    "mobileApp": "App Mobile",
+    "aiPhone": "Pedidos por Telefone com IA",
+    "seo": "Otimização SEO",
+    "customerData": "Dados de Clientes",
+    "resources": "Recursos",
+    "blog": "Blog",
+    "successStories": "Histórias de Sucesso",
+    "helpCenter": "Central de Ajuda",
+    "pricing": "Preços",
+    "contact": "Contato",
+    "phone": "(555) 123-4567",
+    "email": "ola@orderchop.com",
+    "address": "123 Main St, San Francisco, CA 94105",
+    "copyright": "OrderChop. Todos os direitos reservados.",
+    "privacy": "Política de Privacidade",
+    "terms": "Termos de Serviço",
+    "cookies": "Cookies"
+  },
+  "socialProof": {
+    "signedUp": "acabou de se inscrever no OrderChop",
+    "ago": "atrás!"
+  }
+}
