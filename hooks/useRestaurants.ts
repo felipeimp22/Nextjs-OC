@@ -8,6 +8,7 @@ import {
   requestRestaurantAccess,
   getRestaurant,
   updateRestaurant,
+  updateRestaurantLogo,
 } from '@/lib/serverActions/restaurant.actions';
 
 interface CreateRestaurantData {
@@ -111,6 +112,24 @@ export function useUpdateRestaurant() {
       const result = await updateRestaurant(id, data);
       if (!result.success) {
         throw new Error(result.error || 'Failed to update restaurant');
+      }
+      return result.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['restaurant', data?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-restaurants'] });
+    },
+  });
+}
+
+export function useUpdateRestaurantLogo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, logoUrl }: { id: string; logoUrl: string }) => {
+      const result = await updateRestaurantLogo(id, logoUrl);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update restaurant logo');
       }
       return result.data;
     },

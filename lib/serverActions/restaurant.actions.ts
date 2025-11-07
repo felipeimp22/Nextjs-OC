@@ -63,7 +63,6 @@ export async function createRestaurant(data: CreateRestaurantData) {
         country: data.country || 'US',
         phone: data.phone.trim(),
         email: data.email.trim(),
-        logo: data.logo,
         primaryColor: data.primaryColor || '#282e59',
         secondaryColor: data.secondaryColor || '#f03e42',
         accentColor: data.accentColor || '#ffffff',
@@ -294,5 +293,44 @@ export async function updateRestaurant(id: string, data: Partial<CreateRestauran
   } catch (error) {
     console.error('Error updating restaurant:', error);
     return { success: false, error: 'Failed to update restaurant', data: null };
+  }
+}
+
+export async function updateRestaurantLogo(id: string, logoUrl: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        restaurants: {
+          where: {
+            restaurantId: id,
+            role: { in: ['owner', 'manager'] }
+          }
+        }
+      }
+    });
+
+    if (!user || user.restaurants.length === 0) {
+      return { success: false, error: 'Unauthorized to update this restaurant', data: null };
+    }
+
+    const restaurant = await prisma.restaurant.update({
+      where: { id },
+      data: { logo: logoUrl },
+    });
+
+    revalidatePath('/dashboard');
+    revalidatePath('/setup');
+
+    return { success: true, data: restaurant, error: null };
+  } catch (error) {
+    console.error('Error updating restaurant logo:', error);
+    return { success: false, error: 'Failed to update restaurant logo', data: null };
   }
 }

@@ -15,11 +15,11 @@
     "docker:prune": "docker volume prune -f",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    
     "seed:essentials": "tsx seeds/seedProfileEssentials.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
+    "@aws-sdk/client-s3": "^3.926.0",
     "@prisma/client": "^6.18.0",
     "@tanstack/react-query": "^5.90.6",
     "bcryptjs": "^3.0.2",

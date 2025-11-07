@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useCreateRestaurant } from '@/hooks/useRestaurants';
+import { useCreateRestaurant, useUpdateRestaurantLogo } from '@/hooks/useRestaurants';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { Button } from '@/components/ui';
 
@@ -27,10 +27,13 @@ export default function RestaurantForm() {
   const t = useTranslations('restaurantForm');
   const router = useRouter();
   const createRestaurantMutation = useCreateRestaurant();
+  const updateLogoMutation = useUpdateRestaurantLogo();
   const { setSelectedRestaurant } = useRestaurantStore();
 
   const [step, setStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
@@ -55,11 +58,10 @@ export default function RestaurantForm() {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        const result = reader.result as string;
-        setLogoPreview(result);
-        setFormData(prev => ({ ...prev, logo: result }));
+        setLogoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -76,13 +78,35 @@ export default function RestaurantForm() {
     e.preventDefault();
 
     try {
+      setIsUploading(true);
+
       const restaurant = await createRestaurantMutation.mutateAsync(formData);
+
+      if (restaurant && logoFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', logoFile);
+        uploadFormData.append('restaurantId', restaurant.id);
+        uploadFormData.append('folder', 'restaurant');
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+
+        if (uploadResponse.ok) {
+          const { url } = await uploadResponse.json();
+          await updateLogoMutation.mutateAsync({ id: restaurant.id, logoUrl: url });
+        }
+      }
+
       if (restaurant) {
         setSelectedRestaurant(restaurant.id, restaurant.name);
         router.push(`/${restaurant.id}/dashboard`);
       }
     } catch (error) {
       console.error('Error creating restaurant:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -347,10 +371,10 @@ export default function RestaurantForm() {
               </Button>
               <Button
                 type="submit"
-                disabled={createRestaurantMutation.isPending}
+                disabled={createRestaurantMutation.isPending || isUploading}
                 className="bg-brand-red hover:bg-brand-red/90"
               >
-                {createRestaurantMutation.isPending ? t('creating') : t('createRestaurant')}
+                {isUploading ? t('creating') : t('createRestaurant')}
               </Button>
             </div>
           </div>
