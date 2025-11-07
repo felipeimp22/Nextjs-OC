@@ -18,6 +18,11 @@ interface FormData {
   phone: string;
   email: string;
   logo: string;
+  logoFile?: {
+    data: string;
+    mimeType: string;
+    fileName: string;
+  };
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -59,7 +64,14 @@ export default function RestaurantForm() {
       reader.onloadend = () => {
         const result = reader.result as string;
         setLogoPreview(result);
-        setFormData(prev => ({ ...prev, logo: result }));
+        setFormData(prev => ({
+          ...prev,
+          logoFile: {
+            data: result,
+            mimeType: file.type,
+            fileName: file.name,
+          },
+        }));
       };
       reader.readAsDataURL(file);
     }

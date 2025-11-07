@@ -3,6 +3,8 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { StorageFactory } from "@/lib/storage";
+import crypto from "crypto";
 
 interface CreateRestaurantData {
   name: string;
@@ -15,6 +17,11 @@ interface CreateRestaurantData {
   phone: string;
   email: string;
   logo?: string;
+  logoFile?: {
+    data: string;
+    mimeType: string;
+    fileName: string;
+  };
   primaryColor?: string;
   secondaryColor?: string;
   accentColor?: string;
@@ -63,7 +70,6 @@ export async function createRestaurant(data: CreateRestaurantData) {
         country: data.country || 'US',
         phone: data.phone.trim(),
         email: data.email.trim(),
-        logo: data.logo,
         primaryColor: data.primaryColor || '#282e59',
         secondaryColor: data.secondaryColor || '#f03e42',
         accentColor: data.accentColor || '#ffffff',
@@ -77,6 +83,35 @@ export async function createRestaurant(data: CreateRestaurantData) {
         role: 'owner',
       },
     });
+
+    if (data.logoFile) {
+      try {
+        const storage = StorageFactory.getProvider();
+        const base64Data = data.logoFile.data.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        const fileExtension = data.logoFile.mimeType.split('/')[1];
+        const hash = crypto.randomBytes(8).toString('hex');
+        const fileName = `logo-${hash}.${fileExtension}`;
+        const folder = `${restaurant.id}/restaurant`;
+
+        const uploadResult = await storage.upload({
+          file: buffer,
+          fileName,
+          mimeType: data.logoFile.mimeType,
+          folder,
+        });
+
+        await prisma.restaurant.update({
+          where: { id: restaurant.id },
+          data: { logo: uploadResult.url },
+        });
+
+        restaurant.logo = uploadResult.url;
+      } catch (uploadError) {
+        console.error('Error uploading logo:', uploadError);
+      }
+    }
 
     revalidatePath('/dashboard');
     revalidatePath('/getting-started');
