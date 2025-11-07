@@ -26,7 +26,7 @@ export default function SettingsLayout({
   return (
     <div className="max-w-7xl mx-auto">
       {/* Tabs Navigation */}
-      <div className="bg-white border-b border-gray-200 -mx-6 px-6 mb-6">
+      <div className="bg-brand-white border-b border-gray-200 -mx-6 px-6 mb-6">
         <nav className="flex gap-2 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href ||
@@ -53,7 +53,7 @@ export default function SettingsLayout({
       </div>
 
       {/* Settings Content */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-brand-white rounded-lg shadow-sm border border-gray-200">
         {children}
       </div>
     </div>
