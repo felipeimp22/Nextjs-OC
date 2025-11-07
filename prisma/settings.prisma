@@ -1,0 +1,239 @@
+// ========================================
+// SETTINGS SCHEMAS
+// ========================================
+
+// ==================== FINANCIAL SETTINGS ====================
+
+model FinancialSettings {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Currency
+  currency String @default("USD")
+  currencySymbol String @default("$")
+
+  // Taxes (customizable list)
+  taxes TaxSetting[]
+
+  // Tips Configuration
+  tipsEnabled Boolean @default(true)
+  tipType String @default("percentage") // percentage, fixed, both
+  defaultTipOptions Float[] @default([15, 18, 20])
+
+  // Payment Provider Configuration
+  paymentProvider String @default("stripe") // stripe, mercadopago
+  paymentConfig Json? // Flexible config for different providers
+
+  // Stripe Configuration
+  stripeEnabled Boolean @default(false)
+  stripeAccountId String?
+  stripePublicKey String?
+  stripeWebhookSecret String?
+  stripeConnectStatus String @default("not_connected") // not_connected, pending, connected, failed, restricted
+  stripeConnectDetails Json?
+  usePlatformAccountFallback Boolean @default(true)
+
+  // MercadoPago Configuration
+  mercadoPagoEnabled Boolean @default(false)
+  mercadoPagoAccessToken String?
+  mercadoPagoPublicKey String?
+
+  // Platform Fee Configuration
+  globalFee GlobalFee?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId])
+  @@map("financial_settings")
+}
+
+// Tax configuration (embedded)
+type TaxSetting {
+  name String
+  enabled Boolean @default(true)
+  rate Float
+  type String @default("percentage") // percentage, fixed
+  applyTo String @default("entire_order") // entire_order, per_item
+}
+
+// Global platform fee (embedded)
+type GlobalFee {
+  enabled Boolean @default(true)
+  threshold Float @default(10)
+  belowPercent Float @default(10)
+  aboveFlat Float @default(1.95)
+}
+
+// ==================== DELIVERY SETTINGS ====================
+
+model DeliverySettings {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Basic Delivery Config
+  enabled Boolean @default(true)
+  distanceUnit String @default("miles") // miles, km
+  maximumRadius Float @default(10)
+
+  // Distance-based pricing with coverage zones
+  pricingTiers DeliveryPricingTier[]
+
+  // Driver Provider Configuration
+  driverProvider String @default("shipday") // shipday, doordash, ubereats, internal
+  provideDriver Boolean @default(true)
+  driverConfig Json? // Flexible config for different providers
+
+  // Shipday Configuration
+  shipdayEnabled Boolean @default(false)
+  shipdayApiKey String?
+  shipdayBaseUrl String @default("https://api.shipday.com")
+  shipdayDryRun Boolean @default(false)
+
+  // Mapbox Configuration for distance calculation
+  mapboxEnabled Boolean @default(true)
+  mapboxApiKey String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId])
+  @@map("delivery_settings")
+}
+
+// Distance-based pricing tier (embedded)
+type DeliveryPricingTier {
+  name String @default("Default")
+  distanceCovered Float // e.g., 10 km/miles
+  baseFee Float // e.g., 10 dollars for first 10km
+  additionalFeePerUnit Float // e.g., 2 dollars per km after 10km
+  isDefault Boolean @default(false)
+}
+
+// ==================== STORE HOURS ====================
+
+model StoreHours {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Regular weekly hours
+  monday DayHours
+  tuesday DayHours
+  wednesday DayHours
+  thursday DayHours
+  friday DayHours
+  saturday DayHours
+  sunday DayHours
+
+  // Special closures and holiday hours
+  specialClosures SpecialClosure[]
+
+  // Holiday configuration
+  holidayClosuresEnabled Boolean @default(true)
+  holidays String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId])
+  @@map("store_hours")
+}
+
+// Day hours (embedded)
+type DayHours {
+  isOpen Boolean @default(true)
+  open String @default("09:00")
+  close String @default("22:00")
+}
+
+// Special closure (embedded)
+type SpecialClosure {
+  date DateTime
+  reason String?
+  isFullDay Boolean @default(true)
+  open String?
+  close String?
+}
+
+// ==================== USER ROLES & PERMISSIONS ====================
+
+model RolePermissions {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  role String // admin, manager, kitchen, staff
+
+  // Permissions
+  viewDashboard Boolean @default(true)
+  editMenu Boolean @default(false)
+  viewOrders Boolean @default(false)
+  manageOrders Boolean @default(false)
+  viewCustomers Boolean @default(false)
+  editCustomers Boolean @default(false)
+  viewAnalytics Boolean @default(false)
+  manageSettings Boolean @default(false)
+  manageUsers Boolean @default(false)
+  viewFinancialData Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, role])
+  @@map("role_permissions")
+}
+
+// ==================== PAYMENT TRANSACTIONS ====================
+
+model Transaction {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  orderId String @db.ObjectId
+  restaurantId String @db.ObjectId
+
+  amount Float
+  platformFee Float
+  restaurantAmount Float
+
+  paymentProvider String @default("stripe")
+  paymentIntentId String?
+  chargeId String?
+
+  status String @default("pending") // pending, succeeded, failed, refunded, partially_refunded
+
+  // Transfer information (for platform account payments)
+  transferId String?
+  transferAmount Float?
+  transferStatus String?
+
+  // Refund information
+  refundedAmount Float?
+
+  testMode Boolean @default(false)
+
+  metadata Json?
+  error String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([paymentIntentId])
+  @@index([orderId])
+  @@index([restaurantId])
+  @@map("transactions")
+}
+
+// Update Restaurant model to include settings relations
+// Add this to your existing Restaurant model:
+//
+// financialSettings FinancialSettings?
+// deliverySettings  DeliverySettings?
+// storeHours        StoreHours?
+// rolePermissions   RolePermissions[]
