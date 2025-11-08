@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Button, useToast } from '@/components/ui';
 import { FormSection, InfoCard } from '@/components/shared';
-import { PermissionsTable, RoleSummaryCards } from '@/components/shared/settings';
+import { PermissionsManagementSection } from '@/components/settings/users';
 import { getRestaurantUsers, updateRolePermissions } from '@/lib/serverActions/settings.actions';
 
 const PAGES = [
@@ -124,33 +124,12 @@ export default function UsersSettingsPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <FormSection
-        title="Role-Based Permissions"
-        description="Control which pages each role can access in your restaurant"
-      >
-        <InfoCard type="info" title="About Permissions" className="mb-6">
-          <p className="mb-2">Configure access permissions for different user roles:</p>
-          <ul className="list-disc list-inside space-y-1 text-sm">
-            <li><strong>Manager:</strong> Can access most features except owner-specific settings</li>
-            <li><strong>Kitchen:</strong> Focused on order management and kitchen display</li>
-            <li><strong>Staff:</strong> Limited access for front-of-house operations</li>
-            <li><strong>Owner:</strong> Has full access to everything (cannot be modified)</li>
-          </ul>
-        </InfoCard>
-
-        <PermissionsTable
-          pages={PAGES}
-          roles={ROLES}
-          rolePermissions={rolePermissions}
-          onToggle={handleToggle}
-        />
-
-        <RoleSummaryCards
-          roles={ROLES}
-          rolePermissions={rolePermissions}
-          totalPages={PAGES.length}
-        />
-      </FormSection>
+      <PermissionsManagementSection
+        pages={PAGES}
+        roles={ROLES}
+        rolePermissions={rolePermissions}
+        onToggle={handleToggle}
+      />
 
       {/* Save Button */}
       <div className="flex justify-end pt-6 border-t border-gray-200">

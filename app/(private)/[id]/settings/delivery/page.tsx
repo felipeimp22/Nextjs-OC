@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast, Toggle } from '@/components/ui';
 import { FormSection, FormField, InfoCard } from '@/components/shared';
-import { DeliveryProviderCard, DeliveryPricingExamples } from '@/components/shared/settings';
+import { DeliveryProviderSection, DeliveryPricingSection } from '@/components/settings/delivery';
 import { getDeliverySettings, updateDeliverySettings } from '@/lib/serverActions/settings.actions';
 import { Truck, Package } from 'lucide-react';
 
@@ -156,14 +156,14 @@ export default function DeliverySettingsPage() {
       {/* Delivery Provider Selection */}
       <FormSection title="Delivery Provider" description="Choose how you want to handle deliveries">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <DeliveryProviderCard
+          <DeliveryProviderSection
             icon={Package}
             title="Local Delivery"
             description="Manage deliveries with your own drivers or system"
             isSelected={data.provider === 'local'}
             onSelect={() => setData({ ...data, provider: 'local' })}
           />
-          <DeliveryProviderCard
+          <DeliveryProviderSection
             icon={Truck}
             title="Shipday"
             description="Professional third-party delivery service integration"
@@ -307,7 +307,7 @@ export default function DeliverySettingsPage() {
             </FormField>
 
             {/* Pricing Examples */}
-            <DeliveryPricingExamples
+            <DeliveryPricingSection
               distanceCovered={data.pricingTier.distanceCovered}
               baseFee={data.pricingTier.baseFee}
               additionalFeePerUnit={data.pricingTier.additionalFeePerUnit}

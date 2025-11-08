@@ -6,10 +6,13 @@ export { Container, type ContainerProps } from './Container';
 export { Heading, Text, type HeadingProps, type TextProps } from './Typography';
 export { default as Toggle } from './Toggle';
 export { default as Avatar } from './Avatar';
-export { 
-  default as DropdownMenu, 
-  DropdownMenuItem, 
+export { default as ColorPicker } from './ColorPicker';
+export { default as Select } from './Select';
+export {
+  default as DropdownMenu,
+  DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuHeader 
-} from './DropdownMenu';export { ToastProvider, useToast } from './ToastContainer';
+  DropdownMenuHeader
+} from './DropdownMenu';
+export { ToastProvider, useToast } from './ToastContainer';
 export { default as Toast, type ToastType } from './Toast';

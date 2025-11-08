@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Button, Input, useToast } from '@/components/ui';
+import { Button, Input, useToast, Select } from '@/components/ui';
 import { FormSection, FormField, InfoCard } from '@/components/shared';
-import { TaxListItem, TaxEditForm } from '@/components/shared/settings';
+import { TaxManagementSection } from '@/components/settings/financial';
 import { getFinancialSettings, updateFinancialSettings } from '@/lib/serverActions/settings.actions';
 import { AMERICAS_CURRENCIES } from '@/lib/constants/currencies';
-import { Plus } from 'lucide-react';
 
 interface TaxSetting {
   name: string;
@@ -57,9 +56,6 @@ export default function FinancialSettingsPage() {
     stripeConnectStatus: 'not_connected',
     testMode: true,
   });
-
-  const [editingTax, setEditingTax] = useState<TaxSetting | null>(null);
-  const [editingTaxIndex, setEditingTaxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -121,54 +117,6 @@ export default function FinancialSettingsPage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleAddTax = () => {
-    setEditingTax({
-      name: '',
-      enabled: true,
-      rate: 0,
-      type: 'percentage',
-      applyTo: 'entire_order',
-    });
-    setEditingTaxIndex(null);
-  };
-
-  const handleEditTax = (index: number) => {
-    setEditingTax(data.taxes[index]);
-    setEditingTaxIndex(index);
-  };
-
-  const handleSaveTax = () => {
-    if (!editingTax || !editingTax.name.trim()) {
-      showToast('error', 'Tax name is required');
-      return;
-    }
-
-    if (editingTaxIndex !== null) {
-      // Update existing tax
-      const updatedTaxes = [...data.taxes];
-      updatedTaxes[editingTaxIndex] = editingTax;
-      setData({ ...data, taxes: updatedTaxes });
-    } else {
-      // Add new tax
-      setData({ ...data, taxes: [...data.taxes, editingTax] });
-    }
-
-    setEditingTax(null);
-    setEditingTaxIndex(null);
-  };
-
-  const handleDeleteTax = (index: number) => {
-    setData({
-      ...data,
-      taxes: data.taxes.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setEditingTax(null);
-    setEditingTaxIndex(null);
   };
 
   if (loading) {
@@ -265,65 +213,22 @@ export default function FinancialSettingsPage() {
       </FormSection>
 
       {/* Taxes Section */}
-      <FormSection
-        title="Taxes"
-        description="Configure applicable taxes for your orders"
-        actions={
-          <Button
-            onClick={handleAddTax}
-            variant="secondary"
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Tax
-          </Button>
-        }
-      >
-        {data.taxes.length === 0 && !editingTax && (
-          <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-            No taxes configured. Click "Add Tax" to create one.
-          </div>
-        )}
-
-        {data.taxes.length > 0 && (
-          <div className="space-y-3">
-            {data.taxes.map((tax, index) => (
-              <TaxListItem
-                key={index}
-                tax={tax}
-                index={index}
-                currencySymbol={data.currencySymbol}
-                onEdit={handleEditTax}
-                onDelete={handleDeleteTax}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Tax Edit Form */}
-        {editingTax && (
-          <TaxEditForm
-            tax={editingTax}
-            isEditing={editingTaxIndex !== null}
-            currencySymbol={data.currencySymbol}
-            onTaxChange={setEditingTax}
-            onSave={handleSaveTax}
-            onCancel={handleCancelEdit}
-          />
-        )}
-      </FormSection>
+      <TaxManagementSection
+        taxes={data.taxes}
+        currencySymbol={data.currencySymbol}
+        onTaxesChange={(taxes) => setData({ ...data, taxes })}
+      />
 
       {/* Payment Provider Section */}
       <FormSection title="Payment Provider">
         <FormField label="Provider">
-          <select
+          <Select
             value={data.paymentProvider}
             onChange={(e) => setData({ ...data, paymentProvider: e.target.value })}
-            className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
           >
             <option value="stripe">Stripe</option>
             <option value="mercadopago">Mercado Pago</option>
-          </select>
+          </Select>
         </FormField>
 
         {data.paymentProvider === 'stripe' && data.stripeConnectStatus === 'connected' && data.stripeAccountId && (

@@ -2,9 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Button, useToast } from '@/components/ui';
-import { DayScheduleCard, TimezoneSelector } from '@/components/shared/settings';
+import { Button, Select, useToast } from '@/components/ui';
+import { WeeklyScheduleSection } from '@/components/settings/hours';
 import { getStoreHours, updateStoreHours } from '@/lib/serverActions/settings.actions';
+
+const TIMEZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Phoenix',
+  'America/Anchorage',
+  'Pacific/Honolulu',
+];
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const DAY_LABELS = {
@@ -153,30 +163,22 @@ export default function StoreHoursPage() {
         <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
           Timezone
         </h3>
-        <TimezoneSelector value={timezone} onChange={setTimezone} />
-      </section>
-
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          Weekly Schedule
-        </h3>
-
-        <div className="space-y-3">
-          {schedule.map((daySchedule, dayIndex) => (
-            <DayScheduleCard
-              key={daySchedule.day}
-              dayLabel={DAY_LABELS[daySchedule.day as keyof typeof DAY_LABELS]}
-              dayIndex={dayIndex}
-              isOpen={daySchedule.isOpen}
-              timeSlots={daySchedule.timeSlots}
-              onToggleDay={toggleDay}
-              onUpdateTimeSlot={updateTimeSlot}
-              onAddTimeSlot={addTimeSlot}
-              onRemoveTimeSlot={removeTimeSlot}
-            />
+        <Select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+          {TIMEZONES.map((tz) => (
+            <option key={tz} value={tz}>
+              {tz}
+            </option>
           ))}
-        </div>
+        </Select>
       </section>
+
+      <WeeklyScheduleSection
+        schedule={schedule}
+        onToggleDay={toggleDay}
+        onUpdateTimeSlot={updateTimeSlot}
+        onAddTimeSlot={addTimeSlot}
+        onRemoveTimeSlot={removeTimeSlot}
+      />
 
       <div className="flex justify-end pt-4 border-t border-gray-200">
         <Button

@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast } from '@/components/ui';
 import { FormSection, FormField } from '@/components/shared';
-import { LogoUpload, ColorPicker, ColorPreview } from '@/components/shared/settings';
+import { LogoSection, BrandColorsSection } from '@/components/settings/general';
 import { getRestaurant, updateRestaurant } from '@/lib/serverActions/restaurant.actions';
 import { uploadRestaurantPhoto } from '@/lib/serverActions/settings.actions';
 
@@ -183,13 +183,11 @@ export default function GeneralSettingsPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       {/* Restaurant Logo */}
-      <FormSection title="Restaurant Logo">
-        <LogoUpload
-          logoUrl={data.logo}
-          uploading={uploading}
-          onFileSelect={handlePhotoUpload}
-        />
-      </FormSection>
+      <LogoSection
+        logoUrl={data.logo}
+        uploading={uploading}
+        onFileSelect={handlePhotoUpload}
+      />
 
       {/* Restaurant Information */}
       <FormSection title="Restaurant Information">
@@ -304,34 +302,14 @@ export default function GeneralSettingsPage() {
       </FormSection>
 
       {/* Branding Colors */}
-      <FormSection title="Brand Colors" description="Customize your restaurant's brand colors">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <ColorPicker
-            label="Primary Color"
-            value={data.primaryColor}
-            onChange={(value) => setData({ ...data, primaryColor: value })}
-            placeholder="#282e59"
-          />
-          <ColorPicker
-            label="Secondary Color"
-            value={data.secondaryColor}
-            onChange={(value) => setData({ ...data, secondaryColor: value })}
-            placeholder="#f03e42"
-          />
-          <ColorPicker
-            label="Accent Color"
-            value={data.accentColor}
-            onChange={(value) => setData({ ...data, accentColor: value })}
-            placeholder="#ffffff"
-          />
-        </div>
-
-        <ColorPreview
-          primaryColor={data.primaryColor}
-          secondaryColor={data.secondaryColor}
-          accentColor={data.accentColor}
-        />
-      </FormSection>
+      <BrandColorsSection
+        primaryColor={data.primaryColor}
+        secondaryColor={data.secondaryColor}
+        accentColor={data.accentColor}
+        onPrimaryChange={(value) => setData({ ...data, primaryColor: value })}
+        onSecondaryChange={(value) => setData({ ...data, secondaryColor: value })}
+        onAccentChange={(value) => setData({ ...data, accentColor: value })}
+      />
 
       {/* Save Button */}
       <div className="flex justify-end pt-6 border-t border-gray-200">
