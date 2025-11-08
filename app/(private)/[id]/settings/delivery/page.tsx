@@ -4,10 +4,9 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast, Toggle } from '@/components/ui';
-import { FormSection, FormField, InfoCard } from '@/components/shared';
+import { FormSection, FormField } from '@/components/shared';
 import { DeliveryProviderSection, DeliveryPricingSection } from '@/components/settings/delivery';
 import { getDeliverySettings, updateDeliverySettings } from '@/lib/serverActions/settings.actions';
-import { Truck, Package } from 'lucide-react';
 
 type DeliveryProvider = 'shipday' | 'local';
 
@@ -154,40 +153,10 @@ export default function DeliverySettingsPage() {
       </FormSection>
 
       {/* Delivery Provider Selection */}
-      <FormSection title="Delivery Provider" description="Choose how you want to handle deliveries">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <DeliveryProviderSection
-            icon={Package}
-            title="Local Delivery"
-            description="Manage deliveries with your own drivers or system"
-            isSelected={data.provider === 'local'}
-            onSelect={() => setData({ ...data, provider: 'local' })}
-          />
-          <DeliveryProviderSection
-            icon={Truck}
-            title="Shipday"
-            description="Professional third-party delivery service integration"
-            isSelected={data.provider === 'shipday'}
-            onSelect={() => setData({ ...data, provider: 'shipday' })}
-          />
-        </div>
-
-        {/* Provider-specific information */}
-        {data.provider === 'shipday' && (
-          <InfoCard type="success" title="Shipday Integration" className="mt-6">
-            <p>
-              Shipday delivery is managed by our platform. No additional configuration needed -
-              all deliveries will be automatically dispatched through our Shipday integration.
-            </p>
-          </InfoCard>
-        )}
-
-        {data.provider === 'local' && (
-          <InfoCard type="success" className="mt-6">
-            With local delivery, you'll manage delivery assignments and tracking through your own system.
-          </InfoCard>
-        )}
-      </FormSection>
+      <DeliveryProviderSection
+        provider={data.provider}
+        onProviderChange={(provider) => setData({ ...data, provider })}
+      />
 
       {/* Delivery Zone Configuration */}
       <FormSection title="Delivery Zone" description="Set your delivery coverage area">
