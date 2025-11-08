@@ -139,7 +139,29 @@ export async function getStoreHours(restaurantId: string) {
       where: { restaurantId },
     });
 
-    return { success: true, data: settings, error: null };
+    if (!settings) {
+      return { success: true, data: null, error: null };
+    }
+
+    // Convert individual day fields to schedule array format for the frontend
+    const schedule = [
+      { day: 'monday', isOpen: settings.monday.isOpen, timeSlots: [{ openTime: settings.monday.open, closeTime: settings.monday.close }] },
+      { day: 'tuesday', isOpen: settings.tuesday.isOpen, timeSlots: [{ openTime: settings.tuesday.open, closeTime: settings.tuesday.close }] },
+      { day: 'wednesday', isOpen: settings.wednesday.isOpen, timeSlots: [{ openTime: settings.wednesday.open, closeTime: settings.wednesday.close }] },
+      { day: 'thursday', isOpen: settings.thursday.isOpen, timeSlots: [{ openTime: settings.thursday.open, closeTime: settings.thursday.close }] },
+      { day: 'friday', isOpen: settings.friday.isOpen, timeSlots: [{ openTime: settings.friday.open, closeTime: settings.friday.close }] },
+      { day: 'saturday', isOpen: settings.saturday.isOpen, timeSlots: [{ openTime: settings.saturday.open, closeTime: settings.saturday.close }] },
+      { day: 'sunday', isOpen: settings.sunday.isOpen, timeSlots: [{ openTime: settings.sunday.open, closeTime: settings.sunday.close }] },
+    ];
+
+    return {
+      success: true,
+      data: {
+        ...settings,
+        schedule,
+      },
+      error: null
+    };
   } catch (error) {
     console.error('Error fetching store hours:', error);
     return { success: false, error: 'Failed to fetch settings', data: null };
@@ -169,12 +191,34 @@ export async function updateStoreHours(restaurantId: string, data: any) {
       return { success: false, error: 'Unauthorized', data: null };
     }
 
+    // Convert schedule array to individual day fields for the schema
+    const dayFields: any = {};
+
+    if (data.schedule && Array.isArray(data.schedule)) {
+      data.schedule.forEach((daySchedule: any) => {
+        const timeSlot = daySchedule.timeSlots?.[0];
+        if (timeSlot) {
+          dayFields[daySchedule.day] = {
+            isOpen: daySchedule.isOpen,
+            open: timeSlot.openTime || '09:00',
+            close: timeSlot.closeTime || '17:00',
+          };
+        }
+      });
+    }
+
     const settings = await prisma.storeHours.upsert({
       where: { restaurantId },
-      update: data,
+      update: dayFields,
       create: {
         restaurantId,
-        ...data,
+        monday: dayFields.monday || { isOpen: true, open: '09:00', close: '17:00' },
+        tuesday: dayFields.tuesday || { isOpen: true, open: '09:00', close: '17:00' },
+        wednesday: dayFields.wednesday || { isOpen: true, open: '09:00', close: '17:00' },
+        thursday: dayFields.thursday || { isOpen: true, open: '09:00', close: '17:00' },
+        friday: dayFields.friday || { isOpen: true, open: '09:00', close: '17:00' },
+        saturday: dayFields.saturday || { isOpen: true, open: '09:00', close: '17:00' },
+        sunday: dayFields.sunday || { isOpen: true, open: '09:00', close: '17:00' },
       },
     });
 

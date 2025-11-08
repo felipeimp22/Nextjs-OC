@@ -99,6 +99,85 @@ export async function createRestaurant(data: CreateRestaurantData) {
       },
     });
 
+    // Create default delivery settings
+    await prisma.deliverySettings.create({
+      data: {
+        restaurantId: restaurant.id,
+        enabled: true,
+        distanceUnit: 'miles',
+        maximumRadius: 10,
+        driverProvider: 'local',
+        pricingTiers: [
+          {
+            name: 'Default',
+            distanceCovered: 10,
+            baseFee: 5.00,
+            additionalFeePerUnit: 1.00,
+            isDefault: true,
+          },
+        ],
+      },
+    });
+
+    // Create default store hours (9 AM - 5 PM, all days open)
+    await prisma.storeHours.create({
+      data: {
+        restaurantId: restaurant.id,
+        monday: { isOpen: true, open: '09:00', close: '17:00' },
+        tuesday: { isOpen: true, open: '09:00', close: '17:00' },
+        wednesday: { isOpen: true, open: '09:00', close: '17:00' },
+        thursday: { isOpen: true, open: '09:00', close: '17:00' },
+        friday: { isOpen: true, open: '09:00', close: '17:00' },
+        saturday: { isOpen: true, open: '09:00', close: '17:00' },
+        sunday: { isOpen: true, open: '09:00', close: '17:00' },
+      },
+    });
+
+    // Create default role permissions
+    const roles = ['manager', 'kitchen', 'staff'];
+    const roleDefaults = {
+      manager: {
+        dashboard: true,
+        menuManagement: true,
+        orders: true,
+        kitchen: true,
+        customers: true,
+        marketing: true,
+        analytics: true,
+        settings: true,
+      },
+      kitchen: {
+        dashboard: true,
+        menuManagement: false,
+        orders: true,
+        kitchen: true,
+        customers: false,
+        marketing: false,
+        analytics: false,
+        settings: false,
+      },
+      staff: {
+        dashboard: true,
+        menuManagement: false,
+        orders: true,
+        kitchen: false,
+        customers: true,
+        marketing: false,
+        analytics: false,
+        settings: false,
+      },
+    };
+
+    for (const role of roles) {
+      await prisma.rolePermissions.create({
+        data: {
+          restaurantId: restaurant.id,
+          role,
+          ...roleDefaults[role as keyof typeof roleDefaults],
+        },
+      });
+    }
+
     console.log('[DEBUG] logoFile present:', !!data.logoFile);
     console.log('[DEBUG] Environment check - WASABI_ACCESS_KEY exists:', !!process.env.WASABI_ACCESS_KEY);
     console.log('[DEBUG] Environment check - WASABI_BUCKET:', process.env.WASABI_BUCKET);

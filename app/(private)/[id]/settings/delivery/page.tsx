@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast, Toggle } from '@/components/ui';
 import { FormSection, FormField, InfoCard } from '@/components/shared';
+import { DeliveryProviderCard, DeliveryPricingExamples } from '@/components/shared/settings';
 import { getDeliverySettings, updateDeliverySettings } from '@/lib/serverActions/settings.actions';
 import { Truck, Package } from 'lucide-react';
 
@@ -155,69 +156,20 @@ export default function DeliverySettingsPage() {
       {/* Delivery Provider Selection */}
       <FormSection title="Delivery Provider" description="Choose how you want to handle deliveries">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Local Delivery Option */}
-          <button
-            type="button"
-            onClick={() => setData({ ...data, provider: 'local' })}
-            className={`relative p-6 rounded-lg border-2 transition-all ${
-              data.provider === 'local'
-                ? 'border-brand-red bg-red-50 shadow-md'
-                : 'border-gray-200 hover:border-gray-300 bg-white'
-            }`}
-          >
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className={`p-3 rounded-full ${data.provider === 'local' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-600'}`}>
-                <Package className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900">Local Delivery</h4>
-                <p className="text-sm text-gray-600 mt-1">
-                  Manage deliveries with your own drivers or system
-                </p>
-              </div>
-            </div>
-            {data.provider === 'local' && (
-              <div className="absolute top-3 right-3">
-                <div className="bg-brand-red text-white rounded-full w-6 h-6 flex items-center justify-center">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-            )}
-          </button>
-
-          {/* Shipday Option */}
-          <button
-            type="button"
-            onClick={() => setData({ ...data, provider: 'shipday' })}
-            className={`relative p-6 rounded-lg border-2 transition-all ${
-              data.provider === 'shipday'
-                ? 'border-brand-red bg-red-50 shadow-md'
-                : 'border-gray-200 hover:border-gray-300 bg-white'
-            }`}
-          >
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className={`p-3 rounded-full ${data.provider === 'shipday' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-600'}`}>
-                <Truck className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900">Shipday</h4>
-                <p className="text-sm text-gray-600 mt-1">
-                  Professional third-party delivery service integration
-                </p>
-              </div>
-            </div>
-            {data.provider === 'shipday' && (
-              <div className="absolute top-3 right-3">
-                <div className="bg-brand-red text-white rounded-full w-6 h-6 flex items-center justify-center">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-            )}
-          </button>
+          <DeliveryProviderCard
+            icon={Package}
+            title="Local Delivery"
+            description="Manage deliveries with your own drivers or system"
+            isSelected={data.provider === 'local'}
+            onSelect={() => setData({ ...data, provider: 'local' })}
+          />
+          <DeliveryProviderCard
+            icon={Truck}
+            title="Shipday"
+            description="Professional third-party delivery service integration"
+            isSelected={data.provider === 'shipday'}
+            onSelect={() => setData({ ...data, provider: 'shipday' })}
+          />
         </div>
 
         {/* Provider-specific information */}
@@ -355,41 +307,13 @@ export default function DeliverySettingsPage() {
             </FormField>
 
             {/* Pricing Examples */}
-            <div className="space-y-3">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div className="text-sm font-medium text-gray-700 mb-2">Pricing Examples:</div>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Delivery at {data.pricingTier.distanceCovered} {data.distanceUnit} or less:</span>
-                    <span className="font-semibold text-gray-900">
-                      ${data.pricingTier.baseFee.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Delivery at {data.pricingTier.distanceCovered + 5} {data.distanceUnit}:</span>
-                    <span className="font-semibold text-gray-900">
-                      ${(data.pricingTier.baseFee + (5 * data.pricingTier.additionalFeePerUnit)).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-300">
-                    Calculation: ${data.pricingTier.baseFee.toFixed(2)} (base) +
-                    ${(5 * data.pricingTier.additionalFeePerUnit).toFixed(2)}
-                    (5 {data.distanceUnit} × ${data.pricingTier.additionalFeePerUnit.toFixed(2)})
-                  </div>
-                </div>
-              </div>
-
-              <InfoCard type="info">
-                <p className="mb-2">
-                  <strong>How it works:</strong>
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Deliveries within {data.pricingTier.distanceCovered} {data.distanceUnit} = ${data.pricingTier.baseFee.toFixed(2)} flat fee</li>
-                  <li>Beyond {data.pricingTier.distanceCovered} {data.distanceUnit} = Base fee + ${data.pricingTier.additionalFeePerUnit.toFixed(2)} per {data.distanceUnit === 'miles' ? 'mile' : 'km'}</li>
-                  <li>Maximum delivery range: {data.maximumRadius} {data.distanceUnit} (orders beyond this will be rejected)</li>
-                </ul>
-              </InfoCard>
-            </div>
+            <DeliveryPricingExamples
+              distanceCovered={data.pricingTier.distanceCovered}
+              baseFee={data.pricingTier.baseFee}
+              additionalFeePerUnit={data.pricingTier.additionalFeePerUnit}
+              maximumRadius={data.maximumRadius}
+              distanceUnit={data.distanceUnit}
+            />
           </div>
         </FormSection>
       )}

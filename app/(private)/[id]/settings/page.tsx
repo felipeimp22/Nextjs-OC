@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast } from '@/components/ui';
 import { FormSection, FormField } from '@/components/shared';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import { LogoUpload, ColorPicker, ColorPreview } from '@/components/shared/settings';
 import { getRestaurant, updateRestaurant } from '@/lib/serverActions/restaurant.actions';
 import { uploadRestaurantPhoto } from '@/lib/serverActions/settings.actions';
 
@@ -184,43 +184,11 @@ export default function GeneralSettingsPage() {
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       {/* Restaurant Logo */}
       <FormSection title="Restaurant Logo">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-          <div className="relative group">
-            {data.logo ? (
-              <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm">
-                <img
-                  src={data.logo}
-                  alt="Restaurant logo"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="w-32 h-32 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                <ImageIcon className="w-12 h-12 text-gray-400" />
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 space-y-3">
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-              <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm font-medium text-gray-700">
-                <Upload className="w-4 h-4" />
-                <span>{uploading ? 'Uploading...' : data.logo ? 'Change Logo' : 'Upload Logo'}</span>
-              </div>
-            </label>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>Recommended: Square image, at least 400x400px</p>
-              <p className="text-xs text-gray-500">Max file size: 5MB • Formats: JPG, PNG</p>
-            </div>
-          </div>
-        </div>
+        <LogoUpload
+          logoUrl={data.logo}
+          uploading={uploading}
+          onFileSelect={handlePhotoUpload}
+        />
       </FormSection>
 
       {/* Restaurant Information */}
@@ -338,91 +306,31 @@ export default function GeneralSettingsPage() {
       {/* Branding Colors */}
       <FormSection title="Brand Colors" description="Customize your restaurant's brand colors">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FormField label="Primary Color">
-            <div className="flex gap-3">
-              <div className="relative">
-                <input
-                  type="color"
-                  value={data.primaryColor}
-                  onChange={(e) => setData({ ...data, primaryColor: e.target.value })}
-                  className="h-11 w-16 rounded-lg border-2 border-gray-300 cursor-pointer"
-                />
-              </div>
-              <Input
-                value={data.primaryColor}
-                onChange={(e) => setData({ ...data, primaryColor: e.target.value })}
-                placeholder="#282e59"
-                className="flex-1"
-              />
-            </div>
-          </FormField>
-
-          <FormField label="Secondary Color">
-            <div className="flex gap-3">
-              <div className="relative">
-                <input
-                  type="color"
-                  value={data.secondaryColor}
-                  onChange={(e) => setData({ ...data, secondaryColor: e.target.value })}
-                  className="h-11 w-16 rounded-lg border-2 border-gray-300 cursor-pointer"
-                />
-              </div>
-              <Input
-                value={data.secondaryColor}
-                onChange={(e) => setData({ ...data, secondaryColor: e.target.value })}
-                placeholder="#f03e42"
-                className="flex-1"
-              />
-            </div>
-          </FormField>
-
-          <FormField label="Accent Color">
-            <div className="flex gap-3">
-              <div className="relative">
-                <input
-                  type="color"
-                  value={data.accentColor}
-                  onChange={(e) => setData({ ...data, accentColor: e.target.value })}
-                  className="h-11 w-16 rounded-lg border-2 border-gray-300 cursor-pointer"
-                />
-              </div>
-              <Input
-                value={data.accentColor}
-                onChange={(e) => setData({ ...data, accentColor: e.target.value })}
-                placeholder="#ffffff"
-                className="flex-1"
-              />
-            </div>
-          </FormField>
+          <ColorPicker
+            label="Primary Color"
+            value={data.primaryColor}
+            onChange={(value) => setData({ ...data, primaryColor: value })}
+            placeholder="#282e59"
+          />
+          <ColorPicker
+            label="Secondary Color"
+            value={data.secondaryColor}
+            onChange={(value) => setData({ ...data, secondaryColor: value })}
+            placeholder="#f03e42"
+          />
+          <ColorPicker
+            label="Accent Color"
+            value={data.accentColor}
+            onChange={(value) => setData({ ...data, accentColor: value })}
+            placeholder="#ffffff"
+          />
         </div>
 
-        {/* Color Preview */}
-        <div className="mt-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-sm font-medium text-gray-700 mb-4">Color Preview</p>
-          <div className="flex gap-4">
-            <div className="flex-1 text-center">
-              <div
-                className="h-16 rounded-lg shadow-sm border border-gray-200"
-                style={{ backgroundColor: data.primaryColor }}
-              />
-              <p className="text-xs text-gray-600 mt-2">Primary</p>
-            </div>
-            <div className="flex-1 text-center">
-              <div
-                className="h-16 rounded-lg shadow-sm border border-gray-200"
-                style={{ backgroundColor: data.secondaryColor }}
-              />
-              <p className="text-xs text-gray-600 mt-2">Secondary</p>
-            </div>
-            <div className="flex-1 text-center">
-              <div
-                className="h-16 rounded-lg shadow-sm border border-gray-200"
-                style={{ backgroundColor: data.accentColor }}
-              />
-              <p className="text-xs text-gray-600 mt-2">Accent</p>
-            </div>
-          </div>
-        </div>
+        <ColorPreview
+          primaryColor={data.primaryColor}
+          secondaryColor={data.secondaryColor}
+          accentColor={data.accentColor}
+        />
       </FormSection>
 
       {/* Save Button */}
