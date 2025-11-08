@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast } from '@/components/ui';
-import { Upload } from 'lucide-react';
+import { FormSection, FormField } from '@/components/shared';
+import { Upload, Image as ImageIcon } from 'lucide-react';
 import { getRestaurant, updateRestaurant } from '@/lib/serverActions/restaurant.actions';
 import { uploadRestaurantPhoto } from '@/lib/serverActions/settings.actions';
 
@@ -49,6 +50,8 @@ export default function GeneralSettingsPage() {
     accentColor: '#ffffff',
   });
 
+  const [errors, setErrors] = useState<Partial<Record<keyof RestaurantData, string>>>({});
+
   useEffect(() => {
     fetchSettings();
   }, [restaurantId]);
@@ -56,7 +59,7 @@ export default function GeneralSettingsPage() {
   const fetchSettings = async () => {
     try {
       const result = await getRestaurant(restaurantId);
-      
+
       if (!result.success || !result.data) {
         showToast('error', result.error || 'Failed to load settings');
         return;
@@ -84,6 +87,21 @@ export default function GeneralSettingsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof RestaurantData, string>> = {};
+
+    if (!data.name.trim()) newErrors.name = 'Restaurant name is required';
+    if (!data.phone.trim()) newErrors.phone = 'Phone number is required';
+    if (!data.email.trim()) newErrors.email = 'Email is required';
+    if (!data.street.trim()) newErrors.street = 'Street address is required';
+    if (!data.city.trim()) newErrors.city = 'City is required';
+    if (!data.state.trim()) newErrors.state = 'State is required';
+    if (!data.zipCode.trim()) newErrors.zipCode = 'ZIP code is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +136,7 @@ export default function GeneralSettingsPage() {
         }
 
         setData({ ...data, logo: result.data.url });
-        showToast('success', 'Photo uploaded successfully');
+        showToast('success', 'Logo uploaded successfully');
       };
       reader.readAsDataURL(file);
     } catch (error) {
@@ -130,6 +148,11 @@ export default function GeneralSettingsPage() {
   };
 
   const handleSave = async () => {
+    if (!validateForm()) {
+      showToast('error', 'Please fix the errors before saving');
+      return;
+    }
+
     setSaving(true);
     try {
       const result = await updateRestaurant(restaurantId, data);
@@ -151,28 +174,34 @@ export default function GeneralSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
       {/* Restaurant Logo */}
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          {t('logo')}
-        </h3>
-        <div className="flex items-center gap-4">
-          {data.logo && (
-            <img
-              src={data.logo}
-              alt="Restaurant logo"
-              className="w-24 h-24 rounded-lg object-cover border-2 border-gray-200"
-            />
-          )}
-          <div>
+      <FormSection title="Restaurant Logo">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="relative group">
+            {data.logo ? (
+              <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm">
+                <img
+                  src={data.logo}
+                  alt="Restaurant logo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-32 h-32 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                <ImageIcon className="w-12 h-12 text-gray-400" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 space-y-3">
             <label className="cursor-pointer">
               <input
                 type="file"
@@ -181,209 +210,229 @@ export default function GeneralSettingsPage() {
                 className="hidden"
                 disabled={uploading}
               />
-              <div className="flex items-center gap-2 px-4 py-2 bg-brand-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+              <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm font-medium text-gray-700">
                 <Upload className="w-4 h-4" />
-                <span className="text-sm font-medium text-gray-700">
-                  {uploading ? 'Uploading...' : t('uploadLogo')}
-                </span>
+                <span>{uploading ? 'Uploading...' : data.logo ? 'Change Logo' : 'Upload Logo'}</span>
               </div>
             </label>
-            <p className="text-xs text-gray-500 mt-1">Max 5MB, JPG or PNG</p>
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>Recommended: Square image, at least 400x400px</p>
+              <p className="text-xs text-gray-500">Max file size: 5MB • Formats: JPG, PNG</p>
+            </div>
           </div>
         </div>
-      </section>
+      </FormSection>
 
       {/* Restaurant Information */}
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          {t('restaurantInfo')}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('name')}
-            </label>
-            <Input
-              value={data.name}
-              onChange={(e) => setData({ ...data, name: e.target.value })}
-              placeholder={t('namePlaceholder')}
-            />
+      <FormSection title="Restaurant Information">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="Restaurant Name" required error={errors.name}>
+              <Input
+                value={data.name}
+                onChange={(e) => {
+                  setData({ ...data, name: e.target.value });
+                  if (errors.name) setErrors({ ...errors, name: undefined });
+                }}
+                placeholder="Enter restaurant name"
+              />
+            </FormField>
+
+            <FormField label="Phone Number" required error={errors.phone}>
+              <Input
+                value={data.phone}
+                onChange={(e) => {
+                  setData({ ...data, phone: e.target.value });
+                  if (errors.phone) setErrors({ ...errors, phone: undefined });
+                }}
+                placeholder="+1 (555) 123-4567"
+              />
+            </FormField>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('phone')}
-            </label>
-            <Input
-              value={data.phone}
-              onChange={(e) => setData({ ...data, phone: e.target.value })}
-              placeholder="+1 (555) 123-4567"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('description')}
-            </label>
-            <textarea
-              value={data.description}
-              onChange={(e) => setData({ ...data, description: e.target.value })}
-              placeholder={t('descriptionPlaceholder')}
-              rows={3}
-              className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('email')}
-            </label>
+          <FormField label="Email Address" required error={errors.email}>
             <Input
               type="email"
               value={data.email}
-              onChange={(e) => setData({ ...data, email: e.target.value })}
+              onChange={(e) => {
+                setData({ ...data, email: e.target.value });
+                if (errors.email) setErrors({ ...errors, email: undefined });
+              }}
               placeholder="info@restaurant.com"
             />
-          </div>
+          </FormField>
+
+          <FormField label="Description" description="Brief description of your restaurant">
+            <textarea
+              value={data.description}
+              onChange={(e) => setData({ ...data, description: e.target.value })}
+              placeholder="Tell customers about your restaurant..."
+              rows={4}
+              className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors resize-none"
+            />
+          </FormField>
         </div>
-      </section>
+      </FormSection>
 
       {/* Location */}
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          {t('location')}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('street')}
-            </label>
+      <FormSection title="Location">
+        <div className="space-y-6">
+          <FormField label="Street Address" required error={errors.street}>
             <Input
               value={data.street}
-              onChange={(e) => setData({ ...data, street: e.target.value })}
+              onChange={(e) => {
+                setData({ ...data, street: e.target.value });
+                if (errors.street) setErrors({ ...errors, street: undefined });
+              }}
               placeholder="123 Main Street"
             />
+          </FormField>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <FormField label="City" required error={errors.city}>
+              <Input
+                value={data.city}
+                onChange={(e) => {
+                  setData({ ...data, city: e.target.value });
+                  if (errors.city) setErrors({ ...errors, city: undefined });
+                }}
+                placeholder="New York"
+              />
+            </FormField>
+
+            <FormField label="State" required error={errors.state}>
+              <Input
+                value={data.state}
+                onChange={(e) => {
+                  setData({ ...data, state: e.target.value });
+                  if (errors.state) setErrors({ ...errors, state: undefined });
+                }}
+                placeholder="NY"
+                maxLength={2}
+              />
+            </FormField>
+
+            <FormField label="ZIP Code" required error={errors.zipCode}>
+              <Input
+                value={data.zipCode}
+                onChange={(e) => {
+                  setData({ ...data, zipCode: e.target.value });
+                  if (errors.zipCode) setErrors({ ...errors, zipCode: undefined });
+                }}
+                placeholder="10001"
+              />
+            </FormField>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('city')}
-            </label>
-            <Input
-              value={data.city}
-              onChange={(e) => setData({ ...data, city: e.target.value })}
-              placeholder="New York"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('state')}
-            </label>
-            <Input
-              value={data.state}
-              onChange={(e) => setData({ ...data, state: e.target.value })}
-              placeholder="NY"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('zipCode')}
-            </label>
-            <Input
-              value={data.zipCode}
-              onChange={(e) => setData({ ...data, zipCode: e.target.value })}
-              placeholder="10001"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('country')}
-            </label>
+          <FormField label="Country">
             <Input
               value={data.country}
               onChange={(e) => setData({ ...data, country: e.target.value })}
               placeholder="US"
+              maxLength={2}
             />
-          </div>
+          </FormField>
         </div>
-      </section>
+      </FormSection>
 
-      {/* Branding */}
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          {t('branding')}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('primaryColor')}
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={data.primaryColor}
-                onChange={(e) => setData({ ...data, primaryColor: e.target.value })}
-                className="h-10 w-20 rounded-md border border-gray-300 cursor-pointer"
-              />
+      {/* Branding Colors */}
+      <FormSection title="Brand Colors" description="Customize your restaurant's brand colors">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FormField label="Primary Color">
+            <div className="flex gap-3">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={data.primaryColor}
+                  onChange={(e) => setData({ ...data, primaryColor: e.target.value })}
+                  className="h-11 w-16 rounded-lg border-2 border-gray-300 cursor-pointer"
+                />
+              </div>
               <Input
                 value={data.primaryColor}
                 onChange={(e) => setData({ ...data, primaryColor: e.target.value })}
                 placeholder="#282e59"
+                className="flex-1"
               />
             </div>
-          </div>
+          </FormField>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('secondaryColor')}
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={data.secondaryColor}
-                onChange={(e) => setData({ ...data, secondaryColor: e.target.value })}
-                className="h-10 w-20 rounded-md border border-gray-300 cursor-pointer"
-              />
+          <FormField label="Secondary Color">
+            <div className="flex gap-3">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={data.secondaryColor}
+                  onChange={(e) => setData({ ...data, secondaryColor: e.target.value })}
+                  className="h-11 w-16 rounded-lg border-2 border-gray-300 cursor-pointer"
+                />
+              </div>
               <Input
                 value={data.secondaryColor}
                 onChange={(e) => setData({ ...data, secondaryColor: e.target.value })}
                 placeholder="#f03e42"
+                className="flex-1"
               />
             </div>
-          </div>
+          </FormField>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('accentColor')}
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={data.accentColor}
-                onChange={(e) => setData({ ...data, accentColor: e.target.value })}
-                className="h-10 w-20 rounded-md border border-gray-300 cursor-pointer"
-              />
+          <FormField label="Accent Color">
+            <div className="flex gap-3">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={data.accentColor}
+                  onChange={(e) => setData({ ...data, accentColor: e.target.value })}
+                  className="h-11 w-16 rounded-lg border-2 border-gray-300 cursor-pointer"
+                />
+              </div>
               <Input
                 value={data.accentColor}
                 onChange={(e) => setData({ ...data, accentColor: e.target.value })}
                 placeholder="#ffffff"
+                className="flex-1"
               />
+            </div>
+          </FormField>
+        </div>
+
+        {/* Color Preview */}
+        <div className="mt-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-sm font-medium text-gray-700 mb-4">Color Preview</p>
+          <div className="flex gap-4">
+            <div className="flex-1 text-center">
+              <div
+                className="h-16 rounded-lg shadow-sm border border-gray-200"
+                style={{ backgroundColor: data.primaryColor }}
+              />
+              <p className="text-xs text-gray-600 mt-2">Primary</p>
+            </div>
+            <div className="flex-1 text-center">
+              <div
+                className="h-16 rounded-lg shadow-sm border border-gray-200"
+                style={{ backgroundColor: data.secondaryColor }}
+              />
+              <p className="text-xs text-gray-600 mt-2">Secondary</p>
+            </div>
+            <div className="flex-1 text-center">
+              <div
+                className="h-16 rounded-lg shadow-sm border border-gray-200"
+                style={{ backgroundColor: data.accentColor }}
+              />
+              <p className="text-xs text-gray-600 mt-2">Accent</p>
             </div>
           </div>
         </div>
-      </section>
+      </FormSection>
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t border-gray-200">
+      <div className="flex justify-end pt-6 border-t border-gray-200">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-8"
         >
-          {saving ? t('saving') : t('saveChanges')}
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
     </div>

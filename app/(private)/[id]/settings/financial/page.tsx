@@ -4,27 +4,32 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast } from '@/components/ui';
+import { FormSection, FormField, InfoCard } from '@/components/shared';
 import { getFinancialSettings, updateFinancialSettings } from '@/lib/serverActions/settings.actions';
-import { Trash2 } from 'lucide-react';
+import { AMERICAS_CURRENCIES } from '@/lib/constants/currencies';
+import { Trash2, Plus } from 'lucide-react';
 
 interface TaxSetting {
-  id?: string;
   name: string;
+  enabled: boolean;
+  rate: number;
   type: 'percentage' | 'fixed';
-  rate: number | null;
-  fixedAmount: number | null;
-  applyToEntireOrder: boolean;
+  applyTo: 'entire_order' | 'per_item';
 }
 
 interface FinancialData {
-  currencyCode: string;
+  currency: string;
   currencySymbol: string;
   taxes: TaxSetting[];
-  platformFeeThreshold: number;
-  platformFeeBelowThreshold: number;
-  platformFeeAboveThreshold: number;
+  globalFee: {
+    enabled: boolean;
+    threshold: number;
+    belowPercent: number;
+    aboveFlat: number;
+  };
   paymentProvider: string;
-  stripeConnectedAccountId: string | null;
+  stripeAccountId: string | null;
+  stripeConnectStatus: string;
   testMode: boolean;
 }
 
@@ -37,18 +42,23 @@ export default function FinancialSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<FinancialData>({
-    currencyCode: 'USD',
+    currency: 'USD',
     currencySymbol: '$',
     taxes: [],
-    platformFeeThreshold: 50,
-    platformFeeBelowThreshold: 5,
-    platformFeeAboveThreshold: 2.5,
+    globalFee: {
+      enabled: true,
+      threshold: 10,
+      belowPercent: 10,
+      aboveFlat: 1.95,
+    },
     paymentProvider: 'stripe',
-    stripeConnectedAccountId: null,
+    stripeAccountId: null,
+    stripeConnectStatus: 'not_connected',
     testMode: true,
   });
 
   const [editingTax, setEditingTax] = useState<TaxSetting | null>(null);
+  const [editingTaxIndex, setEditingTaxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -57,7 +67,7 @@ export default function FinancialSettingsPage() {
   const fetchSettings = async () => {
     try {
       const result = await getFinancialSettings(restaurantId);
-      
+
       if (!result.success || !result.data) {
         setLoading(false);
         return;
@@ -65,14 +75,18 @@ export default function FinancialSettingsPage() {
 
       const settings = result.data;
       setData({
-        currencyCode: settings.currencyCode || 'USD',
+        currency: settings.currency || 'USD',
         currencySymbol: settings.currencySymbol || '$',
         taxes: settings.taxes || [],
-        platformFeeThreshold: settings.globalFee?.threshold ?? 50,
-        platformFeeBelowThreshold: settings.globalFee?.belowPercent ?? 5,
-        platformFeeAboveThreshold: settings.globalFee?.aboveFlat ?? 2.5,
+        globalFee: settings.globalFee || {
+          enabled: true,
+          threshold: 10,
+          belowPercent: 10,
+          aboveFlat: 1.95,
+        },
         paymentProvider: settings.paymentProvider || 'stripe',
-        stripeConnectedAccountId: settings.stripeConnectedAccountId,
+        stripeAccountId: settings.stripeAccountId,
+        stripeConnectStatus: settings.stripeConnectStatus || 'not_connected',
         testMode: settings.testMode ?? true,
       });
     } catch (error) {
@@ -86,15 +100,10 @@ export default function FinancialSettingsPage() {
     setSaving(true);
     try {
       const result = await updateFinancialSettings(restaurantId, {
-        currencyCode: data.currencyCode,
+        currency: data.currency,
         currencySymbol: data.currencySymbol,
         taxes: data.taxes,
-        globalFee: {
-          enabled: true,
-          threshold: data.platformFeeThreshold,
-          belowPercent: data.platformFeeBelowThreshold,
-          aboveFlat: data.platformFeeAboveThreshold,
-        },
+        globalFee: data.globalFee,
         paymentProvider: data.paymentProvider,
         testMode: data.testMode,
       });
@@ -116,152 +125,224 @@ export default function FinancialSettingsPage() {
   const handleAddTax = () => {
     setEditingTax({
       name: '',
-      type: 'percentage',
+      enabled: true,
       rate: 0,
-      fixedAmount: null,
-      applyToEntireOrder: true,
+      type: 'percentage',
+      applyTo: 'entire_order',
     });
+    setEditingTaxIndex(null);
+  };
+
+  const handleEditTax = (index: number) => {
+    setEditingTax(data.taxes[index]);
+    setEditingTaxIndex(index);
   };
 
   const handleSaveTax = () => {
-    if (!editingTax || !editingTax.name) return;
+    if (!editingTax || !editingTax.name.trim()) {
+      showToast('error', 'Tax name is required');
+      return;
+    }
 
-    if (editingTax.id) {
-      setData({
-        ...data,
-        taxes: data.taxes.map((tax) =>
-          tax.id === editingTax.id ? editingTax : tax
-        ),
-      });
+    if (editingTaxIndex !== null) {
+      // Update existing tax
+      const updatedTaxes = [...data.taxes];
+      updatedTaxes[editingTaxIndex] = editingTax;
+      setData({ ...data, taxes: updatedTaxes });
     } else {
-      setData({
-        ...data,
-        taxes: [...data.taxes, { ...editingTax, id: Date.now().toString() }],
-      });
+      // Add new tax
+      setData({ ...data, taxes: [...data.taxes, editingTax] });
     }
 
     setEditingTax(null);
+    setEditingTaxIndex(null);
   };
 
-  const handleDeleteTax = (id: string) => {
+  const handleDeleteTax = (index: number) => {
     setData({
       ...data,
-      taxes: data.taxes.filter((tax) => tax.id !== id),
+      taxes: data.taxes.filter((_, i) => i !== index),
     });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTax(null);
+    setEditingTaxIndex(null);
   };
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8">
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          Currency
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Currency Code
-            </label>
-            <Input
-              value={data.currencyCode}
-              onChange={(e) => setData({ ...data, currencyCode: e.target.value })}
-              placeholder="USD"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Currency Symbol
-            </label>
-            <Input
-              value={data.currencySymbol}
-              onChange={(e) => setData({ ...data, currencySymbol: e.target.value })}
-              placeholder="$"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
-          <h3 className="text-base font-semibold text-gray-900">
-            Taxes
-          </h3>
-          <Button
-            onClick={handleAddTax}
-            className="bg-brand-red hover:bg-brand-red/90 text-white text-sm px-4 py-2"
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      {/* Currency Section */}
+      <FormSection title="Currency Settings" description="Select your operating currency">
+        <FormField label="Currency" required description="Select the currency for your restaurant">
+          <select
+            value={data.currency}
+            onChange={(e) => {
+              const selected = AMERICAS_CURRENCIES.find(c => c.code === e.target.value);
+              if (selected) {
+                setData({
+                  ...data,
+                  currency: selected.code,
+                  currencySymbol: selected.symbol,
+                });
+              }
+            }}
+            className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
           >
-            + Add Tax
-          </Button>
-        </div>
+            {AMERICAS_CURRENCIES.map((currency) => (
+              <option key={currency.code} value={currency.code}>
+                {currency.code} ({currency.symbol}) - {currency.name}
+              </option>
+            ))}
+          </select>
+        </FormField>
+      </FormSection>
 
-        <div className="space-y-3">
-          {data.taxes.map((tax) => (
-            <div
-              key={tax.id}
-              className="bg-gray-50 border border-gray-200 rounded-md p-4 flex items-center justify-between"
-            >
-              <div>
-                <div className="text-gray-900 font-medium">{tax.name}</div>
-                <div className="text-sm text-gray-600">
-                  {tax.type === 'percentage'
-                    ? `$${tax.rate}%`
-                    : `$${tax.fixedAmount?.toFixed(2)}`}
-                  {' • '}
-                  {tax.applyToEntireOrder ? 'Entire Order' : 'Per Item'}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditingTax(tax)}
-                  className="text-brand-red hover:text-brand-red/80 text-sm font-medium"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteTax(tax.id!)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+      {/* Platform Fee Section */}
+      <FormSection title="Platform Fee" description="Automatically configured for your restaurant">
+        <InfoCard type="info" title="How Platform Fee Works">
+          <p className="mb-2">
+            The platform fee is automatically applied to all orders and helps maintain the service.
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li>Orders below ${data.globalFee.threshold}: {data.globalFee.belowPercent}% of order total</li>
+            <li>Orders ${data.globalFee.threshold} or above: ${data.globalFee.aboveFlat.toFixed(2)} flat fee</li>
+          </ul>
+        </InfoCard>
 
-          {data.taxes.length === 0 && (
-            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-md">
-              No taxes configured
-            </div>
-          )}
-        </div>
-
-        {editingTax && (
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tax Name
-              </label>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FormField label="Threshold Amount">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                {data.currencySymbol}
+              </span>
               <Input
-                value={editingTax.name}
-                onChange={(e) =>
-                  setEditingTax({ ...editingTax, name: e.target.value })
-                }
-                placeholder="Sales Tax"
+                type="number"
+                value={data.globalFee.threshold}
+                disabled
+                className="pl-7 bg-gray-50 cursor-not-allowed"
               />
             </div>
+          </FormField>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type
-                </label>
+          <FormField label="Below Threshold">
+            <div className="relative">
+              <Input
+                type="number"
+                value={data.globalFee.belowPercent}
+                disabled
+                className="pr-7 bg-gray-50 cursor-not-allowed"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                %
+              </span>
+            </div>
+          </FormField>
+
+          <FormField label="Above Threshold">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                {data.currencySymbol}
+              </span>
+              <Input
+                type="number"
+                value={data.globalFee.aboveFlat}
+                disabled
+                className="pl-7 bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+          </FormField>
+        </div>
+      </FormSection>
+
+      {/* Taxes Section */}
+      <FormSection
+        title="Taxes"
+        description="Configure applicable taxes for your orders"
+        actions={
+          <Button
+            onClick={handleAddTax}
+            variant="secondary"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Tax
+          </Button>
+        }
+      >
+        {data.taxes.length === 0 && !editingTax && (
+          <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+            No taxes configured. Click "Add Tax" to create one.
+          </div>
+        )}
+
+        {data.taxes.length > 0 && (
+          <div className="space-y-3">
+            {data.taxes.map((tax, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-gray-900">{tax.name}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${tax.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                      {tax.enabled ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                    <span>
+                      {tax.type === 'percentage' ? `${tax.rate}%` : `${data.currencySymbol}${tax.rate.toFixed(2)}`}
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span>{tax.applyTo === 'entire_order' ? 'Entire Order' : 'Per Item'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => handleEditTax(index)}
+                    variant="ghost"
+                    className="text-brand-red hover:text-brand-red/80"
+                  >
+                    Edit
+                  </Button>
+                  <button
+                    onClick={() => handleDeleteTax(index)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tax Edit Form */}
+        {editingTax && (
+          <div className="mt-4 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg space-y-4">
+            <h4 className="font-semibold text-blue-900">
+              {editingTaxIndex !== null ? 'Edit Tax' : 'Add New Tax'}
+            </h4>
+
+            <FormField label="Tax Name" required>
+              <Input
+                value={editingTax.name}
+                onChange={(e) => setEditingTax({ ...editingTax, name: e.target.value })}
+                placeholder="e.g., Sales Tax, VAT, etc."
+              />
+            </FormField>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="Type">
                 <select
                   value={editingTax.type}
                   onChange={(e) =>
@@ -270,167 +351,97 @@ export default function FinancialSettingsPage() {
                       type: e.target.value as 'percentage' | 'fixed',
                     })
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
+                  className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
                 >
                   <option value="percentage">Percentage</option>
-                  <option value="fixed">Fixed</option>
+                  <option value="fixed">Fixed Amount</option>
                 </select>
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {editingTax.type === 'percentage' ? 'Rate (%)' : 'Amount ($)'}
-                </label>
+              <FormField label={editingTax.type === 'percentage' ? 'Rate (%)' : `Amount (${data.currencySymbol})`}>
                 <Input
                   type="number"
                   step="0.01"
-                  value={editingTax.type === 'percentage' ? (editingTax.rate || 0) : (editingTax.fixedAmount || 0)}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    if (editingTax.type === 'percentage') {
-                      setEditingTax({ ...editingTax, rate: val });
-                    } else {
-                      setEditingTax({ ...editingTax, fixedAmount: val });
-                    }
-                  }}
+                  value={editingTax.rate}
+                  onChange={(e) => setEditingTax({ ...editingTax, rate: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
                 />
-              </div>
+              </FormField>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Apply To
-              </label>
+            <FormField label="Apply To">
               <select
-                value={editingTax.applyToEntireOrder ? 'entire' : 'perItem'}
+                value={editingTax.applyTo}
                 onChange={(e) =>
                   setEditingTax({
                     ...editingTax,
-                    applyToEntireOrder: e.target.value === 'entire',
+                    applyTo: e.target.value as 'entire_order' | 'per_item',
                   })
                 }
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
+                className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
               >
-                <option value="entire">Entire Order</option>
-                <option value="perItem">Per Item</option>
+                <option value="entire_order">Entire Order</option>
+                <option value="per_item">Per Item</option>
               </select>
+            </FormField>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="tax-enabled"
+                checked={editingTax.enabled}
+                onChange={(e) => setEditingTax({ ...editingTax, enabled: e.target.checked })}
+                className="w-4 h-4 text-brand-red border-gray-300 rounded focus:ring-brand-red"
+              />
+              <label htmlFor="tax-enabled" className="text-sm font-medium text-gray-900">
+                Enable this tax
+              </label>
             </div>
 
-            <div className="flex gap-2 justify-end">
-              <Button
-                onClick={() => setEditingTax(null)}
-                className="bg-gray-500 hover:bg-gray-600 text-white"
-              >
-                Cancel
+            <div className="flex gap-3 pt-4 border-t border-blue-200">
+              <Button onClick={handleSaveTax} className="bg-brand-red hover:bg-brand-red/90 text-white">
+                {editingTaxIndex !== null ? 'Update Tax' : 'Add Tax'}
               </Button>
-              <Button
-                onClick={handleSaveTax}
-                className="bg-brand-red hover:bg-brand-red/90 text-white"
-              >
-                Save
+              <Button onClick={handleCancelEdit} variant="ghost">
+                Cancel
               </Button>
             </div>
           </div>
         )}
-      </section>
+      </FormSection>
 
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          Platform Fee (Always Enabled)
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Order Threshold ($)
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              value={data.platformFeeThreshold}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  platformFeeThreshold: parseFloat(e.target.value),
-                })
-              }
-            />
-          </div>
+      {/* Payment Provider Section */}
+      <FormSection title="Payment Provider">
+        <FormField label="Provider">
+          <select
+            value={data.paymentProvider}
+            onChange={(e) => setData({ ...data, paymentProvider: e.target.value })}
+            className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
+          >
+            <option value="stripe">Stripe</option>
+            <option value="mercadopago">Mercado Pago</option>
+          </select>
+        </FormField>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Below Threshold (%)
-            </label>
-            <Input
-              type="number"
-              step="0.1"
-              value={data.platformFeeBelowThreshold}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  platformFeeBelowThreshold: parseFloat(e.target.value),
-                })
-              }
-            />
-          </div>
+        {data.paymentProvider === 'stripe' && data.stripeConnectStatus === 'connected' && data.stripeAccountId && (
+          <InfoCard type="success" title="Stripe Connected" className="mt-4">
+            <p>Account ID: <span className="font-mono text-xs">{data.stripeAccountId}</span></p>
+          </InfoCard>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Above Threshold ($)
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              value={data.platformFeeAboveThreshold}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  platformFeeAboveThreshold: parseFloat(e.target.value),
-                })
-              }
-            />
-          </div>
-        </div>
-      </section>
+        {data.paymentProvider === 'stripe' && data.stripeConnectStatus !== 'connected' && (
+          <InfoCard type="warning" className="mt-4">
+            Stripe account not yet connected. Please complete the Stripe Connect setup to accept payments.
+          </InfoCard>
+        )}
+      </FormSection>
 
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          Payment Provider
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Provider
-            </label>
-            <select
-              value={data.paymentProvider}
-              onChange={(e) =>
-                setData({ ...data, paymentProvider: e.target.value })
-              }
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
-            >
-              <option value="stripe">Stripe</option>
-              <option value="mercadopago">Mercado Pago</option>
-            </select>
-          </div>
-
-          {data.paymentProvider === 'stripe' && data.stripeConnectedAccountId && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-4">
-              <div className="flex items-center gap-2 text-green-700 font-medium">
-                ✓ Stripe Connected
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                Account ID: {data.stripeConnectedAccountId}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <div className="flex justify-end pt-4 border-t border-gray-200">
+      {/* Save Button */}
+      <div className="flex justify-end pt-6 border-t border-gray-200">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-8"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
