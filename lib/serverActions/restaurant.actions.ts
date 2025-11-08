@@ -84,6 +84,21 @@ export async function createRestaurant(data: CreateRestaurantData) {
       },
     });
 
+    // Create default financial settings with platform fee
+    await prisma.financialSettings.create({
+      data: {
+        restaurantId: restaurant.id,
+        currency: 'USD',
+        currencySymbol: '$',
+        globalFee: {
+          enabled: true,
+          threshold: 10,
+          belowPercent: 10,
+          aboveFlat: 1.95,
+        },
+      },
+    });
+
     console.log('[DEBUG] logoFile present:', !!data.logoFile);
     console.log('[DEBUG] Environment check - WASABI_ACCESS_KEY exists:', !!process.env.WASABI_ACCESS_KEY);
     console.log('[DEBUG] Environment check - WASABI_BUCKET:', process.env.WASABI_BUCKET);

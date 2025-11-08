@@ -196,7 +196,7 @@ export async function getRestaurantUsers(restaurantId: string) {
       return { success: false, error: "Unauthorized", data: null };
     }
 
-    const users = await prisma.restaurantUser.findMany({
+    const users = await prisma.userRestaurant.findMany({
       where: { restaurantId },
       include: {
         user: {

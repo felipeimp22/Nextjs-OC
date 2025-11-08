@@ -3,20 +3,26 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Button, useToast, Toggle } from '@/components/ui';
+import { FormSection, InfoCard } from '@/components/shared';
 import { getRestaurantUsers, updateRolePermissions } from '@/lib/serverActions/settings.actions';
+import { Shield } from 'lucide-react';
 
 const PAGES = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'menu', label: 'Menu Management' },
-  { id: 'orders', label: 'Orders' },
-  { id: 'kitchen', label: 'Kitchen' },
-  { id: 'customers', label: 'Customers' },
-  { id: 'marketing', label: 'Marketing' },
-  { id: 'analytics', label: 'Analytics' },
-  { id: 'settings', label: 'Settings' },
+  { id: 'dashboard', label: 'Dashboard', description: 'View main dashboard and overview' },
+  { id: 'menu', label: 'Menu Management', description: 'Create and edit menu items' },
+  { id: 'orders', label: 'Orders', description: 'View and manage orders' },
+  { id: 'kitchen', label: 'Kitchen Display', description: 'Access kitchen order display' },
+  { id: 'customers', label: 'Customers', description: 'View and manage customer data' },
+  { id: 'marketing', label: 'Marketing', description: 'Manage promotions and campaigns' },
+  { id: 'analytics', label: 'Analytics', description: 'View reports and insights' },
+  { id: 'settings', label: 'Settings', description: 'Modify restaurant settings' },
 ];
 
-const ROLES = ['manager', 'kitchen', 'staff'];
+const ROLES = [
+  { id: 'manager', label: 'Manager', color: 'blue' },
+  { id: 'kitchen', label: 'Kitchen', color: 'green' },
+  { id: 'staff', label: 'Staff', color: 'purple' },
+];
 
 interface RolePermissions {
   role: string;
@@ -39,39 +45,42 @@ export default function UsersSettingsPage() {
   const fetchData = async () => {
     try {
       const result = await getRestaurantUsers(restaurantId);
-      
+
       if (result.success && result.data) {
         const perms = result.data.rolePermissions || [];
-        
+
         // Initialize with defaults if empty
         if (perms.length === 0) {
-          setRolePermissions(ROLES.map(role => ({
-            role,
-            permissions: {
-              dashboard: true,
-              menu: role === 'manager',
-              orders: true,
-              kitchen: role !== 'staff',
-              customers: role !== 'kitchen',
-              marketing: role === 'manager',
-              analytics: role === 'manager',
-              settings: role === 'manager',
-            },
-          })));
+          setRolePermissions(
+            ROLES.map((role) => ({
+              role: role.id,
+              permissions: {
+                dashboard: true,
+                menu: role.id === 'manager',
+                orders: true,
+                kitchen: role.id !== 'staff',
+                customers: role.id !== 'kitchen',
+                marketing: role.id === 'manager',
+                analytics: role.id === 'manager',
+                settings: role.id === 'manager',
+              },
+            }))
+          );
         } else {
           setRolePermissions(perms);
         }
       }
     } catch (error) {
       showToast('error', 'Failed to load settings');
+      console.error('Error fetching permissions:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleToggle = (role: string, page: string) => {
-    setRolePermissions(prev => 
-      prev.map(rp => 
+    setRolePermissions((prev) =>
+      prev.map((rp) =>
         rp.role === role
           ? {
               ...rp,
@@ -99,6 +108,7 @@ export default function UsersSettingsPage() {
       await fetchData();
     } catch (error) {
       showToast('error', 'Failed to save permissions');
+      console.error('Error saving permissions:', error);
     } finally {
       setSaving(false);
     }
@@ -106,80 +116,139 @@ export default function UsersSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8">
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          Role Permissions
-        </h3>
-        <p className="text-sm text-gray-600 mb-6">
-          Control which pages each role can access. If a role has access to a page, they have full access to that page.
-        </p>
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
+      <FormSection
+        title="Role-Based Permissions"
+        description="Control which pages each role can access in your restaurant"
+      >
+        <InfoCard type="info" title="About Permissions" className="mb-6">
+          <p className="mb-2">Configure access permissions for different user roles:</p>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Manager:</strong> Can access most features except owner-specific settings</li>
+            <li><strong>Kitchen:</strong> Focused on order management and kitchen display</li>
+            <li><strong>Staff:</strong> Limited access for front-of-house operations</li>
+            <li><strong>Owner:</strong> Has full access to everything (cannot be modified)</li>
+          </ul>
+        </InfoCard>
 
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Page
-                </th>
-                {ROLES.map(role => (
-                  <th key={role} className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {role}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {PAGES.map(page => (
-                <tr key={page.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {page.label}
-                  </td>
-                  {ROLES.map(role => {
-                    const roleData = rolePermissions.find(rp => rp.role === role);
-                    const hasAccess = roleData?.permissions?.[page.id] || false;
-
-                    return (
-                      <td key={role} className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex justify-center">
-                          <Toggle
-                            id={`${role}-${page.id}`}
-                            checked={hasAccess}
-                            onChange={() => handleToggle(role, page.id)}
-                            size="sm"
-                          />
+        <div className="overflow-x-auto">
+          <div className="inline-block min-w-full align-middle">
+            <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-1/3"
+                    >
+                      Feature / Page
+                    </th>
+                    {ROLES.map((role) => (
+                      <th
+                        key={role.id}
+                        scope="col"
+                        className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider"
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <Shield className="w-4 h-4" />
+                          {role.label}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {PAGES.map((page, pageIndex) => (
+                    <tr
+                      key={page.id}
+                      className={pageIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <div className="text-sm font-semibold text-gray-900">
+                            {page.label}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {page.description}
+                          </div>
                         </div>
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      {ROLES.map((role) => {
+                        const roleData = rolePermissions.find(
+                          (rp) => rp.role === role.id
+                        );
+                        const hasAccess = roleData?.permissions?.[page.id] || false;
 
-        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
-          <div className="text-sm font-medium text-blue-900 mb-1">Note:</div>
-          <div className="text-sm text-blue-700">
-            Owner role has full access to everything by default and cannot be modified.
+                        return (
+                          <td key={role.id} className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex justify-center">
+                              <Toggle
+                                id={`${role.id}-${page.id}`}
+                                checked={hasAccess}
+                                onChange={() => handleToggle(role.id, page.id)}
+                                size="sm"
+                              />
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </section>
 
-      <div className="flex justify-end pt-4 border-t border-gray-200">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {ROLES.map((role) => {
+            const roleData = rolePermissions.find((rp) => rp.role === role.id);
+            const enabledCount = roleData
+              ? Object.values(roleData.permissions).filter((v) => v).length
+              : 0;
+            const totalCount = PAGES.length;
+
+            return (
+              <div
+                key={role.id}
+                className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-4 h-4 text-gray-600" />
+                  <h4 className="font-semibold text-gray-900">{role.label}</h4>
+                </div>
+                <p className="text-sm text-gray-600">
+                  {enabledCount} of {totalCount} features enabled
+                </p>
+                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-brand-red h-2 rounded-full transition-all"
+                    style={{
+                      width: `${(enabledCount / totalCount) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </FormSection>
+
+      {/* Save Button */}
+      <div className="flex justify-end pt-6 border-t border-gray-200">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-8"
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? 'Saving...' : 'Save Permissions'}
         </Button>
       </div>
     </div>
