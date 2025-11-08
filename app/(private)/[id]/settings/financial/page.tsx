@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Button, Input, useToast } from '@/components/ui';
 import { FormSection, FormField, InfoCard } from '@/components/shared';
 import { getFinancialSettings, updateFinancialSettings } from '@/lib/serverActions/settings.actions';
+import { AMERICAS_CURRENCIES } from '@/lib/constants/currencies';
 import { Trash2, Plus } from 'lucide-react';
 
 interface TaxSetting {
@@ -180,26 +181,29 @@ export default function FinancialSettingsPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       {/* Currency Section */}
-      <FormSection title="Currency Settings">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField label="Currency Code" required>
-            <Input
-              value={data.currency}
-              onChange={(e) => setData({ ...data, currency: e.target.value.toUpperCase() })}
-              placeholder="USD"
-              maxLength={3}
-            />
-          </FormField>
-
-          <FormField label="Currency Symbol" required>
-            <Input
-              value={data.currencySymbol}
-              onChange={(e) => setData({ ...data, currencySymbol: e.target.value })}
-              placeholder="$"
-              maxLength={3}
-            />
-          </FormField>
-        </div>
+      <FormSection title="Currency Settings" description="Select your operating currency">
+        <FormField label="Currency" required description="Select the currency for your restaurant">
+          <select
+            value={data.currency}
+            onChange={(e) => {
+              const selected = AMERICAS_CURRENCIES.find(c => c.code === e.target.value);
+              if (selected) {
+                setData({
+                  ...data,
+                  currency: selected.code,
+                  currencySymbol: selected.symbol,
+                });
+              }
+            }}
+            className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
+          >
+            {AMERICAS_CURRENCIES.map((currency) => (
+              <option key={currency.code} value={currency.code}>
+                {currency.code} ({currency.symbol}) - {currency.name}
+              </option>
+            ))}
+          </select>
+        </FormField>
       </FormSection>
 
       {/* Platform Fee Section */}
@@ -347,7 +351,7 @@ export default function FinancialSettingsPage() {
                       type: e.target.value as 'percentage' | 'fixed',
                     })
                   }
-                  className="w-full h-10 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent bg-white"
+                  className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
                 >
                   <option value="percentage">Percentage</option>
                   <option value="fixed">Fixed Amount</option>
@@ -374,7 +378,7 @@ export default function FinancialSettingsPage() {
                     applyTo: e.target.value as 'entire_order' | 'per_item',
                   })
                 }
-                className="w-full h-10 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent bg-white"
+                className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
               >
                 <option value="entire_order">Entire Order</option>
                 <option value="per_item">Per Item</option>
@@ -412,7 +416,7 @@ export default function FinancialSettingsPage() {
           <select
             value={data.paymentProvider}
             onChange={(e) => setData({ ...data, paymentProvider: e.target.value })}
-            className="w-full h-10 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent bg-white"
+            className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
           >
             <option value="stripe">Stripe</option>
             <option value="mercadopago">Mercado Pago</option>

@@ -268,7 +268,7 @@ export default function GeneralSettingsPage() {
               onChange={(e) => setData({ ...data, description: e.target.value })}
               placeholder="Tell customers about your restaurant..."
               rows={4}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent resize-none"
+              className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors resize-none"
             />
           </FormField>
         </div>

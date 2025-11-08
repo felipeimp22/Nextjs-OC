@@ -95,11 +95,6 @@ export default function DeliverySettingsPage() {
       return;
     }
 
-    if (data.provider === 'shipday' && !data.shipdayApiKey.trim()) {
-      showToast('error', 'Please enter Shipday API key');
-      return;
-    }
-
     setSaving(true);
     try {
       const result = await updateDeliverySettings(restaurantId, {
@@ -108,7 +103,7 @@ export default function DeliverySettingsPage() {
         distanceUnit: data.distanceUnit,
         maximumRadius: data.maximumRadius,
         shipdayEnabled: data.provider === 'shipday',
-        shipdayApiKey: data.provider === 'shipday' ? data.shipdayApiKey : null,
+        shipdayApiKey: null, // Platform provides Shipday credentials
         pricingTiers: [
           {
             name: 'Default',
@@ -228,26 +223,14 @@ export default function DeliverySettingsPage() {
           </button>
         </div>
 
-        {/* Provider-specific configuration */}
+        {/* Provider-specific information */}
         {data.provider === 'shipday' && (
-          <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
-            <h4 className="font-semibold text-blue-900">Shipday Configuration</h4>
-            <FormField label="Shipday API Key" required>
-              <Input
-                type="password"
-                value={data.shipdayApiKey}
-                onChange={(e) => setData({ ...data, shipdayApiKey: e.target.value })}
-                placeholder="Enter your Shipday API key"
-              />
-            </FormField>
-            <InfoCard type="info">
-              Get your API key from your Shipday account dashboard. Visit{' '}
-              <a href="https://shipday.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">
-                shipday.com
-              </a>{' '}
-              to sign up or log in.
-            </InfoCard>
-          </div>
+          <InfoCard type="success" title="Shipday Integration" className="mt-6">
+            <p>
+              Shipday delivery is managed by our platform. No additional configuration needed -
+              all deliveries will be automatically dispatched through our Shipday integration.
+            </p>
+          </InfoCard>
         )}
 
         {data.provider === 'local' && (
@@ -278,7 +261,7 @@ export default function DeliverySettingsPage() {
               onChange={(e) =>
                 setData({ ...data, distanceUnit: e.target.value as 'km' | 'miles' })
               }
-              className="w-full h-10 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent bg-white"
+              className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
             >
               <option value="miles">Miles</option>
               <option value="km">Kilometers</option>

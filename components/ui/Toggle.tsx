@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ToggleProps {
   id: string;
@@ -10,22 +10,29 @@ interface ToggleProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export default function Toggle({ 
-  id, 
-  checked = false, 
-  onChange, 
+export default function Toggle({
+  id,
+  checked = false,
+  onChange,
   disabled = false,
-  size = 'md' 
+  size = 'md'
 }: ToggleProps) {
   const [internalChecked, setInternalChecked] = useState(checked);
-  
+
+  // Sync internal state when checked prop changes (for controlled component)
+  useEffect(() => {
+    if (onChange && checked !== undefined) {
+      setInternalChecked(checked);
+    }
+  }, [checked, onChange]);
+
   const isChecked = onChange ? checked : internalChecked;
 
   const handleChange = () => {
     if (disabled) return;
-    
+
     const newValue = !isChecked;
-    
+
     if (onChange) {
       onChange(newValue);
     } else {
