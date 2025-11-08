@@ -560,19 +560,16 @@ model RolePermissions {
   restaurantId String @db.ObjectId
   restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  role String // admin, manager, kitchen, staff
+  role String // owner, manager, kitchen, staff
 
-  // Permissions
-  viewDashboard Boolean @default(true)
-  editMenu Boolean @default(false)
-  viewOrders Boolean @default(false)
-  manageOrders Boolean @default(false)
-  viewCustomers Boolean @default(false)
-  editCustomers Boolean @default(false)
-  viewAnalytics Boolean @default(false)
-  manageSettings Boolean @default(false)
-  manageUsers Boolean @default(false)
-  viewFinancialData Boolean @default(false)
+  dashboard Boolean @default(true)
+  menuManagement Boolean @default(false)
+  orders Boolean @default(false)
+  kitchen Boolean @default(false)
+  customers Boolean @default(false)
+  marketing Boolean @default(false)
+  analytics Boolean @default(false)
+  settings Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

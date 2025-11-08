@@ -213,6 +213,21 @@ export async function getRestaurantUsers(restaurantId: string) {
       where: { restaurantId },
     });
 
+    // Simple 1:1 mapping - page name to permission field
+    const mappedPermissions = rolePermissions.map((rp) => ({
+      role: rp.role,
+      permissions: {
+        dashboard: rp.dashboard,
+        menu: rp.menuManagement,
+        orders: rp.orders,
+        kitchen: rp.kitchen,
+        customers: rp.customers,
+        marketing: rp.marketing,
+        analytics: rp.analytics,
+        settings: rp.settings,
+      },
+    }));
+
     return {
       success: true,
       data: {
@@ -223,10 +238,7 @@ export async function getRestaurantUsers(restaurantId: string) {
           role: ru.role,
           status: 'active',
         })),
-        rolePermissions: rolePermissions.map((rp) => ({
-          role: rp.role,
-          permissions: rp.permissions,
-        })),
+        rolePermissions: mappedPermissions,
       },
       error: null,
     };
@@ -259,8 +271,19 @@ export async function updateRolePermissions(restaurantId: string, rolePermission
       return { success: false, error: 'Only owners can modify permissions' };
     }
 
-    // Update or create role permissions
+    // Simple 1:1 mapping - frontend to backend
     for (const rp of rolePermissions) {
+      const permissionData = {
+        dashboard: rp.permissions.dashboard || false,
+        menuManagement: rp.permissions.menu || false,
+        orders: rp.permissions.orders || false,
+        kitchen: rp.permissions.kitchen || false,
+        customers: rp.permissions.customers || false,
+        marketing: rp.permissions.marketing || false,
+        analytics: rp.permissions.analytics || false,
+        settings: rp.permissions.settings || false,
+      };
+
       await prisma.rolePermissions.upsert({
         where: {
           restaurantId_role: {
@@ -268,13 +291,11 @@ export async function updateRolePermissions(restaurantId: string, rolePermission
             role: rp.role,
           },
         },
-        update: {
-          permissions: rp.permissions,
-        },
+        update: permissionData,
         create: {
           restaurantId,
           role: rp.role,
-          permissions: rp.permissions,
+          ...permissionData,
         },
       });
     }

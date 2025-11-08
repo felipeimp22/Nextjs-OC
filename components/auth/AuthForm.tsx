@@ -43,7 +43,7 @@ export default function AuthForm() {
   }
 
   async function handleSocialLogin(provider: 'google' | 'facebook') {
-    await signIn(provider, { callbackUrl: '/dashboard' });
+    await signIn(provider, { callbackUrl: '/setup' });
   }
 
   return (
