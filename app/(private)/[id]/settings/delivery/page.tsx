@@ -89,10 +89,20 @@ export default function DeliverySettingsPage() {
   };
 
   const handleSave = async () => {
-    // Validation
-    if (data.provider === 'local' && (!data.localDeliveryFee || data.localDeliveryFee <= 0)) {
-      showToast('error', 'Please enter a valid delivery fee for local delivery');
-      return;
+    // Validation for local delivery
+    if (data.provider === 'local') {
+      if (!data.pricingTier.distanceCovered || data.pricingTier.distanceCovered <= 0) {
+        showToast('error', 'Please enter a valid base distance');
+        return;
+      }
+      if (!data.pricingTier.baseFee || data.pricingTier.baseFee <= 0) {
+        showToast('error', 'Please enter a valid base fee');
+        return;
+      }
+      if (data.pricingTier.additionalFeePerUnit < 0) {
+        showToast('error', 'Additional fee per unit cannot be negative');
+        return;
+      }
     }
 
     setSaving(true);
@@ -108,7 +118,7 @@ export default function DeliverySettingsPage() {
           {
             name: 'Default',
             distanceCovered: data.pricingTier.distanceCovered,
-            baseFee: data.provider === 'local' ? data.localDeliveryFee : data.pricingTier.baseFee,
+            baseFee: data.pricingTier.baseFee,
             additionalFeePerUnit: data.pricingTier.additionalFeePerUnit,
             isDefault: true,
           },
@@ -272,9 +282,68 @@ export default function DeliverySettingsPage() {
 
       {/* Delivery Fee Configuration (Local only) */}
       {data.provider === 'local' && (
-        <FormSection title="Delivery Fee" description="Set the delivery fee for local deliveries">
+        <FormSection
+          title="Delivery Pricing"
+          description="Configure distance-based pricing for local deliveries"
+        >
           <div className="space-y-6">
-            <FormField label="Delivery Fee" required>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                label={`Base Distance Covered (${data.distanceUnit})`}
+                required
+                description="Distance included in base fee"
+              >
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={data.pricingTier.distanceCovered}
+                  onChange={(e) =>
+                    setData({
+                      ...data,
+                      pricingTier: {
+                        ...data.pricingTier,
+                        distanceCovered: parseFloat(e.target.value) || 0,
+                      },
+                    })
+                  }
+                  placeholder="10"
+                />
+              </FormField>
+
+              <FormField
+                label="Base Fee"
+                required
+                description="Fee for base distance"
+              >
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    $
+                  </span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={data.pricingTier.baseFee}
+                    onChange={(e) =>
+                      setData({
+                        ...data,
+                        pricingTier: {
+                          ...data.pricingTier,
+                          baseFee: parseFloat(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    className="pl-7"
+                    placeholder="10.00"
+                  />
+                </div>
+              </FormField>
+            </div>
+
+            <FormField
+              label={`Additional Fee per ${data.distanceUnit === 'miles' ? 'Mile' : 'Kilometer'}`}
+              required
+              description={`Charged for each ${data.distanceUnit === 'miles' ? 'mile' : 'kilometer'} beyond base distance`}
+            >
               <div className="relative max-w-xs">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                   $
@@ -282,28 +351,58 @@ export default function DeliverySettingsPage() {
                 <Input
                   type="number"
                   step="0.01"
-                  value={data.localDeliveryFee}
+                  value={data.pricingTier.additionalFeePerUnit}
                   onChange={(e) =>
-                    setData({ ...data, localDeliveryFee: parseFloat(e.target.value) || 0 })
+                    setData({
+                      ...data,
+                      pricingTier: {
+                        ...data.pricingTier,
+                        additionalFeePerUnit: parseFloat(e.target.value) || 0,
+                      },
+                    })
                   }
                   className="pl-7"
-                  placeholder="5.00"
+                  placeholder="1.00"
                 />
               </div>
             </FormField>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="text-sm font-medium text-gray-700 mb-2">Example:</div>
-              <div className="text-sm text-gray-600">
-                Customers within {data.maximumRadius} {data.distanceUnit} will be charged{' '}
-                <span className="font-semibold text-gray-900">${data.localDeliveryFee.toFixed(2)}</span>{' '}
-                for delivery.
+            {/* Pricing Examples */}
+            <div className="space-y-3">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="text-sm font-medium text-gray-700 mb-2">Pricing Examples:</div>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex justify-between">
+                    <span>Delivery at {data.pricingTier.distanceCovered} {data.distanceUnit} or less:</span>
+                    <span className="font-semibold text-gray-900">
+                      ${data.pricingTier.baseFee.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Delivery at {data.pricingTier.distanceCovered + 5} {data.distanceUnit}:</span>
+                    <span className="font-semibold text-gray-900">
+                      ${(data.pricingTier.baseFee + (5 * data.pricingTier.additionalFeePerUnit)).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-300">
+                    Calculation: ${data.pricingTier.baseFee.toFixed(2)} (base) +
+                    ${(5 * data.pricingTier.additionalFeePerUnit).toFixed(2)}
+                    (5 {data.distanceUnit} × ${data.pricingTier.additionalFeePerUnit.toFixed(2)})
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <InfoCard type="info">
-              You can set a flat delivery fee for all local deliveries. Advanced distance-based pricing coming soon!
-            </InfoCard>
+              <InfoCard type="info">
+                <p className="mb-2">
+                  <strong>How it works:</strong>
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Deliveries within {data.pricingTier.distanceCovered} {data.distanceUnit} = ${data.pricingTier.baseFee.toFixed(2)} flat fee</li>
+                  <li>Beyond {data.pricingTier.distanceCovered} {data.distanceUnit} = Base fee + ${data.pricingTier.additionalFeePerUnit.toFixed(2)} per {data.distanceUnit === 'miles' ? 'mile' : 'km'}</li>
+                  <li>Maximum delivery range: {data.maximumRadius} {data.distanceUnit} (orders beyond this will be rejected)</li>
+                </ul>
+              </InfoCard>
+            </div>
           </div>
         </FormSection>
       )}
