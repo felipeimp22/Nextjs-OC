@@ -221,101 +221,12 @@ export default function DeliverySettingsPage() {
 
       {/* Delivery Fee Configuration (Local only) */}
       {data.provider === 'local' && (
-        <FormSection
-          title="Delivery Pricing"
-          description="Configure distance-based pricing for local deliveries"
-        >
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                label={`Base Distance Covered (${data.distanceUnit})`}
-                required
-                description="Distance included in base fee"
-              >
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={data.pricingTier.distanceCovered}
-                  onChange={(e) =>
-                    setData({
-                      ...data,
-                      pricingTier: {
-                        ...data.pricingTier,
-                        distanceCovered: parseFloat(e.target.value) || 0,
-                      },
-                    })
-                  }
-                  placeholder="10"
-                />
-              </FormField>
-
-              <FormField
-                label="Base Fee"
-                required
-                description="Fee for base distance"
-              >
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                    $
-                  </span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={data.pricingTier.baseFee}
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        pricingTier: {
-                          ...data.pricingTier,
-                          baseFee: parseFloat(e.target.value) || 0,
-                        },
-                      })
-                    }
-                    className="pl-7"
-                    placeholder="10.00"
-                  />
-                </div>
-              </FormField>
-            </div>
-
-            <FormField
-              label={`Additional Fee per ${data.distanceUnit === 'miles' ? 'Mile' : 'Kilometer'}`}
-              required
-              description={`Charged for each ${data.distanceUnit === 'miles' ? 'mile' : 'kilometer'} beyond base distance`}
-            >
-              <div className="relative max-w-xs">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={data.pricingTier.additionalFeePerUnit}
-                  onChange={(e) =>
-                    setData({
-                      ...data,
-                      pricingTier: {
-                        ...data.pricingTier,
-                        additionalFeePerUnit: parseFloat(e.target.value) || 0,
-                      },
-                    })
-                  }
-                  className="pl-7"
-                  placeholder="1.00"
-                />
-              </div>
-            </FormField>
-
-            {/* Pricing Examples */}
-            <DeliveryPricingSection
-              distanceCovered={data.pricingTier.distanceCovered}
-              baseFee={data.pricingTier.baseFee}
-              additionalFeePerUnit={data.pricingTier.additionalFeePerUnit}
-              maximumRadius={data.maximumRadius}
-              distanceUnit={data.distanceUnit}
-            />
-          </div>
-        </FormSection>
+        <DeliveryPricingSection
+          pricingTier={data.pricingTier}
+          maximumRadius={data.maximumRadius}
+          distanceUnit={data.distanceUnit}
+          onPricingChange={(tier) => setData({ ...data, pricingTier: tier })}
+        />
       )}
 
       {/* Advanced Pricing (for future use - display only for shipday) */}
