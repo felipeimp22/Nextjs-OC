@@ -8,6 +8,341 @@ datasource db {
 }
 
 // ========================================
+// menu.prisma
+// ========================================
+
+// ========================================
+// MENU SYSTEM WITH MODIFIERS
+// ========================================
+
+// ==================== MENU CATEGORIES ====================
+
+model MenuCategory {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("MenuCategories", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+  description String?
+  image String?
+
+  order Int @default(0)
+  highlight Boolean @default(false)
+
+  // Availability scheduling
+  seasonalAvailability SeasonalPeriod[]
+  weekdayAvailability WeekdaySchedule?
+
+  items MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@map("menu_categories")
+}
+
+type SeasonalPeriod {
+  startDate DateTime
+  endDate DateTime
+}
+
+type WeekdaySchedule {
+  monday DaySchedule
+  tuesday DaySchedule
+  wednesday DaySchedule
+  thursday DaySchedule
+  friday DaySchedule
+  saturday DaySchedule
+  sunday DaySchedule
+}
+
+type DaySchedule {
+  available Boolean @default(true)
+  start String @default("09:00")
+  end String @default("22:00")
+}
+
+// ==================== MENU ITEMS ====================
+
+model MenuItem {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("MenuItems", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  categoryId String @db.ObjectId
+  category MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name String
+  description String?
+  image String?
+
+  price Float
+  cost Float?
+
+  nutrition Nutrition?
+
+  isAvailable Boolean @default(true)
+  isVisible Boolean @default(true)
+  allowSpecialNotes Boolean @default(false)
+
+  // Inventory management
+  disableWhenFinishInventory Boolean @default(false)
+  inventoryCount Int @default(0)
+
+  // Additional fees (e.g., packaging fee)
+  fees ItemFee[]
+
+  // Tags for filtering (vegetarian, gluten-free, etc.)
+  tags String[] @default([])
+
+  // Relation to menu rules (for modifiers)
+  rules MenuRules?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId, categoryId])
+  @@index([restaurantId, isAvailable])
+  @@map("menu_items")
+}
+
+type Nutrition {
+  calories Int @default(0)
+  fat Float @default(0)
+  protein Float @default(0)
+  carbs Float @default(0)
+}
+
+type ItemFee {
+  name String
+  price Float
+}
+
+// ==================== OPTIONS (MODIFIERS) ====================
+
+model OptionCategory {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("OptionCategories", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+  description String?
+
+  order Int @default(0)
+
+  options Option[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@map("option_categories")
+}
+
+model Option {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("Options", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  categoryId String @db.ObjectId
+  category OptionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name String
+  description String?
+  image String?
+
+  // Choice configuration
+  choices Choice[]
+
+  multiSelect Boolean @default(false)
+  minSelections Int @default(1)
+  maxSelections Int @default(1)
+
+  // Quantity per choice
+  allowQuantity Boolean @default(false)
+  minQuantity Int @default(0)
+  maxQuantity Int @default(1)
+
+  isAvailable Boolean @default(true)
+  isVisible Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId, categoryId])
+  @@map("options")
+}
+
+type Choice {
+  id String @default(uuid())
+  name String
+  basePrice Float @default(0)
+  useNewPrice Boolean @default(false)
+  isDefault Boolean @default(false)
+  disableWhenFinishInventory Boolean @default(false)
+  isAvailable Boolean @default(true)
+  inventoryCount Int @default(0)
+}
+
+// ==================== MENU RULES (Item-Option Relationships) ====================
+
+model MenuRules {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  menuItemId String @unique @db.ObjectId
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("MenuRules", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Applied options with their adjustments
+  appliedOptions AppliedOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@map("menu_rules")
+}
+
+type AppliedOption {
+  optionId String @db.ObjectId
+  required Boolean @default(false)
+  order Int @default(0)
+  choiceAdjustments ChoiceAdjustment[]
+}
+
+type ChoiceAdjustment {
+  choiceId String
+  priceAdjustment Float @default(0)
+  isAvailable Boolean @default(true)
+  isDefault Boolean @default(false)
+  adjustments PriceAdjustment[] // Cross-option price adjustments
+}
+
+type PriceAdjustment {
+  targetOptionId String @db.ObjectId
+  targetChoiceId String? // Optional - if null, applies to all choices
+  adjustmentType String // multiplier, addition, fixed
+  value Float
+}
+
+// ==================== ORDERS ====================
+
+model Order {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("Orders", fields: [restaurantId], references: [id])
+
+  orderNumber String @unique
+
+  // Customer information
+  customerId String? @db.ObjectId
+  customerName String
+  customerEmail String
+  customerPhone String
+  customerAddress Json?
+
+  // Restaurant info snapshot
+  restaurantInfo Json
+
+  // Order items
+  items OrderItem[]
+
+  // Order details
+  orderType String // pickup, delivery, dine_in
+  status String @default("pending") // pending, confirmed, preparing, ready, out_for_delivery, delivered, completed, cancelled
+
+  // Payment
+  paymentStatus String @default("pending") // pending, paid, failed, refunded, partially_refunded
+  paymentMethod String // card, cash, other
+  paymentIntentId String?
+  paymentClientSecret String?
+  chargeId String?
+
+  // Pricing
+  subtotal Float
+  tax Float
+  taxBreakdown Json? // Detailed tax breakdown
+  tip Float @default(0)
+  deliveryFee Float @default(0)
+  platformFee Float @default(0)
+  total Float
+
+  // Delivery details
+  deliveryDistance Float?
+  deliveryInfo Json? // { provider, externalId, trackingUrl, status }
+
+  // Special instructions
+  specialInstructions String?
+
+  // Timezone and local time
+  timezone String @default("UTC")
+  localDate String? // YYYY-MM-DD in restaurant's timezone
+  localDateTime DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId, status])
+  @@index([restaurantId, orderType])
+  @@index([paymentIntentId])
+  @@map("orders")
+}
+
+type OrderItem {
+  menuItemId String @db.ObjectId
+  name String
+  price Float
+  quantity Int
+  options SelectedOption[]
+  specialInstructions String?
+}
+
+type SelectedOption {
+  name String
+  choice String
+  priceAdjustment Float
+}
+
+// ==================== CUSTOMERS ====================
+
+model Customer {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("Customers", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name String
+  email String
+  phone Json? // { countryCode, number }
+
+  address Json?
+
+  orderCount Int @default(0)
+  totalSpent Float @default(0)
+  lastOrderDate DateTime?
+
+  orderHistory String[] @default([]) // Array of Order IDs
+
+  tags String[] @default([])
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, email])
+  @@index([restaurantId])
+  @@map("customers")
+}
+
+// ========================================
 // restaurant.prisma
 // ========================================
 
@@ -32,28 +367,268 @@ model Restaurant {
   secondaryColor  String   @default("#f03e42")
   accentColor     String   @default("#ffffff")
 
+  // Relations
   users UserRestaurant[]
 
-  // Settings Relations (from settings.prisma)
-  financialSettings FinancialSettings?
-  deliverySettings  DeliverySettings?
-  storeHours        StoreHours?
-  rolePermissions   RolePermissions[]
-
-  // Menu Relations (from menu.prisma)
+  // Menu relations
   menuCategories   MenuCategory[] @relation("MenuCategories")
   menuItems        MenuItem[] @relation("MenuItems")
   optionCategories OptionCategory[] @relation("OptionCategories")
   options          Option[] @relation("Options")
   menuRules        MenuRules[] @relation("MenuRules")
-  orders           Order[] @relation("Orders")
-  customers        Customer[] @relation("Customers")
+  
+  // Order relations
+  orders    Order[] @relation("Orders")
+  customers Customer[] @relation("Customers")
+  
+  // Settings relations
+  financialSettings FinancialSettings?
+  deliverySettings  DeliverySettings?
+  storeHours        StoreHours?
+  rolePermissions   RolePermissions[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("restaurants")
 }
+
+// ========================================
+// settings.prisma
+// ========================================
+
+// ========================================
+// SETTINGS SCHEMAS
+// ========================================
+
+// ==================== FINANCIAL SETTINGS ====================
+
+model FinancialSettings {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Currency
+  currency String @default("USD")
+  currencySymbol String @default("$")
+
+  // Taxes (customizable list)
+  taxes TaxSetting[]
+
+  // Tips Configuration
+  tipsEnabled Boolean @default(true)
+  tipType String @default("percentage") // percentage, fixed, both
+  defaultTipOptions Float[] @default([15, 18, 20])
+
+  // Payment Provider Configuration
+  paymentProvider String @default("stripe") // stripe, mercadopago
+  paymentConfig Json? // Flexible config for different providers
+
+  // Stripe Configuration
+  stripeEnabled Boolean @default(false)
+  stripeAccountId String?
+  stripePublicKey String?
+  stripeWebhookSecret String?
+  stripeConnectStatus String @default("not_connected") // not_connected, pending, connected, failed, restricted
+  stripeConnectDetails Json?
+  usePlatformAccountFallback Boolean @default(true)
+
+  // MercadoPago Configuration
+  mercadoPagoEnabled Boolean @default(false)
+  mercadoPagoAccessToken String?
+  mercadoPagoPublicKey String?
+
+  // Platform Fee Configuration
+  globalFee GlobalFee?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId])
+  @@map("financial_settings")
+}
+
+// Tax configuration (embedded)
+type TaxSetting {
+  name String
+  enabled Boolean @default(true)
+  rate Float
+  type String @default("percentage") // percentage, fixed
+  applyTo String @default("entire_order") // entire_order, per_item
+}
+
+// Global platform fee (embedded)
+type GlobalFee {
+  enabled Boolean @default(true)
+  threshold Float @default(10)
+  belowPercent Float @default(10)
+  aboveFlat Float @default(1.95)
+}
+
+// ==================== DELIVERY SETTINGS ====================
+
+model DeliverySettings {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Basic Delivery Config
+  enabled Boolean @default(true)
+  distanceUnit String @default("miles") // miles, km
+  maximumRadius Float @default(10)
+
+  // Distance-based pricing with coverage zones
+  pricingTiers DeliveryPricingTier[]
+
+  // Driver Provider Configuration
+  driverProvider String @default("local") // shipday, local
+
+  // Note: Shipday and Mapbox credentials are provided at platform level via environment variables:
+  // SHIPDAY_API_KEY, SHIPDAY_BASE_URL, SHIPDAY_DRY_RUN, DRIVER_PROVIDER
+  // No need to store per-restaurant since platform manages these integrations
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId])
+  @@map("delivery_settings")
+}
+
+// Distance-based pricing tier (embedded)
+type DeliveryPricingTier {
+  name String @default("Default")
+  distanceCovered Float // e.g., 10 km/miles
+  baseFee Float // e.g., 10 dollars for first 10km
+  additionalFeePerUnit Float // e.g., 2 dollars per km after 10km
+  isDefault Boolean @default(false)
+}
+
+// ==================== STORE HOURS ====================
+
+model StoreHours {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Regular weekly hours
+  monday DayHours
+  tuesday DayHours
+  wednesday DayHours
+  thursday DayHours
+  friday DayHours
+  saturday DayHours
+  sunday DayHours
+
+  // Special closures and holiday hours
+  specialClosures SpecialClosure[]
+
+  // Holiday configuration
+  holidayClosuresEnabled Boolean @default(true)
+  holidays String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId])
+  @@map("store_hours")
+}
+
+// Day hours (embedded)
+type DayHours {
+  isOpen Boolean @default(true)
+  open String @default("09:00")
+  close String @default("22:00")
+}
+
+// Special closure (embedded)
+type SpecialClosure {
+  date DateTime
+  reason String?
+  isFullDay Boolean @default(true)
+  open String?
+  close String?
+}
+
+// ==================== USER ROLES & PERMISSIONS ====================
+
+model RolePermissions {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  role String // admin, manager, kitchen, staff
+
+  // Permissions
+  viewDashboard Boolean @default(true)
+  editMenu Boolean @default(false)
+  viewOrders Boolean @default(false)
+  manageOrders Boolean @default(false)
+  viewCustomers Boolean @default(false)
+  editCustomers Boolean @default(false)
+  viewAnalytics Boolean @default(false)
+  manageSettings Boolean @default(false)
+  manageUsers Boolean @default(false)
+  viewFinancialData Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, role])
+  @@map("role_permissions")
+}
+
+// ==================== PAYMENT TRANSACTIONS ====================
+
+model Transaction {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  orderId String @db.ObjectId
+  restaurantId String @db.ObjectId
+
+  amount Float
+  platformFee Float
+  restaurantAmount Float
+
+  paymentProvider String @default("stripe")
+  paymentIntentId String?
+  chargeId String?
+
+  status String @default("pending") // pending, succeeded, failed, refunded, partially_refunded
+
+  // Transfer information (for platform account payments)
+  transferId String?
+  transferAmount Float?
+  transferStatus String?
+
+  // Refund information
+  refundedAmount Float?
+
+  testMode Boolean @default(false)
+
+  metadata Json?
+  error String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([paymentIntentId])
+  @@index([orderId])
+  @@index([restaurantId])
+  @@map("transactions")
+}
+
+// Update Restaurant model to include settings relations
+// Add this to your existing Restaurant model:
+//
+// financialSettings FinancialSettings?
+// deliverySettings  DeliverySettings?
+// storeHours        StoreHours?
+// rolePermissions   RolePermissions[]
+
 
 // ========================================
 // user.prisma

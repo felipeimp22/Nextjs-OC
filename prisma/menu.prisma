@@ -194,7 +194,6 @@ model MenuRules {
   updatedAt DateTime @updatedAt
 
   @@index([restaurantId])
-  @@index([menuItemId])
   @@map("menu_rules")
 }
 
@@ -280,7 +279,6 @@ model Order {
 
   @@index([restaurantId, status])
   @@index([restaurantId, orderType])
-  @@index([orderNumber])
   @@index([paymentIntentId])
   @@map("orders")
 }
@@ -330,14 +328,3 @@ model Customer {
   @@index([restaurantId])
   @@map("customers")
 }
-
-// Update Restaurant model to include menu relations
-// Add these to your existing Restaurant model:
-//
-// menuCategories   MenuCategory[] @relation("MenuCategories")
-// menuItems        MenuItem[] @relation("MenuItems")
-// optionCategories OptionCategory[] @relation("OptionCategories")
-// options          Option[] @relation("Options")
-// menuRules        MenuRules[] @relation("MenuRules")
-// orders           Order[] @relation("Orders")
-// customers        Customer[] @relation("Customers")

@@ -1,36 +1,25 @@
-'use client';
-
-import { cn } from '@/lib/utils';
+import { ReactNode } from 'react';
 
 interface FormSectionProps {
   title: string;
   description?: string;
-  children: React.ReactNode;
-  className?: string;
-  actions?: React.ReactNode;
+  children: ReactNode;
+  actions?: ReactNode;
 }
 
-export default function FormSection({
-  title,
-  description,
-  children,
-  className,
-  actions,
-}: FormSectionProps) {
+export default function FormSection({ title, description, children, actions }: FormSectionProps) {
   return (
-    <section className={cn('space-y-6', className)}>
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+    <section className="space-y-4">
+      <div className="flex items-start justify-between pb-3 border-b border-gray-200">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
           {description && (
-            <p className="text-sm text-gray-600">{description}</p>
+            <p className="text-sm text-gray-600 mt-1">{description}</p>
           )}
         </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        {actions && <div>{actions}</div>}
       </div>
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        {children}
-      </div>
+      <div>{children}</div>
     </section>
   );
 }
