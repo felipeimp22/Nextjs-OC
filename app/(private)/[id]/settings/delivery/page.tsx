@@ -15,12 +15,7 @@ interface DeliveryData {
   provider: DeliveryProvider;
   distanceUnit: 'miles' | 'km';
   maximumRadius: number;
-  // For local delivery
-  localDeliveryFee: number;
-  // For Shipday
-  shipdayEnabled: boolean;
-  shipdayApiKey: string;
-  // Pricing tier (for local delivery)
+  // Pricing tier for distance-based pricing
   pricingTier: {
     name: string;
     distanceCovered: number;
@@ -42,9 +37,6 @@ export default function DeliverySettingsPage() {
     provider: 'local',
     distanceUnit: 'miles',
     maximumRadius: 10,
-    localDeliveryFee: 5.00,
-    shipdayEnabled: false,
-    shipdayApiKey: '',
     pricingTier: {
       name: 'Default',
       distanceCovered: 10,
@@ -70,9 +62,6 @@ export default function DeliverySettingsPage() {
           provider: (settings.driverProvider === 'shipday' ? 'shipday' : 'local') as DeliveryProvider,
           distanceUnit: settings.distanceUnit || 'miles',
           maximumRadius: settings.maximumRadius || 10,
-          localDeliveryFee: tier?.baseFee || 5.00,
-          shipdayEnabled: settings.shipdayEnabled || false,
-          shipdayApiKey: settings.shipdayApiKey || '',
           pricingTier: {
             name: tier?.name || 'Default',
             distanceCovered: tier?.distanceCovered || 10,
@@ -112,8 +101,6 @@ export default function DeliverySettingsPage() {
         driverProvider: data.provider,
         distanceUnit: data.distanceUnit,
         maximumRadius: data.maximumRadius,
-        shipdayEnabled: data.provider === 'shipday',
-        shipdayApiKey: null, // Platform provides Shipday credentials
         pricingTiers: [
           {
             name: 'Default',

@@ -84,19 +84,11 @@ model DeliverySettings {
   pricingTiers DeliveryPricingTier[]
 
   // Driver Provider Configuration
-  driverProvider String @default("shipday") // shipday, doordash, ubereats, internal
-  provideDriver Boolean @default(true)
-  driverConfig Json? // Flexible config for different providers
+  driverProvider String @default("local") // shipday, local
 
-  // Shipday Configuration
-  shipdayEnabled Boolean @default(false)
-  shipdayApiKey String?
-  shipdayBaseUrl String @default("https://api.shipday.com")
-  shipdayDryRun Boolean @default(false)
-
-  // Mapbox Configuration for distance calculation
-  mapboxEnabled Boolean @default(true)
-  mapboxApiKey String?
+  // Note: Shipday and Mapbox credentials are provided at platform level via environment variables:
+  // SHIPDAY_API_KEY, SHIPDAY_BASE_URL, SHIPDAY_DRY_RUN, DRIVER_PROVIDER
+  // No need to store per-restaurant since platform manages these integrations
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
