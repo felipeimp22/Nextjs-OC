@@ -10,7 +10,7 @@ import Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
 import { ImageUpload } from '@/components/shared';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createMenuItem, updateMenuItem, uploadMenuItemImage } from '@/lib/serverActions/menu.actions';
+import { createMenuItem, updateMenuItem, uploadMenuImage } from '@/lib/serverActions/menu.actions';
 
 interface MenuItemFormModalProps {
   isOpen: boolean;
@@ -90,22 +90,17 @@ export default function MenuItemFormModal({
       return;
     }
 
-    if (!item?.id) {
-      showToast('error', 'Please save the item first before uploading an image');
-      return;
-    }
-
     setUploading(true);
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64Data = event.target?.result as string;
 
-        const result = await uploadMenuItemImage(restaurantId, item.id, {
+        const result = await uploadMenuImage(restaurantId, {
           data: base64Data,
           mimeType: file.type,
           fileName: file.name,
-        });
+        }, 'item');
 
         if (!result.success || !result.data) {
           showToast('error', result.error || 'Failed to upload image');

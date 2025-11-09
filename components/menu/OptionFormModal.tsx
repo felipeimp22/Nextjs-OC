@@ -11,7 +11,7 @@ import  Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
 import { ImageUpload } from '@/components/shared';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createOption, updateOption, uploadOptionImage } from '@/lib/serverActions/menu.actions';
+import { createOption, updateOption, uploadMenuImage } from '@/lib/serverActions/menu.actions';
 
 interface Choice {
   id?: string;
@@ -139,22 +139,17 @@ export default function OptionFormModal({
       return;
     }
 
-    if (!option?.id) {
-      showToast('error', 'Please save the option first before uploading an image');
-      return;
-    }
-
     setUploading(true);
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64Data = event.target?.result as string;
 
-        const result = await uploadOptionImage(restaurantId, option.id, {
+        const result = await uploadMenuImage(restaurantId, {
           data: base64Data,
           mimeType: file.type,
           fileName: file.name,
-        });
+        }, 'option');
 
         if (!result.success || !result.data) {
           showToast('error', result.error || 'Failed to upload image');

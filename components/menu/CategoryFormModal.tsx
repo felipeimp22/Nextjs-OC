@@ -9,7 +9,7 @@ import  Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
 import { ImageUpload } from '@/components/shared';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createMenuCategory, updateMenuCategory, uploadMenuCategoryImage } from '@/lib/serverActions/menu.actions';
+import { createMenuCategory, updateMenuCategory, uploadMenuImage } from '@/lib/serverActions/menu.actions';
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -79,22 +79,17 @@ export default function CategoryFormModal({
       return;
     }
 
-    if (!category?.id) {
-      showToast('error', 'Please save the category first before uploading an image');
-      return;
-    }
-
     setUploading(true);
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64Data = event.target?.result as string;
 
-        const result = await uploadMenuCategoryImage(restaurantId, category.id, {
+        const result = await uploadMenuImage(restaurantId, {
           data: base64Data,
           mimeType: file.type,
           fileName: file.name,
-        });
+        }, 'category');
 
         if (!result.success || !result.data) {
           showToast('error', result.error || 'Failed to upload image');
