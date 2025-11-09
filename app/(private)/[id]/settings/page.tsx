@@ -46,7 +46,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full md:max-w-7xl mx-auto">
       <Tabs
         tabs={tabs}
         activeTab={activeTab}
