@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Toggle } from '@/components/ui/Toggle';
+import  Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
 import { useToast } from '@/components/ui/ToastContainer';
 import { createMenuCategory, updateMenuCategory } from '@/lib/serverActions/menu.actions';

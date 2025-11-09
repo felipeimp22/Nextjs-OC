@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
+import  Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastContainer';
 import MenuItemFormModal from './MenuItemFormModal';
 import { getMenuItems, deleteMenuItem, getMenuCategories } from '@/lib/serverActions/menu.actions';
