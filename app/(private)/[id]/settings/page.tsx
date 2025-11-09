@@ -46,7 +46,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="w-full md:max-w-7xl mx-auto">
+    <div className="w-full md:max-w-7xl md:mx-auto">
       <Tabs
         tabs={tabs}
         activeTab={activeTab}
@@ -54,7 +54,7 @@ export default function SettingsPage() {
         className="mb-4 md:mb-6"
       />
 
-      <div className="bg-brand-white rounded-lg shadow-sm border border-gray-200 overflow-hidden w-full">
+      <div className="bg-brand-white rounded-none md:rounded-lg shadow-sm border-0 md:border border-gray-200 overflow-hidden w-full">
         {activeTab === 'general' && <GeneralSettings restaurantId={restaurantId} />}
         {activeTab === 'financial' && <FinancialSettings restaurantId={restaurantId} />}
         {activeTab === 'delivery' && <DeliverySettings restaurantId={restaurantId} />}

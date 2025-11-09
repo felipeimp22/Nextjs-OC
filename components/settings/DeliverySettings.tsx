@@ -134,7 +134,7 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
   }
 
   return (
-    <div className="w-full md:max-w-4xl mx-auto p-3 md:p-6 space-y-6 md:space-y-8">
+    <div className="w-full md:max-w-4xl md:mx-auto p-3 md:p-6 space-y-6 md:space-y-8">
       <FormSection title="Delivery Service">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0 mr-4">

@@ -54,10 +54,8 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
           isMobile ? 'ml-0' : isCollapsed ? 'ml-20' : 'ml-64'
         }`}>
           <PrivateHeader onMenuClick={() => setMobileMenuOpen(true)} />
-          <main className="flex-1 p-4 md:p-6 w-full overflow-x-hidden">
-            <div className="w-[95%] md:w-full mx-auto">
-              {children}
-            </div>
+          <main className="flex-1 px-2 py-4 md:p-6 w-full overflow-x-hidden">
+            {children}
           </main>
         </div>
       </div>
