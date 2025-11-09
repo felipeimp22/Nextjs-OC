@@ -64,7 +64,7 @@ export default function PrivateHeader() {
                     key={restaurant.id}
                     onClick={() => {
                       setRestaurantMenuOpen(false);
-                      router.push(`/dashboard/${restaurant.id}`);
+                      router.push(`/${restaurant.id}/dashboard`);
                     }}
                   >
                     <div className="flex flex-col items-start">

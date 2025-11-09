@@ -1,6 +1,6 @@
 // lib/delivery/providers/ShipdayDeliveryProvider.ts
 
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
 import {
   IDeliveryProvider,
   DeliveryEstimateOptions,
@@ -19,7 +19,7 @@ export interface ShipdayConfig {
 }
 
 export class ShipdayDeliveryProvider implements IDeliveryProvider {
-  private client: AxiosInstance | null = null;
+  private client: any = null; // ✅ Changed from AxiosInstance to any
   private dryRun: boolean = false;
 
   async initialize(config: ShipdayConfig): Promise<void> {

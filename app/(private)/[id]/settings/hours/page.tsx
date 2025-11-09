@@ -2,9 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Button, Input, useToast, Toggle } from '@/components/ui';
+import { Button, Select, useToast } from '@/components/ui';
+import { WeeklyScheduleSection } from '@/components/settings/hours';
 import { getStoreHours, updateStoreHours } from '@/lib/serverActions/settings.actions';
-import { Trash2 } from 'lucide-react';
+
+const TIMEZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Phoenix',
+  'America/Anchorage',
+  'Pacific/Honolulu',
+];
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const DAY_LABELS = {
@@ -16,16 +26,6 @@ const DAY_LABELS = {
   saturday: 'Saturday',
   sunday: 'Sunday',
 };
-
-const TIMEZONES = [
-  'America/New_York',
-  'America/Chicago',
-  'America/Denver',
-  'America/Los_Angeles',
-  'America/Phoenix',
-  'America/Anchorage',
-  'Pacific/Honolulu',
-];
 
 interface TimeSlot {
   openTime: string;
@@ -163,109 +163,22 @@ export default function StoreHoursPage() {
         <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
           Timezone
         </h3>
-        <div>
-          <select
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
-          >
-            {TIMEZONES.map((tz) => (
-              <option key={tz} value={tz}>
-                {tz}
-              </option>
-            ))}
-          </select>
-        </div>
-      </section>
-
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          Weekly Schedule
-        </h3>
-
-        <div className="space-y-3">
-          {schedule.map((daySchedule, dayIndex) => (
-            <div
-              key={daySchedule.day}
-              className="bg-gray-50 border border-gray-200 rounded-md p-4"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-gray-900 font-medium">
-                  {DAY_LABELS[daySchedule.day as keyof typeof DAY_LABELS]}
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">
-                    {daySchedule.isOpen ? 'Open' : 'Closed'}
-                  </span>
-                  <Toggle
-                    id={`day-${dayIndex}`}
-                    checked={daySchedule.isOpen}
-                    onChange={() => toggleDay(dayIndex)}
-                    size="sm"
-                  />
-                </div>
-              </div>
-
-              {daySchedule.isOpen && (
-                <div className="space-y-2">
-                  {daySchedule.timeSlots.map((slot, slotIndex) => (
-                    <div
-                      key={slotIndex}
-                      className="flex items-center gap-3 bg-white p-3 rounded-md border border-gray-300"
-                    >
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-600 mb-1">
-                          Open
-                        </label>
-                        <input
-                          type="time"
-                          value={slot.openTime}
-                          onChange={(e) =>
-                            updateTimeSlot(dayIndex, slotIndex, 'openTime', e.target.value)
-                          }
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
-                        />
-                      </div>
-
-                      <div className="text-gray-400 pt-5">-</div>
-
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-600 mb-1">
-                          Close
-                        </label>
-                        <input
-                          type="time"
-                          value={slot.closeTime}
-                          onChange={(e) =>
-                            updateTimeSlot(dayIndex, slotIndex, 'closeTime', e.target.value)
-                          }
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
-                        />
-                      </div>
-
-                      {daySchedule.timeSlots.length > 1 && (
-                        <button
-                          onClick={() => removeTimeSlot(dayIndex, slotIndex)}
-                          className="text-red-600 hover:text-red-700 pt-5"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-
-                  <button
-                    onClick={() => addTimeSlot(dayIndex)}
-                    className="w-full text-sm text-brand-red hover:text-brand-red/80 font-medium py-2 border border-dashed border-gray-300 rounded-md hover:border-brand-red transition-colors"
-                  >
-                    + Add Time Slot
-                  </button>
-                </div>
-              )}
-            </div>
+        <Select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+          {TIMEZONES.map((tz) => (
+            <option key={tz} value={tz}>
+              {tz}
+            </option>
           ))}
-        </div>
+        </Select>
       </section>
+
+      <WeeklyScheduleSection
+        schedule={schedule}
+        onToggleDay={toggleDay}
+        onUpdateTimeSlot={updateTimeSlot}
+        onAddTimeSlot={addTimeSlot}
+        onRemoveTimeSlot={removeTimeSlot}
+      />
 
       <div className="flex justify-end pt-4 border-t border-gray-200">
         <Button

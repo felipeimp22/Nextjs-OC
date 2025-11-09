@@ -513,14 +513,11 @@ model StoreHours {
   restaurantId String @db.ObjectId
   restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  // Regular weekly hours
-  monday DayHours
-  tuesday DayHours
-  wednesday DayHours
-  thursday DayHours
-  friday DayHours
-  saturday DayHours
-  sunday DayHours
+  // Timezone
+  timezone String @default("America/New_York")
+
+  // Weekly schedule with multiple time slots support
+  schedule WeeklySchedule[]
 
   // Special closures and holiday hours
   specialClosures SpecialClosure[]
@@ -529,6 +526,15 @@ model StoreHours {
   holidayClosuresEnabled Boolean @default(true)
   holidays String[] @default([])
 
+  // Legacy fields (kept for backwards compatibility during migration)
+  monday DayHours?
+  tuesday DayHours?
+  wednesday DayHours?
+  thursday DayHours?
+  friday DayHours?
+  saturday DayHours?
+  sunday DayHours?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -536,7 +542,20 @@ model StoreHours {
   @@map("store_hours")
 }
 
-// Day hours (embedded)
+// Weekly schedule entry with multiple time slots (embedded)
+type WeeklySchedule {
+  day String // monday, tuesday, etc.
+  isOpen Boolean @default(true)
+  timeSlots ScheduleTimeSlot[]
+}
+
+// Time slot for weekly schedule (embedded)
+type ScheduleTimeSlot {
+  openTime String @default("09:00")
+  closeTime String @default("17:00")
+}
+
+// Day hours (embedded) - Legacy format
 type DayHours {
   isOpen Boolean @default(true)
   open String @default("09:00")

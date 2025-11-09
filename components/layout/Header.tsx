@@ -72,8 +72,8 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-md border-b border-traces-gold-900/20">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <Link href={user ? "/dashboard" : "/"} className="text-2xl font-bold text-traces-gold-300 tracking-wider">
-          THE TRACES
+        <Link href={user ? "/setup" : "/"} className="text-2xl font-bold text-traces-gold-300 tracking-wider">
+          ORDERCHOP
         </Link>
 
         {/* Desktop Navigation */}
