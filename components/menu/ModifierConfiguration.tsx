@@ -182,11 +182,16 @@ export default function ModifierConfiguration({
                       >
                         ↓
                       </Button>
-                      <div onClick={(e) => e.stopPropagation()}>
+                      <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-2">
+                        {!isMobile && (
+                          <Text variant="small" className="text-gray-600">
+                            {t('required')}
+                          </Text>
+                        )}
                         <Toggle
+                          id={`required-toggle-${appliedOption.optionId}`}
                           checked={appliedOption.required}
                           onChange={() => handleToggleRequired(appliedOption.optionId)}
-                          label={isMobile ? "" : t('required')}
                         />
                       </div>
                     </div>
