@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import  Select  from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/shared/Pagination';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import OptionFormModal from './OptionFormModal';
 import { getOptions, deleteOption, getOptionCategories } from '@/lib/serverActions/menu.actions';
 
