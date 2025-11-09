@@ -102,7 +102,7 @@ export default function ModifierSelector({
                       </div>
                       <div className="mt-3 ml-11">
                         <Text variant="small" className="text-gray-600 mb-2">
-                          {t('choices')}: {option.choices.length}
+                          {t('categoryChoices', { count: option.choices.length })}
                         </Text>
                         <div className="flex flex-wrap gap-2">
                           {option.choices.slice(0, isMobile ? 3 : 5).map((choice) => (
@@ -116,7 +116,7 @@ export default function ModifierSelector({
                           ))}
                           {option.choices.length > (isMobile ? 3 : 5) && (
                             <span className="px-2 py-1 text-gray-500 text-xs">
-                              +{option.choices.length - (isMobile ? 3 : 5)} {t('moreChoices')}
+                              +{option.choices.length - (isMobile ? 3 : 5)} more
                             </span>
                           )}
                         </div>
@@ -132,16 +132,15 @@ export default function ModifierSelector({
         {availableOptions.length === 0 && (
           <div className="text-center py-12">
             <Text className="text-gray-500">
-              {t('noModifiersAvailable')}
+              {t('noModifiers')}
             </Text>
           </div>
         )}
 
         <div className="mt-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <Text variant="small" className="text-blue-900">
-            <strong>{selected.size}</strong> {t(selected.size !== 1 ? 'selectedCount_other' : 'selectedCount', {count: selected.size})}{' '}
-            {t('switchToConfig')} <strong>{t('configTab')}</strong> {t('toSetup')}
-          </Text>
+          <Text variant="small" className="text-blue-900" dangerouslySetInnerHTML={{
+            __html: t('selected', { count: selected.size, plural: selected.size !== 1 ? 's' : '' }) + '. ' + t('hint')
+          }} />
         </div>
     </div>
   );

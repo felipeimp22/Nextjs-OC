@@ -110,9 +110,7 @@ export default function ModifierConfiguration({
 
       {appliedOptions.length === 0 && (
         <div className="text-center py-12">
-          <Text className="text-gray-500">
-            {t('noModifiersSelected')} <strong>{t('addModifiersTab')}</strong> {t('toSelectModifiers')}
-          </Text>
+          <Text className="text-gray-500" dangerouslySetInnerHTML={{ __html: t('noModifiersSelected') }} />
         </div>
       )}
 
