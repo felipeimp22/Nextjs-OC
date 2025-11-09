@@ -135,8 +135,8 @@ export function FinancialSettings({ restaurantId }: FinancialSettingsProps) {
 
   return (
     <div className="w-full md:max-w-4xl md:mx-auto p-3 md:p-6 space-y-6 md:space-y-8">
-      <FormSection title="Currency Settings" description="Select your operating currency">
-        <FormField label="Currency" required description="Select the currency for your restaurant">
+      <FormSection title={t('currency')} description={t('currencyCode')}>
+        <FormField label={t('currencyCode')} required description={t('currencyCode')}>
           <select
             value={data.currency}
             onChange={(e) => {
@@ -160,19 +160,19 @@ export function FinancialSettings({ restaurantId }: FinancialSettingsProps) {
         </FormField>
       </FormSection>
 
-      <FormSection title="Platform Fee" description="Automatically configured for your restaurant">
-        <InfoCard type="info" title="How Platform Fee Works">
+      <FormSection title={t('platformFee')} description={t('threshold')}>
+        <InfoCard type="info" title={t('platformFee')}>
           <p className="mb-2">
-            The platform fee is automatically applied to all orders and helps maintain the service.
+            {t('threshold')}
           </p>
           <ul className="list-disc list-inside space-y-1 text-sm">
-            <li>Orders below ${data.globalFee.threshold}: {data.globalFee.belowPercent}% of order total</li>
-            <li>Orders ${data.globalFee.threshold} or above: ${data.globalFee.aboveFlat.toFixed(2)} flat fee</li>
+            <li>{t('belowThreshold')}: ${data.globalFee.threshold}: {data.globalFee.belowPercent}% </li>
+            <li>{t('aboveThreshold')}: ${data.globalFee.threshold} : ${data.globalFee.aboveFlat.toFixed(2)} </li>
           </ul>
         </InfoCard>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <FormField label="Threshold Amount">
+          <FormField label={t('threshold')}>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                 {data.currencySymbol}
@@ -186,7 +186,7 @@ export function FinancialSettings({ restaurantId }: FinancialSettingsProps) {
             </div>
           </FormField>
 
-          <FormField label="Below Threshold">
+          <FormField label={t('belowThreshold')}>
             <div className="relative">
               <Input
                 type="number"
@@ -200,7 +200,7 @@ export function FinancialSettings({ restaurantId }: FinancialSettingsProps) {
             </div>
           </FormField>
 
-          <FormField label="Above Threshold">
+          <FormField label={t('aboveThreshold')}>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                 {data.currencySymbol}
@@ -220,29 +220,30 @@ export function FinancialSettings({ restaurantId }: FinancialSettingsProps) {
         taxes={data.taxes}
         currencySymbol={data.currencySymbol}
         onTaxesChange={(taxes) => setData({ ...data, taxes })}
+        t={t}
       />
 
-      <FormSection title="Payment Provider">
-        <FormField label="Provider">
+      <FormSection title={t('payment')}>
+        <FormField label={t('paymentProvider')}>
           <select
             value={data.paymentProvider}
             onChange={(e) => setData({ ...data, paymentProvider: e.target.value })}
             className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
           >
-            <option value="stripe">Stripe</option>
-            <option value="mercadopago">Mercado Pago</option>
+            <option value="stripe">{t('stripe')}</option>
+            <option value="mercadopago">{t('mercadopago')}</option>
           </select>
         </FormField>
 
         {data.paymentProvider === 'stripe' && data.stripeConnectStatus === 'connected' && data.stripeAccountId && (
-          <InfoCard type="success" title="Stripe Connected" className="mt-4">
+          <InfoCard type="success" title={t('stripeConnected')} className="mt-4">
             <p>Account ID: <span className="font-mono text-xs">{data.stripeAccountId}</span></p>
           </InfoCard>
         )}
 
         {data.paymentProvider === 'stripe' && data.stripeConnectStatus !== 'connected' && (
           <InfoCard type="warning" className="mt-4">
-            Stripe account not yet connected. Please complete the Stripe Connect setup to accept payments.
+            {t('connectStripe')}
           </InfoCard>
         )}
       </FormSection>
@@ -253,7 +254,7 @@ export function FinancialSettings({ restaurantId }: FinancialSettingsProps) {
           disabled={saving}
           className="bg-brand-red hover:bg-brand-red/90 text-white px-6 md:px-8 w-full md:w-auto"
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? t('saving') : t('saveChanges')}
         </Button>
       </div>
     </div>

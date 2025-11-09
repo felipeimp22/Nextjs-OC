@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Select, useToast } from '@/components/ui';
 import { WeeklyScheduleSection } from '@/components/settings/hours';
 import { getStoreHours, updateStoreHours } from '@/lib/serverActions/settings.actions';
@@ -33,6 +34,7 @@ interface StoreHoursSettingsProps {
 }
 
 export function StoreHoursSettings({ restaurantId }: StoreHoursSettingsProps) {
+  const t = useTranslations('settings.hours');
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -153,7 +155,7 @@ export function StoreHoursSettings({ restaurantId }: StoreHoursSettingsProps) {
     <div className="w-full p-3 md:p-6 space-y-6 md:space-y-8">
       <section>
         <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-          Timezone
+          {t('timezone')}
         </h3>
         <Select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
           {TIMEZONES.map((tz) => (
@@ -170,6 +172,7 @@ export function StoreHoursSettings({ restaurantId }: StoreHoursSettingsProps) {
         onUpdateTimeSlot={updateTimeSlot}
         onAddTimeSlot={addTimeSlot}
         onRemoveTimeSlot={removeTimeSlot}
+        t={t}
       />
 
       <div className="flex justify-end pt-4 border-t border-gray-200">
@@ -178,7 +181,7 @@ export function StoreHoursSettings({ restaurantId }: StoreHoursSettingsProps) {
           disabled={saving}
           className="bg-brand-red hover:bg-brand-red/90 text-white px-6 md:px-8 w-full md:w-auto"
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? t('saving') : t('saveChanges')}
         </Button>
       </div>
     </div>

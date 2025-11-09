@@ -135,11 +135,11 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
 
   return (
     <div className="w-full md:max-w-4xl md:mx-auto p-3 md:p-6 space-y-6 md:space-y-8">
-      <FormSection title="Delivery Service">
+      <FormSection title={t('title')}>
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0 mr-4">
-            <p className="text-sm font-medium text-gray-900">Enable Delivery</p>
-            <p className="text-sm text-gray-600 mt-1">Allow customers to choose delivery for their orders</p>
+            <p className="text-sm font-medium text-gray-900">{t('title')}</p>
+            <p className="text-sm text-gray-600 mt-1">{t('description')}</p>
           </div>
           <Toggle
             id="delivery-enabled"
@@ -156,9 +156,9 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
         t={t}
       />
 
-      <FormSection title="Delivery Zone" description="Set your delivery coverage area">
+      <FormSection title={t('zones')} description={t('description')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <FormField label="Maximum Delivery Radius" required>
+          <FormField label={t('maxDeliveryRadius')} required>
             <Input
               type="number"
               step="0.1"
@@ -170,7 +170,7 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
             />
           </FormField>
 
-          <FormField label="Distance Unit">
+          <FormField label={t('distanceUnit')}>
             <select
               value={data.distanceUnit}
               onChange={(e) =>
@@ -178,8 +178,8 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
               }
               className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
             >
-              <option value="miles">Miles</option>
-              <option value="km">Kilometers</option>
+              <option value="miles">{t('miles')}</option>
+              <option value="km">{t('kilometers')}</option>
             </select>
           </FormField>
         </div>
@@ -196,10 +196,9 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
       )}
 
       {data.provider === 'shipday' && (
-        <FormSection title="Pricing Information">
+        <FormSection title={t('pricing')}>
           <InfoCard type="info">
-            Delivery pricing is managed automatically by Shipday based on distance and their pricing structure.
-            Check your Shipday dashboard for detailed pricing information.
+            {t('shipdayIntegrationMessage')}
           </InfoCard>
         </FormSection>
       )}
@@ -210,7 +209,7 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
           disabled={saving || !data.enabled}
           className="bg-brand-red hover:bg-brand-red/90 text-white px-6 md:px-8 w-full md:w-auto"
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? t('saving') : t('saveChanges')}
         </Button>
       </div>
     </div>

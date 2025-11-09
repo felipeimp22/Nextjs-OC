@@ -20,7 +20,7 @@ export default getRequestConfig(async () => {
   }
 
   // Ensure locale is valid
-  const supportedLocales = ['en', 'pt'];
+  const supportedLocales = ['en', 'pt', 'es'];
   if (!supportedLocales.includes(locale)) {
     locale = 'en';
   }

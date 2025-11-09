@@ -93,13 +93,13 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof RestaurantData, string>> = {};
 
-    if (!data.name.trim()) newErrors.name = 'Restaurant name is required';
-    if (!data.phone.trim()) newErrors.phone = 'Phone number is required';
-    if (!data.email.trim()) newErrors.email = 'Email is required';
-    if (!data.street.trim()) newErrors.street = 'Street address is required';
-    if (!data.city.trim()) newErrors.city = 'City is required';
-    if (!data.state.trim()) newErrors.state = 'State is required';
-    if (!data.zipCode.trim()) newErrors.zipCode = 'ZIP code is required';
+    if (!data.name.trim()) newErrors.name = t('name') + ' is required';
+    if (!data.phone.trim()) newErrors.phone = t('phone') + ' is required';
+    if (!data.email.trim()) newErrors.email = t('email') + ' is required';
+    if (!data.street.trim()) newErrors.street = t('street') + ' is required';
+    if (!data.city.trim()) newErrors.city = t('city') + ' is required';
+    if (!data.state.trim()) newErrors.state = t('state') + ' is required';
+    if (!data.zipCode.trim()) newErrors.zipCode = t('zipCode') + ' is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -187,23 +187,24 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
         logoUrl={data.logo}
         uploading={uploading}
         onFileSelect={handlePhotoUpload}
+        t={t}
       />
 
-      <FormSection title="Restaurant Information">
+      <FormSection title={t('restaurantInfo')}>
         <div className="space-y-4 md:space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <FormField label="Restaurant Name" required error={errors.name}>
+            <FormField label={t('name')} required error={errors.name}>
               <Input
                 value={data.name}
                 onChange={(e) => {
                   setData({ ...data, name: e.target.value });
                   if (errors.name) setErrors({ ...errors, name: undefined });
                 }}
-                placeholder="Enter restaurant name"
+                placeholder={t('namePlaceholder')}
               />
             </FormField>
 
-            <FormField label="Phone Number" required error={errors.phone}>
+            <FormField label={t('phone')} required error={errors.phone}>
               <Input
                 value={data.phone}
                 onChange={(e) => {
@@ -215,7 +216,7 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
             </FormField>
           </div>
 
-          <FormField label="Email Address" required error={errors.email}>
+          <FormField label={t('email')} required error={errors.email}>
             <Input
               type="email"
               value={data.email}
@@ -227,11 +228,11 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
             />
           </FormField>
 
-          <FormField label="Description" description="Brief description of your restaurant">
+          <FormField label={t('description')} description={t('descriptionPlaceholder')}>
             <textarea
               value={data.description}
               onChange={(e) => setData({ ...data, description: e.target.value })}
-              placeholder="Tell customers about your restaurant..."
+              placeholder={t('descriptionPlaceholder')}
               rows={4}
               className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors resize-none"
             />
@@ -239,9 +240,9 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
         </div>
       </FormSection>
 
-      <FormSection title="Location">
+      <FormSection title={t('location')}>
         <div className="space-y-4 md:space-y-6">
-          <FormField label="Street Address" required error={errors.street}>
+          <FormField label={t('street')} required error={errors.street}>
             <Input
               value={data.street}
               onChange={(e) => {
@@ -253,7 +254,7 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
           </FormField>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <FormField label="City" required error={errors.city}>
+            <FormField label={t('city')} required error={errors.city}>
               <Input
                 value={data.city}
                 onChange={(e) => {
@@ -264,7 +265,7 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
               />
             </FormField>
 
-            <FormField label="State" required error={errors.state}>
+            <FormField label={t('state')} required error={errors.state}>
               <Input
                 value={data.state}
                 onChange={(e) => {
@@ -276,7 +277,7 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
               />
             </FormField>
 
-            <FormField label="ZIP Code" required error={errors.zipCode}>
+            <FormField label={t('zipCode')} required error={errors.zipCode}>
               <Input
                 value={data.zipCode}
                 onChange={(e) => {
@@ -288,7 +289,7 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
             </FormField>
           </div>
 
-          <FormField label="Country">
+          <FormField label={t('country')}>
             <Input
               value={data.country}
               onChange={(e) => setData({ ...data, country: e.target.value })}
@@ -306,6 +307,7 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
         onPrimaryChange={(value) => setData({ ...data, primaryColor: value })}
         onSecondaryChange={(value) => setData({ ...data, secondaryColor: value })}
         onAccentChange={(value) => setData({ ...data, accentColor: value })}
+        t={t}
       />
 
       <div className="flex justify-end pt-4 md:pt-6 border-t border-gray-200">
@@ -314,7 +316,7 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
           disabled={saving}
           className="bg-brand-red hover:bg-brand-red/90 text-white px-6 md:px-8 w-full md:w-auto"
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? t('saving') : t('saveChanges')}
         </Button>
       </div>
     </div>

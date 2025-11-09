@@ -4,14 +4,15 @@ import { FormSection } from '@/components/shared';
 import { Upload, Image as ImageIcon } from 'lucide-react';
 
 interface LogoSectionProps {
+  t: (key: string) => string;
   logoUrl?: string;
   uploading: boolean;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export default function LogoSection({ logoUrl, uploading, onFileSelect }: LogoSectionProps) {
+export default function LogoSection({ t, logoUrl, uploading, onFileSelect }: LogoSectionProps) {
   return (
-    <FormSection title="Restaurant Logo">
+    <FormSection title={t('restaurantLogo')}>
       <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
         <div className="relative group">
           {logoUrl ? (
@@ -40,12 +41,12 @@ export default function LogoSection({ logoUrl, uploading, onFileSelect }: LogoSe
             />
             <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm font-medium text-gray-700">
               <Upload className="w-4 h-4" />
-              <span>{uploading ? 'Uploading...' : logoUrl ? 'Change Logo' : 'Upload Logo'}</span>
+              <span>{uploading ? t('uploading') : logoUrl ? t('changeLogo') : t('uploadLogo')}</span>
             </div>
           </label>
           <div className="text-sm text-gray-600 space-y-1">
-            <p>Recommended: Square image, at least 400x400px</p>
-            <p className="text-xs text-gray-500">Max file size: 5MB • Formats: JPG, PNG</p>
+            <p>{t('logoRecommendation')}</p>
+            <p className="text-xs text-gray-500">{t('logoLimits')}</p>
           </div>
         </div>
       </div>

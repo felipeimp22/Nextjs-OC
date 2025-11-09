@@ -14,12 +14,14 @@ interface TaxSetting {
 }
 
 interface TaxManagementSectionProps {
+  t: (key: string) => string;
   taxes: TaxSetting[];
   currencySymbol: string;
   onTaxesChange: (taxes: TaxSetting[]) => void;
 }
 
 export default function TaxManagementSection({
+  t,
   taxes,
   currencySymbol,
   onTaxesChange,
@@ -46,7 +48,7 @@ export default function TaxManagementSection({
 
   const handleSaveTax = () => {
     if (!editingTax || !editingTax.name.trim()) {
-      showToast('error', 'Tax name is required');
+      showToast('error', t('taxName'));
       return;
     }
 
@@ -73,8 +75,8 @@ export default function TaxManagementSection({
 
   return (
     <FormSection
-      title="Taxes"
-      description="Configure applicable taxes for your orders"
+      title={t('taxes')}
+      description={t('taxesDescription')}
       actions={
         <Button
           onClick={handleAddTax}
@@ -82,13 +84,13 @@ export default function TaxManagementSection({
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Add Tax
+          {t('addTax')}
         </Button>
       }
     >
       {taxes.length === 0 && !editingTax && (
         <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-          No taxes configured. Click "Add Tax" to create one.
+          {t('noTaxes')}
         </div>
       )}
 
@@ -103,7 +105,7 @@ export default function TaxManagementSection({
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="font-semibold text-gray-900">{tax.name}</span>
                   <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${tax.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                    {tax.enabled ? 'Active' : 'Inactive'}
+                    {tax.enabled ? t('active') : t('inactive')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 md:gap-4 mt-1 text-sm text-gray-600 flex-wrap">
@@ -111,7 +113,7 @@ export default function TaxManagementSection({
                     {tax.type === 'percentage' ? `${tax.rate}%` : `${currencySymbol}${tax.rate.toFixed(2)}`}
                   </span>
                   <span className="text-gray-400">•</span>
-                  <span>{tax.applyTo === 'entire_order' ? 'Entire Order' : 'Per Item'}</span>
+                  <span>{tax.applyTo === 'entire_order' ? t('entireOrder') : t('perItem')}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 self-end md:self-auto">
@@ -120,7 +122,7 @@ export default function TaxManagementSection({
                   variant="ghost"
                   className="text-brand-red hover:text-brand-red/80 text-sm"
                 >
-                  Edit
+                  {t('edit')}
                 </Button>
                 <button
                   onClick={() => handleDeleteTax(index)}
@@ -137,19 +139,19 @@ export default function TaxManagementSection({
       {editingTax && (
         <div className="mt-4 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg space-y-4">
           <h4 className="font-semibold text-blue-900">
-            {editingTaxIndex !== null ? 'Edit Tax' : 'Add New Tax'}
+            {editingTaxIndex !== null ? t('editTax') : t('addNewTax')}
           </h4>
 
-          <FormField label="Tax Name" required>
+          <FormField label={t('taxName')} required>
             <Input
               value={editingTax.name}
               onChange={(e) => setEditingTax({ ...editingTax, name: e.target.value })}
-              placeholder="e.g., Sales Tax, VAT, etc."
+              placeholder={t('taxNamePlaceholder')}
             />
           </FormField>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Type">
+            <FormField label={t('type')}>
               <select
                 value={editingTax.type}
                 onChange={(e) =>
@@ -160,12 +162,12 @@ export default function TaxManagementSection({
                 }
                 className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
               >
-                <option value="percentage">Percentage</option>
-                <option value="fixed">Fixed Amount</option>
+                <option value="percentage">{t('percentage')}</option>
+                <option value="fixed">{t('fixed')}</option>
               </select>
             </FormField>
 
-            <FormField label={editingTax.type === 'percentage' ? 'Rate (%)' : `Amount (${currencySymbol})`}>
+            <FormField label={editingTax.type === 'percentage' ? t('rate') : t('amount')}>
               <Input
                 type="number"
                 step="0.01"
@@ -176,7 +178,7 @@ export default function TaxManagementSection({
             </FormField>
           </div>
 
-          <FormField label="Apply To">
+          <FormField label={t('applyTo')}>
             <select
               value={editingTax.applyTo}
               onChange={(e) =>
@@ -187,8 +189,8 @@ export default function TaxManagementSection({
               }
               className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
             >
-              <option value="entire_order">Entire Order</option>
-              <option value="per_item">Per Item</option>
+              <option value="entire_order">{t('entireOrder')}</option>
+              <option value="per_item">{t('perItem')}</option>
             </select>
           </FormField>
 
@@ -201,16 +203,16 @@ export default function TaxManagementSection({
               className="w-4 h-4 text-brand-red border-gray-300 rounded focus:ring-brand-red"
             />
             <label htmlFor="tax-enabled" className="text-sm font-medium text-gray-900">
-              Enable this tax
+              {t('enableTax')}
             </label>
           </div>
 
           <div className="flex flex-col md:flex-row gap-3 pt-4 border-t border-blue-200">
             <Button onClick={handleSaveTax} className="bg-brand-red hover:bg-brand-red/90 text-white w-full md:w-auto">
-              {editingTaxIndex !== null ? 'Update Tax' : 'Add Tax'}
+              {editingTaxIndex !== null ? t('updateTax') : t('addTax')}
             </Button>
             <Button onClick={handleCancelEdit} variant="ghost" className="w-full md:w-auto">
-              Cancel
+              {t('cancel')}
             </Button>
           </div>
         </div>
