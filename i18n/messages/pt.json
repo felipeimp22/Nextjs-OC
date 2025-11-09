@@ -368,8 +368,8 @@
       "choiceNamePlaceholder": "ex: Pequeno, Médio, Grande",
       "basePrice": "Preço",
       "basePricePlaceholder": "0.00",
-      "useNewPrice": "Substituir preço do item",
       "isDefault": "Opção padrão",
+      "isAvailable": "Disponível",
       "removeChoice": "Remover",
       "selectionSettings": "Configurações de Seleção",
       "multiSelect": "Permitir Múltiplas Seleções",
@@ -388,7 +388,8 @@
       "allCategories": "Todas as Categorias",
       "available": "Disponível",
       "unavailable": "Indisponível",
-      "atLeastOneChoice": "Pelo menos uma opção é necessária"
+      "atLeastOneChoice": "Pelo menos uma opção é necessária",
+      "maxDefaultsReached": "Número máximo de seleções padrão ({max}) atingido. Desmarque outra opção primeiro."
     },
     "itemModifiers": {
       "title": "Configurar Modificadores",

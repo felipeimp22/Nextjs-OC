@@ -368,8 +368,8 @@
       "choiceNamePlaceholder": "e.g., Small, Medium, Large",
       "basePrice": "Price",
       "basePricePlaceholder": "0.00",
-      "useNewPrice": "Replace item price",
       "isDefault": "Default choice",
+      "isAvailable": "Available",
       "removeChoice": "Remove",
       "selectionSettings": "Selection Settings",
       "multiSelect": "Allow Multiple Selections",
@@ -388,7 +388,8 @@
       "allCategories": "All Categories",
       "available": "Available",
       "unavailable": "Unavailable",
-      "atLeastOneChoice": "At least one choice is required"
+      "atLeastOneChoice": "At least one choice is required",
+      "maxDefaultsReached": "Maximum number of default selections ({max}) reached. Uncheck another choice first."
     },
     "itemModifiers": {
       "title": "Configure Modifiers",
