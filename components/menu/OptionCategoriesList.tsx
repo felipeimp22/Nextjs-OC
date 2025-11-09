@@ -81,12 +81,12 @@ export default function OptionCategoriesList({ restaurantId }: OptionCategoriesL
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div className="flex-1 min-w-0">
           <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
           <p className="text-sm text-gray-600 mt-1">{t('description')}</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2 w-full md:w-auto">
           <Plus className="w-4 h-4" />
           {t('addCategory')}
         </Button>

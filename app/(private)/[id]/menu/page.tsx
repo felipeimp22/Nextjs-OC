@@ -44,15 +44,15 @@ export default function MenuManagementPage() {
   ];
 
   return (
-    <div className="p-8">
+    <div className="w-full md:max-w-7xl md:mx-auto">
       <Tabs
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={(tabId) => setActiveTab(tabId as Tab)}
-        className="mb-8"
+        className="mb-4 md:mb-6"
       />
 
-      <div className="mt-6">
+      <div className="mt-4 md:mt-6">
         {activeTab === 'categories' && <MenuCategoriesList restaurantId={restaurantId} />}
         {activeTab === 'items' && <MenuItemsList restaurantId={restaurantId} />}
         {activeTab === 'modifierCategories' && <OptionCategoriesList restaurantId={restaurantId} />}
