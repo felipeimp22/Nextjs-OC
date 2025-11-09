@@ -97,16 +97,16 @@ export default function TaxManagementSection({
           {taxes.map((tax, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+              className="flex flex-col md:flex-row md:items-center md:justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors gap-3"
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
                   <span className="font-semibold text-gray-900">{tax.name}</span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${tax.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                  <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${tax.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
                     {tax.enabled ? 'Active' : 'Inactive'}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                <div className="flex items-center gap-2 md:gap-4 mt-1 text-sm text-gray-600 flex-wrap">
                   <span>
                     {tax.type === 'percentage' ? `${tax.rate}%` : `${currencySymbol}${tax.rate.toFixed(2)}`}
                   </span>
@@ -114,11 +114,11 @@ export default function TaxManagementSection({
                   <span>{tax.applyTo === 'entire_order' ? 'Entire Order' : 'Per Item'}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-end md:self-auto">
                 <Button
                   onClick={() => handleEditTax(index)}
                   variant="ghost"
-                  className="text-brand-red hover:text-brand-red/80"
+                  className="text-brand-red hover:text-brand-red/80 text-sm"
                 >
                   Edit
                 </Button>
@@ -205,11 +205,11 @@ export default function TaxManagementSection({
             </label>
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-blue-200">
-            <Button onClick={handleSaveTax} className="bg-brand-red hover:bg-brand-red/90 text-white">
+          <div className="flex flex-col md:flex-row gap-3 pt-4 border-t border-blue-200">
+            <Button onClick={handleSaveTax} className="bg-brand-red hover:bg-brand-red/90 text-white w-full md:w-auto">
               {editingTaxIndex !== null ? 'Update Tax' : 'Add Tax'}
             </Button>
-            <Button onClick={handleCancelEdit} variant="ghost">
+            <Button onClick={handleCancelEdit} variant="ghost" className="w-full md:w-auto">
               Cancel
             </Button>
           </div>

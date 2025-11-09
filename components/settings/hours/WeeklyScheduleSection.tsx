@@ -73,46 +73,48 @@ export default function WeeklyScheduleSection({
                 {daySchedule.timeSlots.map((slot, slotIndex) => (
                   <div
                     key={slotIndex}
-                    className="flex items-center gap-3 bg-white p-3 rounded-md border border-gray-300"
+                    className="bg-white p-3 rounded-md border border-gray-300"
                   >
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-600 mb-1">
-                        Open
-                      </label>
-                      <input
-                        type="time"
-                        value={slot.openTime}
-                        onChange={(e) =>
-                          onUpdateTimeSlot(dayIndex, slotIndex, 'openTime', e.target.value)
-                        }
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
-                      />
+                    <div className="flex flex-col md:flex-row md:items-center gap-3">
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">
+                          Open
+                        </label>
+                        <input
+                          type="time"
+                          value={slot.openTime}
+                          onChange={(e) =>
+                            onUpdateTimeSlot(dayIndex, slotIndex, 'openTime', e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
+                        />
+                      </div>
+
+                      <div className="hidden md:block text-gray-400 pt-5">-</div>
+
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">
+                          Close
+                        </label>
+                        <input
+                          type="time"
+                          value={slot.closeTime}
+                          onChange={(e) =>
+                            onUpdateTimeSlot(dayIndex, slotIndex, 'closeTime', e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
+                        />
+                      </div>
+
+                      {daySchedule.timeSlots.length > 1 && (
+                        <button
+                          onClick={() => onRemoveTimeSlot(dayIndex, slotIndex)}
+                          className="text-red-600 hover:text-red-700 md:pt-5 self-end md:self-auto"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
-
-                    <div className="text-gray-400 pt-5">-</div>
-
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-600 mb-1">
-                        Close
-                      </label>
-                      <input
-                        type="time"
-                        value={slot.closeTime}
-                        onChange={(e) =>
-                          onUpdateTimeSlot(dayIndex, slotIndex, 'closeTime', e.target.value)
-                        }
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red"
-                      />
-                    </div>
-
-                    {daySchedule.timeSlots.length > 1 && (
-                      <button
-                        onClick={() => onRemoveTimeSlot(dayIndex, slotIndex)}
-                        className="text-red-600 hover:text-red-700 pt-5"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 ))}
 
