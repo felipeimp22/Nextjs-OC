@@ -15,7 +15,7 @@ interface DeliveryPricingSectionProps {
   maximumRadius: number;
   distanceUnit: string;
   onPricingChange: (tier: PricingTier) => void;
-  t: (key: string) => string;
+  t: (key: string, values?: Record<string, any>) => string;
 }
 
 export default function DeliveryPricingSection({
@@ -83,7 +83,7 @@ export default function DeliveryPricingSection({
         <FormField
           label={perUnitLabel}
           required
-          description={t('additionalFeeDescription').replace('{unit}', unitLabel.toLowerCase())}
+          description={t('additionalFeeDescription', { unit: unitLabel.toLowerCase() })}
         >
           <div className="relative max-w-xs">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
@@ -111,13 +111,13 @@ export default function DeliveryPricingSection({
             <div className="text-sm font-medium text-gray-700 mb-2">{t('pricingExamples')}</div>
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex justify-between">
-                <span>{t('deliveryAt').replace('{distance}', String(pricingTier.distanceCovered)).replace('{unit}', unitLabel)}</span>
+                <span>{t('deliveryAt', { distance: String(pricingTier.distanceCovered), unit: unitLabel })}</span>
                 <span className="font-semibold text-gray-900">
                   ${pricingTier.baseFee.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>{t('deliveryAt').replace('{distance}', String(pricingTier.distanceCovered + 5)).replace('{unit}', unitLabel)}</span>
+                <span>{t('deliveryAt', { distance: String(pricingTier.distanceCovered + 5), unit: unitLabel })}</span>
                 <span className="font-semibold text-gray-900">
                   ${(pricingTier.baseFee + (5 * pricingTier.additionalFeePerUnit)).toFixed(2)}
                 </span>
@@ -135,9 +135,9 @@ export default function DeliveryPricingSection({
               <strong>{t('howItWorks')}:</strong>
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>{t('withinDistance').replace('{distance}', String(pricingTier.distanceCovered)).replace('{unit}', unitLabel).replace('{baseFee}', pricingTier.baseFee.toFixed(2))}</li>
-              <li>{t('beyondDistance').replace('{distance}', String(pricingTier.distanceCovered)).replace('{unit}', unitLabel).replace('{additionalFee}', pricingTier.additionalFeePerUnit.toFixed(2)).replace('{unit}', unitLabel)}</li>
-              <li>{t('maxRange').replace('{range}', String(maximumRadius)).replace('{unit}', unitLabel)}</li>
+              <li>{t('withinDistance', { distance: String(pricingTier.distanceCovered), unit: unitLabel, baseFee: pricingTier.baseFee.toFixed(2) })}</li>
+              <li>{t('beyondDistance', { distance: String(pricingTier.distanceCovered), unit: unitLabel, additionalFee: pricingTier.additionalFeePerUnit.toFixed(2) })}</li>
+              <li>{t('maxRange', { range: String(maximumRadius), unit: unitLabel })}</li>
             </ul>
           </InfoCard>
         </div>
