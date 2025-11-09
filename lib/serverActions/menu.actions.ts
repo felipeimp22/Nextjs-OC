@@ -677,3 +677,143 @@ export async function uploadMenuImage(restaurantId: string, imageFile: {
     return { success: false, error: 'Failed to upload image', data: null };
   }
 }
+
+export async function getMenuRules(menuItemId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    const rules = await prisma.menuRules.findUnique({
+      where: { menuItemId },
+    });
+
+    return { success: true, data: rules, error: null };
+  } catch (error) {
+    console.error('Error fetching menu rules:', error);
+    return { success: false, error: 'Failed to fetch menu rules', data: null };
+  }
+}
+
+interface PriceAdjustmentInput {
+  targetOptionId: string;
+  targetChoiceId?: string;
+  adjustmentType: 'multiplier' | 'addition' | 'fixed';
+  value: number;
+}
+
+interface ChoiceAdjustmentInput {
+  choiceId: string;
+  priceAdjustment: number;
+  isAvailable?: boolean;
+  isDefault?: boolean;
+  adjustments?: PriceAdjustmentInput[];
+}
+
+interface AppliedOptionInput {
+  optionId: string;
+  required: boolean;
+  order: number;
+  choiceAdjustments: ChoiceAdjustmentInput[];
+}
+
+export async function createOrUpdateMenuRules(data: {
+  menuItemId: string;
+  restaurantId: string;
+  appliedOptions: AppliedOptionInput[];
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    const menuItem = await prisma.menuItem.findUnique({
+      where: { id: data.menuItemId },
+    });
+
+    if (!menuItem) {
+      return { success: false, error: 'Menu item not found', data: null };
+    }
+
+    const optionIds = data.appliedOptions.map(ao => ao.optionId);
+    const options = await prisma.option.findMany({
+      where: {
+        id: { in: optionIds },
+        restaurantId: data.restaurantId,
+      },
+    });
+
+    if (options.length !== optionIds.length) {
+      return { success: false, error: 'One or more options not found', data: null };
+    }
+
+    const existingRules = await prisma.menuRules.findUnique({
+      where: { menuItemId: data.menuItemId },
+    });
+
+    const rulesData = {
+      restaurantId: data.restaurantId,
+      appliedOptions: data.appliedOptions.map(ao => ({
+        optionId: ao.optionId,
+        required: ao.required,
+        order: ao.order,
+        choiceAdjustments: ao.choiceAdjustments.map(ca => ({
+          choiceId: ca.choiceId,
+          priceAdjustment: ca.priceAdjustment,
+          isAvailable: ca.isAvailable ?? true,
+          isDefault: ca.isDefault ?? false,
+          adjustments: ca.adjustments?.map(adj => ({
+            targetOptionId: adj.targetOptionId,
+            targetChoiceId: adj.targetChoiceId,
+            adjustmentType: adj.adjustmentType,
+            value: adj.value,
+          })) || [],
+        })),
+      })),
+    };
+
+    let rules;
+    if (existingRules) {
+      rules = await prisma.menuRules.update({
+        where: { menuItemId: data.menuItemId },
+        data: rulesData,
+      });
+    } else {
+      rules = await prisma.menuRules.create({
+        data: {
+          menuItemId: data.menuItemId,
+          ...rulesData,
+        },
+      });
+    }
+
+    revalidatePath(`/${data.restaurantId}/menu`);
+
+    return { success: true, data: rules, error: null };
+  } catch (error) {
+    console.error('Error creating/updating menu rules:', error);
+    return { success: false, error: 'Failed to save menu rules', data: null };
+  }
+}
+
+export async function deleteMenuRules(menuItemId: string, restaurantId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    await prisma.menuRules.delete({
+      where: { menuItemId },
+    });
+
+    revalidatePath(`/${restaurantId}/menu`);
+
+    return { success: true, data: null, error: null };
+  } catch (error) {
+    console.error('Error deleting menu rules:', error);
+    return { success: false, error: 'Failed to delete menu rules', data: null };
+  }
+}
