@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import  Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
+import { ImageUpload } from '@/components/shared';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createMenuCategory, updateMenuCategory } from '@/lib/serverActions/menu.actions';
+import { createMenuCategory, updateMenuCategory, uploadMenuCategoryImage } from '@/lib/serverActions/menu.actions';
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export default function CategoryFormModal({
   const t = useTranslations('menu.categories');
   const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -62,6 +64,58 @@ export default function CategoryFormModal({
       });
     }
   }, [category, isOpen]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('error', 'Image must be less than 5MB');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Please select an image file');
+      return;
+    }
+
+    if (!category?.id) {
+      showToast('error', 'Please save the category first before uploading an image');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target?.result as string;
+
+        const result = await uploadMenuCategoryImage(restaurantId, category.id, {
+          data: base64Data,
+          mimeType: file.type,
+          fileName: file.name,
+        });
+
+        if (!result.success || !result.data) {
+          showToast('error', result.error || 'Failed to upload image');
+          return;
+        }
+
+        setFormData({ ...formData, image: result.data.url });
+        showToast('success', 'Image uploaded successfully');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      showToast('error', 'Failed to upload image');
+      console.error('Upload error:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImageRemove = () => {
+    setFormData({ ...formData, image: '' });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,10 +182,12 @@ export default function CategoryFormModal({
         </FormField>
 
         <FormField label={t('image')}>
-          <Input
-            value={formData.image}
-            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-            placeholder="https://example.com/image.jpg"
+          <ImageUpload
+            imageUrl={formData.image}
+            uploading={uploading}
+            onFileSelect={handleImageUpload}
+            onRemove={handleImageRemove}
+            size="md"
           />
         </FormField>
 

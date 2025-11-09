@@ -619,3 +619,184 @@ export async function deleteOption(id: string, restaurantId: string) {
     return { success: false, error: 'Failed to delete option', data: null };
   }
 }
+
+// Upload Images
+export async function uploadMenuCategoryImage(restaurantId: string, categoryId: string, imageFile: {
+  data: string;
+  mimeType: string;
+  fileName: string;
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        restaurants: {
+          where: {
+            restaurantId,
+            role: { in: ['owner', 'manager'] }
+          }
+        }
+      }
+    });
+
+    if (!user || user.restaurants.length === 0) {
+      return { success: false, error: 'Unauthorized', data: null };
+    }
+
+    const { StorageFactory } = await import("@/lib/storage");
+    const crypto = await import("crypto");
+
+    const storage = StorageFactory.getProvider();
+    const base64Data = imageFile.data.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const fileExtension = imageFile.mimeType.split('/')[1];
+    const hash = crypto.randomBytes(8).toString('hex');
+    const fileName = `category-${hash}.${fileExtension}`;
+    const folder = `${restaurantId}/menu/categories`;
+
+    const uploadResult = await storage.upload({
+      file: buffer,
+      fileName,
+      mimeType: imageFile.mimeType,
+      folder,
+    });
+
+    await prisma.menuCategory.update({
+      where: { id: categoryId },
+      data: { image: uploadResult.url },
+    });
+
+    revalidatePath(`/${restaurantId}/menu`);
+
+    return { success: true, data: { url: uploadResult.url }, error: null };
+  } catch (error) {
+    console.error('Error uploading category image:', error);
+    return { success: false, error: 'Failed to upload image', data: null };
+  }
+}
+
+export async function uploadMenuItemImage(restaurantId: string, itemId: string, imageFile: {
+  data: string;
+  mimeType: string;
+  fileName: string;
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        restaurants: {
+          where: {
+            restaurantId,
+            role: { in: ['owner', 'manager'] }
+          }
+        }
+      }
+    });
+
+    if (!user || user.restaurants.length === 0) {
+      return { success: false, error: 'Unauthorized', data: null };
+    }
+
+    const { StorageFactory } = await import("@/lib/storage");
+    const crypto = await import("crypto");
+
+    const storage = StorageFactory.getProvider();
+    const base64Data = imageFile.data.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const fileExtension = imageFile.mimeType.split('/')[1];
+    const hash = crypto.randomBytes(8).toString('hex');
+    const fileName = `item-${hash}.${fileExtension}`;
+    const folder = `${restaurantId}/menu/items`;
+
+    const uploadResult = await storage.upload({
+      file: buffer,
+      fileName,
+      mimeType: imageFile.mimeType,
+      folder,
+    });
+
+    await prisma.menuItem.update({
+      where: { id: itemId },
+      data: { image: uploadResult.url },
+    });
+
+    revalidatePath(`/${restaurantId}/menu`);
+
+    return { success: true, data: { url: uploadResult.url }, error: null };
+  } catch (error) {
+    console.error('Error uploading item image:', error);
+    return { success: false, error: 'Failed to upload image', data: null };
+  }
+}
+
+export async function uploadOptionImage(restaurantId: string, optionId: string, imageFile: {
+  data: string;
+  mimeType: string;
+  fileName: string;
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        restaurants: {
+          where: {
+            restaurantId,
+            role: { in: ['owner', 'manager'] }
+          }
+        }
+      }
+    });
+
+    if (!user || user.restaurants.length === 0) {
+      return { success: false, error: 'Unauthorized', data: null };
+    }
+
+    const { StorageFactory } = await import("@/lib/storage");
+    const crypto = await import("crypto");
+
+    const storage = StorageFactory.getProvider();
+    const base64Data = imageFile.data.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const fileExtension = imageFile.mimeType.split('/')[1];
+    const hash = crypto.randomBytes(8).toString('hex');
+    const fileName = `option-${hash}.${fileExtension}`;
+    const folder = `${restaurantId}/menu/options`;
+
+    const uploadResult = await storage.upload({
+      file: buffer,
+      fileName,
+      mimeType: imageFile.mimeType,
+      folder,
+    });
+
+    await prisma.option.update({
+      where: { id: optionId },
+      data: { image: uploadResult.url },
+    });
+
+    revalidatePath(`/${restaurantId}/menu`);
+
+    return { success: true, data: { url: uploadResult.url }, error: null };
+  } catch (error) {
+    console.error('Error uploading option image:', error);
+    return { success: false, error: 'Failed to upload image', data: null };
+  }
+}

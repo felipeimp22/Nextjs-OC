@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/Input';
 import  Select  from '@/components/ui/Select';
 import  Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
+import { ImageUpload } from '@/components/shared';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createOption, updateOption } from '@/lib/serverActions/menu.actions';
+import { createOption, updateOption, uploadOptionImage } from '@/lib/serverActions/menu.actions';
 
 interface Choice {
   id?: string;
@@ -41,6 +42,7 @@ export default function OptionFormModal({
   const t = useTranslations('menu.modifiers');
   const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -121,6 +123,58 @@ export default function OptionFormModal({
     const newChoices = [...choices];
     newChoices[index] = { ...newChoices[index], [field]: value };
     setChoices(newChoices);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('error', 'Image must be less than 5MB');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Please select an image file');
+      return;
+    }
+
+    if (!option?.id) {
+      showToast('error', 'Please save the option first before uploading an image');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target?.result as string;
+
+        const result = await uploadOptionImage(restaurantId, option.id, {
+          data: base64Data,
+          mimeType: file.type,
+          fileName: file.name,
+        });
+
+        if (!result.success || !result.data) {
+          showToast('error', result.error || 'Failed to upload image');
+          return;
+        }
+
+        setFormData({ ...formData, image: result.data.url });
+        showToast('success', 'Image uploaded successfully');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      showToast('error', 'Failed to upload image');
+      console.error('Upload error:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImageRemove = () => {
+    setFormData({ ...formData, image: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,10 +267,12 @@ export default function OptionFormModal({
         </FormField>
 
         <FormField label={t('image')}>
-          <Input
-            value={formData.image}
-            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-            placeholder="https://example.com/image.jpg"
+          <ImageUpload
+            imageUrl={formData.image}
+            uploading={uploading}
+            onFileSelect={handleImageUpload}
+            onRemove={handleImageRemove}
+            size="md"
           />
         </FormField>
 
