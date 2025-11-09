@@ -458,66 +458,62 @@ console.log(result);
 
 ---
 
-## API Routes Guide
+## Server Actions Guide
 
-### Example: Financial Settings API
+The application uses Next.js Server Actions for all data operations, providing better performance and type safety than traditional API routes.
+
+### Example: Financial Settings Server Action
 
 ```typescript
-// app/api/settings/financial/route.ts
+// lib/serverActions/settings.actions.ts
 
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
+'use server';
 
-// GET /api/settings/financial?restaurantId=xxx
-export async function GET(request: NextRequest) {
+import prisma from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+
+export async function getFinancialSettings(restaurantId: string) {
   try {
-    const session = await getServerSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const restaurantId = request.nextUrl.searchParams.get('restaurantId');
-
-    if (!restaurantId) {
-      return NextResponse.json({ error: 'Restaurant ID required' }, { status: 400 });
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
     }
 
     const settings = await prisma.financialSettings.findUnique({
       where: { restaurantId },
     });
 
-    if (!settings) {
-      // Return defaults
-      return NextResponse.json({
-        data: {
-          currency: 'USD',
-          currencySymbol: '$',
-          taxes: [],
-          tipsEnabled: true,
-          defaultTipOptions: [15, 18, 20],
-          // ... defaults
-        },
-      });
-    }
-
-    return NextResponse.json({ data: settings });
+    return { success: true, data: settings, error: null };
   } catch (error) {
-    console.error('❌ Error fetching financial settings:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching financial settings:', error);
+    return { success: false, error: 'Failed to fetch settings', data: null };
   }
 }
 
-// PUT /api/settings/financial
-export async function PUT(request: NextRequest) {
+export async function updateFinancialSettings(restaurantId: string, data: any) {
   try {
-    const session = await getServerSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
     }
 
-    const body = await request.json();
-    const { restaurantId, ...data } = body;
+    // Verify user has access to this restaurant
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        restaurants: {
+          where: {
+            restaurantId,
+            role: { in: ['owner', 'manager'] }
+          }
+        }
+      }
+    });
+
+    if (!user || user.restaurants.length === 0) {
+      return { success: false, error: 'Unauthorized', data: null };
+    }
 
     const settings = await prisma.financialSettings.upsert({
       where: { restaurantId },
@@ -528,71 +524,55 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    console.log('✅ Financial settings updated for restaurant:', restaurantId);
+    revalidatePath(`/${restaurantId}/settings`);
+    revalidatePath(`/${restaurantId}/settings/financial`);
 
-    return NextResponse.json({ data: settings });
+    return { success: true, data: settings, error: null };
   } catch (error) {
-    console.error('❌ Error updating financial settings:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error updating financial settings:', error);
+    return { success: false, error: 'Failed to save settings', data: null };
   }
 }
 ```
 
-### Example: Order Draft API
+### Using Server Actions in Components
 
 ```typescript
-// app/api/orders/draft/route.ts
+'use client';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { calculateOrderDraft } from '@/lib/utils/orderDraftCalculator';
-import prisma from '@/lib/prisma';
+import { useState, useEffect } from 'react';
+import { getFinancialSettings, updateFinancialSettings } from '@/lib/serverActions/settings.actions';
+import { toast } from 'sonner';
 
-// POST /api/orders/draft
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { restaurantId, items, orderType, tip, customerLocation } = body;
+export default function FinancialSettingsPage({ params }) {
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    // Fetch restaurant and settings
-    const [restaurant, financialSettings, deliverySettings] = await Promise.all([
-      prisma.restaurant.findUnique({ where: { id: restaurantId } }),
-      prisma.financialSettings.findUnique({ where: { restaurantId } }),
-      prisma.deliverySettings.findUnique({ where: { restaurantId } }),
-    ]);
+  useEffect(() => {
+    loadSettings();
+  }, [params.id]);
 
-    if (!restaurant) {
-      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+  const loadSettings = async () => {
+    const result = await getFinancialSettings(params.id);
+    if (result.success) {
+      setSettings(result.data);
+    } else {
+      toast.error(result.error);
     }
+    setLoading(false);
+  };
 
-    // Fetch menu items and rules
-    // ... (implementation details)
+  const handleSave = async (data: any) => {
+    const result = await updateFinancialSettings(params.id, data);
+    if (result.success) {
+      toast.success('Settings saved successfully');
+      setSettings(result.data);
+    } else {
+      toast.error(result.error);
+    }
+  };
 
-    // Calculate draft
-    const draft = await calculateOrderDraft(
-      {
-        restaurantId,
-        items,
-        orderType,
-        tip,
-        restaurantLocation: { lat: restaurant.geoLat!, lng: restaurant.geoLng! },
-        customerLocation,
-        taxSettings: financialSettings?.taxes || [],
-        deliveryPricingTiers: deliverySettings?.pricingTiers || [],
-        globalFee: financialSettings?.globalFee,
-        distanceUnit: deliverySettings?.distanceUnit as any,
-      },
-      menuItemsMap,
-      menuRulesMap,
-      optionsMap
-    );
-
-    console.log('✅ Order draft calculated:', draft.total);
-
-    return NextResponse.json({ data: draft });
-  } catch (error) {
-    console.error('❌ Error calculating order draft:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  // ... component JSX
 }
 ```
 

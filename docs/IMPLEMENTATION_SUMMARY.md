@@ -51,24 +51,26 @@
 
 ---
 
-## 📋 What Needs to Be Done
+## 📋 What's Already Implemented
 
-### 1. **Update Existing Restaurant Schema**
+### 1. **Restaurant Schema** ✅
 
-Add relations to the existing `Restaurant` model:
+The `Restaurant` model already includes all necessary relations:
 
 ```prisma
-// In prisma/restaurant.prisma or schema.prisma
-
 model Restaurant {
-  // ... existing fields ...
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  // ... address fields ...
 
-  // Add these relations:
+  // Settings relations ✅
   financialSettings FinancialSettings?
   deliverySettings  DeliverySettings?
   storeHours        StoreHours?
   rolePermissions   RolePermissions[]
 
+  // Menu relations ✅
   menuCategories   MenuCategory[] @relation("MenuCategories")
   menuItems        MenuItem[] @relation("MenuItems")
   optionCategories OptionCategory[] @relation("OptionCategories")
@@ -79,189 +81,194 @@ model Restaurant {
 }
 ```
 
-### 2. **Build API Routes**
+### 2. **Server Actions** ✅
 
-Create these API endpoints:
+The application uses Next.js Server Actions instead of API routes for better performance and type safety.
 
-#### Settings APIs:
-```
-GET/PUT  /api/settings/financial?restaurantId=xxx
-GET/PUT  /api/settings/delivery?restaurantId=xxx
-GET/PUT  /api/settings/hours?restaurantId=xxx
-GET/PUT  /api/settings/roles?restaurantId=xxx
-```
+#### Settings Actions (lib/serverActions/settings.actions.ts):
+```typescript
+// Financial Settings
+export async function getFinancialSettings(restaurantId: string)
+export async function updateFinancialSettings(restaurantId: string, data: any)
 
-#### Menu APIs:
-```
-GET      /api/menu/categories?restaurantId=xxx
-GET/POST /api/menu/items?restaurantId=xxx&categoryId=yyy
-GET/POST /api/menu/options?restaurantId=xxx
-GET/PUT  /api/menu/rules?menuItemId=xxx
-```
+// Delivery Settings
+export async function getDeliverySettings(restaurantId: string)
+export async function updateDeliverySettings(restaurantId: string, data: any)
 
-#### Order APIs:
-```
-POST     /api/orders/draft         # Calculate order preview
-POST     /api/orders                # Create order
-GET      /api/orders/:id            # Get order details
-PATCH    /api/orders/:id/status    # Update order status
+// Store Hours
+export async function getStoreHours(restaurantId: string)
+export async function updateStoreHours(restaurantId: string, data: any)
+
+// Users & Roles
+export async function getRestaurantUsers(restaurantId: string)
+export async function updateRolePermissions(restaurantId: string, rolePermissions: any[])
+
+// Photo Upload
+export async function uploadRestaurantPhoto(restaurantId: string, logoFile: any)
 ```
 
-#### Payment Webhooks:
-```
-POST     /api/webhooks/stripe      # Stripe webhook handler
-POST     /api/webhooks/mercadopago # MercadoPago webhook handler
+#### Menu Actions (lib/serverActions/menu.actions.ts):
+```typescript
+// Menu Categories
+export async function getMenuCategories(restaurantId: string)
+export async function createMenuCategory(data: {...})
+export async function updateMenuCategory(id: string, data: {...})
+export async function deleteMenuCategory(id: string, restaurantId: string)
+
+// Menu Items
+export async function getMenuItems(restaurantId: string, categoryId?: string)
+export async function createMenuItem(data: {...})
+export async function updateMenuItem(id: string, data: {...})
+export async function deleteMenuItem(id: string, restaurantId: string)
+
+// Options (Modifiers)
+export async function getOptionCategories(restaurantId: string)
+export async function createOptionCategory(data: {...})
+export async function getOptions(restaurantId: string, categoryId?: string)
+export async function createOption(data: {...})
+export async function updateOption(id: string, data: {...})
+
+// Menu Rules (Modifier Configuration)
+export async function getMenuRules(menuItemId: string)
+export async function createOrUpdateMenuRules(data: {...})
+export async function deleteMenuRules(menuItemId: string, restaurantId: string)
+
+// Image Upload
+export async function uploadMenuImage(restaurantId: string, imageFile: {...}, type: 'category' | 'item' | 'option')
 ```
 
-**Example API Route Template:**
+#### Restaurant Actions (lib/serverActions/restaurant.actions.ts):
+```typescript
+export async function createRestaurant(data: CreateRestaurantData)
+export async function getUserRestaurants()
+export async function searchRestaurants(query: string)
+export async function requestRestaurantAccess(restaurantId: string)
+export async function getRestaurant(id: string)
+export async function updateRestaurant(id: string, data: Partial<CreateRestaurantData>)
+```
+
+#### Auth Actions (lib/serverActions/auth.actions.ts):
+```typescript
+export async function signUp(data: {...})
+export async function signIn(data: {...})
+export async function signOut()
+export async function getCurrentUser()
+```
+
+**Example Usage in Frontend:**
 
 ```typescript
-// app/api/settings/financial/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+'use client';
 
-export async function GET(request: NextRequest) {
-  const restaurantId = request.nextUrl.searchParams.get('restaurantId');
+import { getFinancialSettings, updateFinancialSettings } from '@/lib/serverActions/settings.actions';
 
-  const settings = await prisma.financialSettings.findUnique({
-    where: { restaurantId },
-  });
+export default function FinancialSettingsPage() {
+  const handleSave = async (data: any) => {
+    const result = await updateFinancialSettings(restaurantId, data);
+    if (result.success) {
+      // Show success message
+    }
+  };
 
-  return NextResponse.json({ data: settings });
-}
-
-export async function PUT(request: NextRequest) {
-  const body = await request.json();
-  const { restaurantId, ...data } = body;
-
-  const settings = await prisma.financialSettings.upsert({
-    where: { restaurantId },
-    update: data,
-    create: { restaurantId, ...data },
-  });
-
-  return NextResponse.json({ data: settings });
+  // ... component code
 }
 ```
 
-### 3. **Build Frontend Settings Pages**
+### 3. **Frontend Components** ✅
 
-Create pages following this structure:
+Settings pages and components are already implemented:
 
 ```
-app/[locale]/(private)/dashboard/[restaurantId]/settings/
-├── layout.tsx              # Settings tabs navigation
-├── page.tsx                # General settings (redirect to financial)
-├── financial/page.tsx      # Financial settings form
-├── delivery/page.tsx       # Delivery settings form
-├── hours/page.tsx          # Store hours configuration
-├── users/page.tsx          # Users & roles management
-└── components/
-    ├── FinancialSettingsForm.tsx
-    ├── DeliverySettingsForm.tsx
-    ├── StoreHoursForm.tsx
-    └── UsersRolesForm.tsx
+app/(private)/[id]/settings/
+├── page.tsx                      # Settings layout & navigation
+├── financial/page.tsx            # Financial settings page ✅
+├── delivery/page.tsx             # Delivery settings page ✅
+├── hours/page.tsx                # Store hours page ✅
+└── users/page.tsx                # Users & roles page ✅
+
+components/settings/
+├── financial/                    # Financial settings components ✅
+├── delivery/                     # Delivery settings components ✅
+├── hours/                        # Store hours components ✅
+├── users/                        # Users & roles components ✅
+└── general/                      # General settings components ✅
+
+components/menu/                  # Menu management components ✅
+components/auth/                  # Auth components ✅
+components/setup/                 # Restaurant setup components ✅
 ```
 
-**Example Frontend Component:**
+**Settings pages use Server Actions:**
 
 ```tsx
-// app/[locale]/(private)/dashboard/[restaurantId]/settings/financial/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { getFinancialSettings, updateFinancialSettings } from '@/lib/serverActions/settings.actions';
 
-export default function FinancialSettingsPage() {
-  const params = useParams();
-  const t = useTranslations('settings.financial');
+export default function FinancialSettingsPage({ params }) {
   const [settings, setSettings] = useState(null);
 
   useEffect(() => {
-    fetchSettings();
+    loadSettings();
   }, []);
 
-  const fetchSettings = async () => {
-    const res = await fetch(`/api/settings/financial?restaurantId=${params.restaurantId}`);
-    const data = await res.json();
-    setSettings(data.data);
+  const loadSettings = async () => {
+    const result = await getFinancialSettings(params.id);
+    if (result.success) {
+      setSettings(result.data);
+    }
   };
 
   const handleSave = async (data) => {
-    await fetch('/api/settings/financial', {
-      method: 'PUT',
-      body: JSON.stringify({ restaurantId: params.restaurantId, ...data }),
-    });
+    const result = await updateFinancialSettings(params.id, data);
+    if (result.success) {
+      // Show success toast
+    }
   };
 
+  // ... component JSX
+}
+```
+
+### 4. **i18n Translations** ✅
+
+Translation files are already set up with comprehensive coverage:
+
+```
+i18n/messages/
+├── en.json    # English translations ✅
+└── pt.json    # Portuguese translations ✅
+```
+
+**Available translation namespaces:**
+- `auth.*` - Authentication pages
+- `setup.*` - Restaurant setup flow
+- `menu.*` - Menu management
+- `settings.*` - All settings pages (financial, delivery, hours, users)
+- `dashboard.*` - Dashboard pages
+- `common.*` - Common UI elements
+- `validation.*` - Form validation messages
+
+**Usage in components:**
+
+```tsx
+import { useTranslations } from 'next-intl';
+
+export default function FinancialSettings() {
+  const t = useTranslations('settings.financial');
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">{t('title')}</h1>
-      {/* Settings form components */}
+    <div>
+      <h1>{t('title')}</h1>
+      <label>{t('currency')}</label>
+      {/* ... */}
     </div>
   );
 }
 ```
 
-### 4. **Add i18n Translations**
-
-Create translation files:
-
-```json
-// i18n/messages/en.json
-{
-  "settings": {
-    "financial": {
-      "title": "Financial Settings",
-      "currency": "Currency",
-      "taxes": "Taxes",
-      "addTax": "Add Tax",
-      "taxName": "Tax Name",
-      "taxRate": "Tax Rate",
-      "taxType": "Tax Type",
-      "percentage": "Percentage",
-      "fixed": "Fixed Amount",
-      "applyTo": "Apply To",
-      "entireOrder": "Entire Order",
-      "perItem": "Per Item",
-      "paymentProvider": "Payment Provider",
-      "stripe": "Stripe",
-      "mercadopago": "MercadoPago",
-      "connectStripe": "Connect Stripe Account",
-      "save": "Save Settings"
-    },
-    "delivery": {
-      "title": "Delivery Settings",
-      "enabled": "Enable Delivery",
-      "distanceUnit": "Distance Unit",
-      "miles": "Miles",
-      "kilometers": "Kilometers",
-      "maximumRadius": "Maximum Delivery Radius",
-      "pricingTiers": "Pricing Tiers",
-      "addTier": "Add Pricing Tier",
-      "tierName": "Tier Name",
-      "distanceCovered": "Distance Covered",
-      "baseFee": "Base Fee",
-      "additionalFee": "Additional Fee Per Unit",
-      "driverProvider": "Driver Provider",
-      "shipday": "Shipday",
-      "internal": "Internal Drivers"
-    },
-    "hours": {
-      "title": "Store Hours",
-      "regularHours": "Regular Hours",
-      "monday": "Monday",
-      "tuesday": "Tuesday",
-      "open": "Open",
-      "close": "Close",
-      "closed": "Closed",
-      "specialClosures": "Special Closures",
-      "addClosure": "Add Special Closure"
-    }
-  }
-}
-```
+Both English and Portuguese are fully supported throughout the application.
 
 ### 5. **Install Required Dependencies**
 
@@ -414,33 +421,40 @@ Start with the simplest route:
 
 ---
 
-## 📝 Implementation Checklist
+## ✅ Implementation Status
 
 ### Backend
-- [ ] Update `Restaurant` model with new relations
-- [ ] Run `npm run db:generate` and `npm run db:push`
-- [ ] Create API routes for Financial Settings
-- [ ] Create API routes for Delivery Settings
-- [ ] Create API routes for Store Hours
-- [ ] Create API routes for Users & Roles
-- [ ] Create API routes for Menu Management
-- [ ] Create API routes for Orders
-- [ ] Implement Stripe webhook handler
-- [ ] Implement Order Draft endpoint
-- [ ] Test all API routes
+- [x] Update `Restaurant` model with new relations
+- [x] Run `npm run db:generate` and `npm run db:push`
+- [x] Create Server Actions for Financial Settings
+- [x] Create Server Actions for Delivery Settings
+- [x] Create Server Actions for Store Hours
+- [x] Create Server Actions for Users & Roles
+- [x] Create Server Actions for Menu Management
+- [x] Create Server Actions for Restaurant Management
+- [x] Create Server Actions for Auth
+- [x] Implement Payment providers (Stripe, MercadoPago)
+- [x] Implement Delivery provider (Shipday)
+- [x] Implement Storage provider (Wasabi)
+- [x] Implement Tax Calculator
+- [x] Implement Distance Calculator
+- [x] Implement Order Draft Calculator
 
 ### Frontend
-- [ ] Create Settings layout with tabs
-- [ ] Create Financial Settings page
-- [ ] Create Delivery Settings page (with pricing tiers UI)
-- [ ] Create Store Hours page
-- [ ] Create Users & Roles page
-- [ ] Add i18n translations
-- [ ] Create reusable form components
-- [ ] Implement form validation
-- [ ] Add loading states
-- [ ] Add error handling
-- [ ] Test responsive design
+- [x] Create Settings layout with tabs
+- [x] Create Financial Settings page
+- [x] Create Delivery Settings page (with pricing tiers UI)
+- [x] Create Store Hours page
+- [x] Create Users & Roles page
+- [x] Add i18n translations (English & Portuguese)
+- [x] Create reusable form components
+- [x] Implement form validation
+- [x] Add loading states
+- [x] Add error handling
+- [x] Test responsive design
+- [x] Create Menu management UI
+- [x] Create Restaurant setup flow
+- [x] Create Auth pages (Sign in/Sign up)
 
 ### Integration
 - [ ] Connect Stripe (test mode)
