@@ -419,7 +419,8 @@
         "default": "Default",
         "unavailable": "Unavailable",
         "base": "Base",
-        "crossModifierRules": "Cross-Modifier Price Rules"
+        "crossModifierRules": "Cross-Modifier Price Rules",
+        "maxDefaultsReached": "Maximum number of default selections ({max}) reached. Uncheck another choice first."
       },
       "rules": {
         "title": "Price Rules for \"{choiceName}\"",

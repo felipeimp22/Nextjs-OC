@@ -14,6 +14,9 @@ interface Option {
   id: string;
   name: string;
   description?: string;
+  multiSelect: boolean;
+  minSelections: number;
+  maxSelections: number;
   choices: {
     id: string;
     name: string;

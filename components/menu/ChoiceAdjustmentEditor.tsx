@@ -9,16 +9,25 @@ import Toggle from '@/components/ui/Toggle';
 import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/components/ui/ToastContainer';
 import PriceAdjustmentRuleEditor from './PriceAdjustmentRuleEditor';
 
 interface Option {
   id: string;
   name: string;
+  description?: string;
+  multiSelect: boolean;
+  minSelections: number;
+  maxSelections: number;
   choices: {
     id: string;
     name: string;
     basePrice: number;
   }[];
+  category: {
+    id: string;
+    name: string;
+  };
 }
 
 interface PriceAdjustment {
@@ -60,6 +69,7 @@ export default function ChoiceAdjustmentEditor({
 }: ChoiceAdjustmentEditorProps) {
   const isMobile = useIsMobile();
   const t = useTranslations('menu.itemModifiers.choiceEditor');
+  const { showToast } = useToast();
   const [expandedChoiceId, setExpandedChoiceId] = useState<string | null>(null);
 
   const handleUpdatePrice = (choiceId: string, price: number) => {
@@ -77,11 +87,39 @@ export default function ChoiceAdjustmentEditor({
   };
 
   const handleToggleDefault = (choiceId: string) => {
-    const updated = choiceAdjustments.map(ca => ({
-      ...ca,
-      isDefault: ca.choiceId === choiceId ? !ca.isDefault : ca.isDefault,
-    }));
-    onUpdate(updated);
+    const currentChoice = choiceAdjustments.find(ca => ca.choiceId === choiceId);
+    if (!currentChoice) return;
+
+    // If unchecking, always allow
+    if (currentChoice.isDefault) {
+      const updated = choiceAdjustments.map(ca =>
+        ca.choiceId === choiceId ? { ...ca, isDefault: false } : ca
+      );
+      onUpdate(updated);
+      return;
+    }
+
+    // If checking, validate based on multiSelect and maxSelections
+    const currentDefaultCount = choiceAdjustments.filter(ca => ca.isDefault).length;
+
+    if (!optionDetails.multiSelect) {
+      // Single select: only one can be default
+      const updated = choiceAdjustments.map(ca => ({
+        ...ca,
+        isDefault: ca.choiceId === choiceId,
+      }));
+      onUpdate(updated);
+    } else {
+      // Multi select: check if we haven't exceeded maxSelections
+      if (currentDefaultCount >= optionDetails.maxSelections) {
+        showToast('error', t('maxDefaultsReached', { max: optionDetails.maxSelections }));
+        return;
+      }
+      const updated = choiceAdjustments.map(ca =>
+        ca.choiceId === choiceId ? { ...ca, isDefault: true } : ca
+      );
+      onUpdate(updated);
+    }
   };
 
   const handleUpdateAdjustments = (choiceId: string, adjustments: PriceAdjustment[]) => {
@@ -154,19 +192,25 @@ export default function ChoiceAdjustmentEditor({
                       </Text>
                     </div>
 
-                    <div className="flex items-end gap-2">
-                      <div className="flex-1">
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1 flex flex-col gap-1">
+                        <Text variant="small" className="text-gray-600">
+                          {t('available')}
+                        </Text>
                         <Toggle
+                          id={`available-toggle-${choiceAdjustment.choiceId}`}
                           checked={choiceAdjustment.isAvailable}
                           onChange={() => handleToggleAvailable(choiceAdjustment.choiceId)}
-                          label={t('available')}
                         />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 flex flex-col gap-1">
+                        <Text variant="small" className="text-gray-600">
+                          {t('default')}
+                        </Text>
                         <Toggle
+                          id={`default-toggle-${choiceAdjustment.choiceId}`}
                           checked={choiceAdjustment.isDefault}
                           onChange={() => handleToggleDefault(choiceAdjustment.choiceId)}
-                          label={t('default')}
                         />
                       </div>
                     </div>

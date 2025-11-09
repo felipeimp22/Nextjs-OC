@@ -419,7 +419,8 @@
         "default": "Padrão",
         "unavailable": "Indisponível",
         "base": "Base",
-        "crossModifierRules": "Regras de Preço entre Modificadores"
+        "crossModifierRules": "Regras de Preço entre Modificadores",
+        "maxDefaultsReached": "Número máximo de seleções padrão ({max}) atingido. Desmarque outra opção primeiro."
       },
       "rules": {
         "title": "Regras de Preço para \"{choiceName}\"",
