@@ -27,7 +27,7 @@ After the updates, **YES - we are now using cache!** Here's what's cached:
 async function handleSubmit() {
   const result = await signIn({ email, password });
   if (result.success) {
-    window.location.href = '/dashboard';
+    window.location.href = '/setup';
   }
 }
 

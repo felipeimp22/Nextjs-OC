@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast, Toggle } from '@/components/ui';
-import { FormSection, FormField } from '@/components/shared';
+import { FormSection, FormField, InfoCard } from '@/components/shared';
 import { DeliveryProviderSection, DeliveryPricingSection } from '@/components/settings/delivery';
 import { getDeliverySettings, updateDeliverySettings } from '@/lib/serverActions/settings.actions';
 

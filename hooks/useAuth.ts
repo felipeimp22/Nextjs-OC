@@ -59,7 +59,7 @@ export function useSignIn() {
       queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
       
       // Redirect to dashboard
-      window.location.href = '/dashboard';
+      window.location.href = '/setup';
     },
   });
 }
@@ -88,7 +88,7 @@ export function useSignUp() {
       queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
       
       // Redirect to dashboard
-      window.location.href = '/dashboard';
+      window.location.href = '/setup';
     },
   });
 }

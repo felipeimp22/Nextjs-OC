@@ -224,8 +224,10 @@ export async function createRestaurant(data: CreateRestaurantData) {
       console.log('[DEBUG] No logoFile provided in request');
     }
 
-    revalidatePath('/dashboard');
-    revalidatePath('/getting-started');
+    // Revalidate the new restaurant's pages
+    revalidatePath(`/${restaurant.id}/dashboard`);
+    revalidatePath(`/${restaurant.id}/settings`);
+    revalidatePath('/setup');
 
     return { success: true, data: restaurant, error: null };
   } catch (error) {
@@ -348,8 +350,8 @@ export async function requestRestaurantAccess(restaurantId: string) {
       },
     });
 
-    revalidatePath('/dashboard');
-    revalidatePath('/getting-started');
+    revalidatePath(`/${restaurantId}/dashboard`);
+    revalidatePath('/setup');
 
     return { success: true, error: null };
   } catch (error) {
@@ -433,8 +435,8 @@ export async function updateRestaurant(id: string, data: Partial<CreateRestauran
       data: updateData,
     });
 
-    revalidatePath('/dashboard');
-    revalidatePath(`/dashboard/${id}`);
+    revalidatePath(`/${id}/dashboard`);
+    revalidatePath(`/${id}/settings`);
 
     return { success: true, data: restaurant, error: null };
   } catch (error) {
