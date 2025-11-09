@@ -256,6 +256,7 @@ export default function OptionFormModal({
 
                   <FormField label={t('useNewPrice')}>
                     <Toggle
+                      id={`choice-use-new-price-${index}`}
                       checked={choice.useNewPrice}
                       onChange={(checked) => handleChoiceChange(index, 'useNewPrice', checked)}
                     />
@@ -263,6 +264,7 @@ export default function OptionFormModal({
 
                   <FormField label={t('isDefault')}>
                     <Toggle
+                      id={`choice-is-default-${index}`}
                       checked={choice.isDefault}
                       onChange={(checked) => handleChoiceChange(index, 'isDefault', checked)}
                     />
@@ -289,6 +291,7 @@ export default function OptionFormModal({
           <div className="grid grid-cols-2 gap-4">
             <FormField label={t('multiSelect')}>
               <Toggle
+                id="option-multi-select"
                 checked={formData.multiSelect}
                 onChange={(checked) => setFormData({ ...formData, multiSelect: checked })}
               />
@@ -324,6 +327,7 @@ export default function OptionFormModal({
           <div className="grid grid-cols-2 gap-4">
             <FormField label={t('allowQuantity')}>
               <Toggle
+                id="option-allow-quantity"
                 checked={formData.allowQuantity}
                 onChange={(checked) => setFormData({ ...formData, allowQuantity: checked })}
               />
@@ -356,6 +360,7 @@ export default function OptionFormModal({
         <div className="grid grid-cols-2 gap-4 border-t border-gray-200 pt-6">
           <FormField label={t('isAvailable')}>
             <Toggle
+              id="option-is-available"
               checked={formData.isAvailable}
               onChange={(checked) => setFormData({ ...formData, isAvailable: checked })}
             />
@@ -363,6 +368,7 @@ export default function OptionFormModal({
 
           <FormField label={t('isVisible')}>
             <Toggle
+              id="option-is-visible"
               checked={formData.isVisible}
               onChange={(checked) => setFormData({ ...formData, isVisible: checked })}
             />

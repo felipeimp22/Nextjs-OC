@@ -146,6 +146,7 @@ export default function CategoryFormModal({
 
         <FormField label={t('highlight')}>
           <Toggle
+            id="category-highlight"
             checked={formData.highlight}
             onChange={(checked) => setFormData({ ...formData, highlight: checked })}
           />

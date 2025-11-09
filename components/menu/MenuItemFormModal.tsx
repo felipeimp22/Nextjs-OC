@@ -41,8 +41,6 @@ export default function MenuItemFormModal({
     isAvailable: true,
     isVisible: true,
     allowSpecialNotes: false,
-    disableWhenFinishInventory: false,
-    inventoryCount: 0,
     tags: '',
   });
 
@@ -58,8 +56,6 @@ export default function MenuItemFormModal({
         isAvailable: item.isAvailable,
         isVisible: item.isVisible,
         allowSpecialNotes: item.allowSpecialNotes || false,
-        disableWhenFinishInventory: item.disableWhenFinishInventory || false,
-        inventoryCount: item.inventoryCount || 0,
         tags: item.tags?.join(', ') || '',
       });
     } else {
@@ -73,8 +69,6 @@ export default function MenuItemFormModal({
         isAvailable: true,
         isVisible: true,
         allowSpecialNotes: false,
-        disableWhenFinishInventory: false,
-        inventoryCount: 0,
         tags: '',
       });
     }
@@ -102,8 +96,6 @@ export default function MenuItemFormModal({
             isAvailable: formData.isAvailable,
             isVisible: formData.isVisible,
             allowSpecialNotes: formData.allowSpecialNotes,
-            disableWhenFinishInventory: formData.disableWhenFinishInventory,
-            inventoryCount: formData.inventoryCount,
             tags,
           })
         : await createMenuItem({
@@ -117,8 +109,6 @@ export default function MenuItemFormModal({
             isAvailable: formData.isAvailable,
             isVisible: formData.isVisible,
             allowSpecialNotes: formData.allowSpecialNotes,
-            disableWhenFinishInventory: formData.disableWhenFinishInventory,
-            inventoryCount: formData.inventoryCount,
             tags,
           });
 
@@ -232,6 +222,7 @@ export default function MenuItemFormModal({
         <div className="grid grid-cols-2 gap-4">
           <FormField label={t('isAvailable')}>
             <Toggle
+              id="item-is-available"
               checked={formData.isAvailable}
               onChange={(checked) => setFormData({ ...formData, isAvailable: checked })}
             />
@@ -239,6 +230,7 @@ export default function MenuItemFormModal({
 
           <FormField label={t('isVisible')}>
             <Toggle
+              id="item-is-visible"
               checked={formData.isVisible}
               onChange={(checked) => setFormData({ ...formData, isVisible: checked })}
             />
@@ -246,29 +238,12 @@ export default function MenuItemFormModal({
 
           <FormField label={t('allowSpecialNotes')}>
             <Toggle
+              id="item-allow-special-notes"
               checked={formData.allowSpecialNotes}
               onChange={(checked) => setFormData({ ...formData, allowSpecialNotes: checked })}
             />
           </FormField>
-
-          <FormField label={t('disableWhenFinishInventory')}>
-            <Toggle
-              checked={formData.disableWhenFinishInventory}
-              onChange={(checked) => setFormData({ ...formData, disableWhenFinishInventory: checked })}
-            />
-          </FormField>
         </div>
-
-        {formData.disableWhenFinishInventory && (
-          <FormField label={t('inventoryCount')}>
-            <Input
-              type="number"
-              min="0"
-              value={formData.inventoryCount}
-              onChange={(e) => setFormData({ ...formData, inventoryCount: parseInt(e.target.value) || 0 })}
-            />
-          </FormField>
-        )}
       </form>
     </Modal>
   );

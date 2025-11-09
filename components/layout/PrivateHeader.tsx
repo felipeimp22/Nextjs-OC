@@ -11,6 +11,7 @@ import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMen
 export default function PrivateHeader() {
   const t = useTranslations('header');
   const tSettings = useTranslations('settings');
+  const tMenu = useTranslations('menu');
   const router = useRouter();
   const pathname = usePathname();
   const { data: user } = useCurrentUser();
@@ -28,6 +29,9 @@ export default function PrivateHeader() {
 
   // Determine page title based on pathname
   const getPageTitle = () => {
+    if (pathname?.includes('/menu')) {
+      return tMenu('title');
+    }
     if (pathname?.includes('/settings')) {
       return t('settings');
     }
