@@ -59,7 +59,7 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
     if (itemsResult.success) {
       setItems(itemsResult.data || []);
     } else {
-      showToast('error', itemsResult.error || 'Failed to load items');
+      showToast('error', itemsResult.error || t('failedToLoadItems'));
     }
 
     if (categoriesResult.success) {
@@ -88,10 +88,10 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
 
     const result = await deleteMenuItem(item.id, restaurantId);
     if (result.success) {
-      showToast('success', 'Item deleted successfully');
+      showToast('success', t('itemDeletedSuccessfully'));
       loadData();
     } else {
-      showToast('error', result.error || 'Failed to delete item');
+      showToast('error', result.error || t('failedToDeleteItem'));
     }
   };
 
@@ -166,8 +166,8 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
 
       {categories.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-sm border-2 border-dashed border-gray-300">
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No categories found</h3>
-          <p className="text-sm text-gray-600 mt-1">Please create a category first before adding items.</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">{t('noCategoriesFound')}</h3>
+          <p className="text-sm text-gray-600 mt-1">{t('createCategoryFirst')}</p>
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-sm border-2 border-dashed border-gray-300">
@@ -201,15 +201,15 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
 
               <div className="space-y-2 mb-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Category</span>
+                  <span className="text-sm text-gray-600">{t('category')}</span>
                   <span className="text-sm font-medium text-gray-900">{item.category.name}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Price</span>
+                  <span className="text-sm text-gray-600">{t('price')}</span>
                   <span className="text-sm font-medium text-gray-900">${item.price.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Status</span>
+                  <span className="text-sm text-gray-600">{t('status')}</span>
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-medium rounded-sm ${
                       item.isAvailable
@@ -229,14 +229,14 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-brand-navy bg-brand-navy/10 hover:bg-brand-navy/20 rounded-sm transition-colors"
                   >
                     <Pencil className="w-4 h-4" />
-                    Edit
+                    {t('edit')}
                   </button>
                   <button
                     onClick={() => handleDelete(item)}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-sm transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
+                    {t('delete')}
                   </button>
                 </div>
                 <button
@@ -244,7 +244,7 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-sm transition-colors"
                 >
                   <Settings className="w-4 h-4" />
-                  Manage Modifiers
+                  {t('manageModifiers')}
                 </button>
               </div>
             </div>
@@ -256,19 +256,19 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Item
+                  {t('item')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
+                  {t('category')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
+                  {t('price')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('status')}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('actions')}
                 </th>
               </tr>
             </thead>
@@ -314,21 +314,21 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
                       <button
                         onClick={() => handleManageModifiers(item)}
                         className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-sm transition-colors"
-                        title="Manage Modifiers"
+                        title={t('manageModifiers')}
                       >
                         <Settings className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEdit(item)}
                         className="p-2 text-gray-600 hover:text-brand-navy hover:bg-gray-100 rounded-sm transition-colors"
-                        title="Edit"
+                        title={t('edit')}
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(item)}
                         className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors"
-                        title="Delete"
+                        title={t('delete')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Typography';
@@ -58,6 +59,7 @@ export default function ChoiceAdjustmentEditor({
   onUpdate,
 }: ChoiceAdjustmentEditorProps) {
   const isMobile = useIsMobile();
+  const t = useTranslations('menu.itemModifiers.choiceEditor');
   const [expandedChoiceId, setExpandedChoiceId] = useState<string | null>(null);
 
   const handleUpdatePrice = (choiceId: string, price: number) => {
@@ -98,7 +100,7 @@ export default function ChoiceAdjustmentEditor({
   return (
     <div className="space-y-3">
       <Text variant="small" className="font-semibold text-gray-700 mb-3">
-        Configure Choices & Pricing
+        {t('title')}
       </Text>
 
       {choiceAdjustments.map((choiceAdjustment) => {
@@ -121,12 +123,12 @@ export default function ChoiceAdjustmentEditor({
                     </Text>
                     {choiceAdjustment.isDefault && (
                       <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
-                        Default
+                        {t('default')}
                       </span>
                     )}
                     {!choiceAdjustment.isAvailable && (
                       <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
-                        Unavailable
+                        {t('unavailable')}
                       </span>
                     )}
                   </div>
@@ -134,7 +136,7 @@ export default function ChoiceAdjustmentEditor({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-gray-600 mb-1 block">
-                        Price Adjustment
+                        {t('priceAdjustment')}
                       </label>
                       <Input
                         type="number"
@@ -148,7 +150,7 @@ export default function ChoiceAdjustmentEditor({
                         className="w-full"
                       />
                       <Text variant="small" className="text-gray-500 mt-1">
-                        Base: ${choiceDetails.basePrice.toFixed(2)}
+                        {t('base')}: ${choiceDetails.basePrice.toFixed(2)}
                       </Text>
                     </div>
 
@@ -157,14 +159,14 @@ export default function ChoiceAdjustmentEditor({
                         <Toggle
                           checked={choiceAdjustment.isAvailable}
                           onChange={() => handleToggleAvailable(choiceAdjustment.choiceId)}
-                          label="Available"
+                          label={t('available')}
                         />
                       </div>
                       <div className="flex-1">
                         <Toggle
                           checked={choiceAdjustment.isDefault}
                           onChange={() => handleToggleDefault(choiceAdjustment.choiceId)}
-                          label="Default"
+                          label={t('default')}
                         />
                       </div>
                     </div>
@@ -185,7 +187,7 @@ export default function ChoiceAdjustmentEditor({
                     ) : (
                       <ChevronRight className="w-4 h-4" />
                     )}
-                    <span>Cross-Modifier Price Rules</span>
+                    <span>{t('crossModifierRules')}</span>
                     {choiceAdjustment.adjustments.length > 0 && (
                       <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
                         {choiceAdjustment.adjustments.length}

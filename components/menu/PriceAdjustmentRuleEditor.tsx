@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Typography';
 import { Input } from '@/components/ui/Input';
@@ -55,6 +56,7 @@ export default function PriceAdjustmentRuleEditor({
   onUpdate,
 }: PriceAdjustmentRuleEditorProps) {
   const isMobile = useIsMobile();
+  const t = useTranslations('menu.itemModifiers.ruleEditor');
 
   const handleAddRule = () => {
     const newRule: PriceAdjustment = {
@@ -85,11 +87,11 @@ export default function PriceAdjustmentRuleEditor({
   const getAdjustmentTypeLabel = (type: string) => {
     switch (type) {
       case 'multiplier':
-        return 'Multiply by';
+        return t('adjustmentTypeLabels.multiplier');
       case 'addition':
-        return 'Add';
+        return t('adjustmentTypeLabels.addition');
       case 'fixed':
-        return 'Set to';
+        return t('adjustmentTypeLabels.fixed');
       default:
         return type;
     }
@@ -103,16 +105,16 @@ export default function PriceAdjustmentRuleEditor({
       ? option.choices.find(c => c.id === adjustment.targetChoiceId)
       : null;
 
-    const choiceText = choice ? ` "${choice.name}"` : ' (any choice)';
+    const choiceText = choice ? ` "${choice.name}"` : ` ${t('anyChoice')}`;
     const basePrice = choiceAdjustment.priceAdjustment;
 
     switch (adjustment.adjustmentType) {
       case 'multiplier':
-        return `When "${option.name}"${choiceText} is selected: ${basePrice.toFixed(2)} × ${adjustment.value} = $${(basePrice * adjustment.value).toFixed(2)}`;
+        return `${t('whenSelected')} "${option.name}"${choiceText} ${t('isSelected')}: ${basePrice.toFixed(2)} × ${adjustment.value} = $${(basePrice * adjustment.value).toFixed(2)}`;
       case 'addition':
-        return `When "${option.name}"${choiceText} is selected: ${basePrice.toFixed(2)} + ${adjustment.value} = $${(basePrice + adjustment.value).toFixed(2)}`;
+        return `${t('whenSelected')} "${option.name}"${choiceText} ${t('isSelected')}: ${basePrice.toFixed(2)} + ${adjustment.value} = $${(basePrice + adjustment.value).toFixed(2)}`;
       case 'fixed':
-        return `When "${option.name}"${choiceText} is selected: Price = $${adjustment.value.toFixed(2)} (replaces base price)`;
+        return `${t('whenSelected')} "${option.name}"${choiceText} ${t('isSelected')}: Price = $${adjustment.value.toFixed(2)} ${t('replacesBase')}`;
       default:
         return '';
     }
@@ -122,17 +124,17 @@ export default function PriceAdjustmentRuleEditor({
     <div className="space-y-4">
       <div className="mb-3">
         <Text variant="small" className="font-semibold text-gray-700 mb-1">
-          Price Rules for "{choiceName}"
+          {t('title')} "{choiceName}"
         </Text>
         <Text variant="small" className="text-gray-600">
-          Configure how this choice's price changes based on other modifier selections.
+          {t('description')}
         </Text>
       </div>
 
       {choiceAdjustment.adjustments.length === 0 && (
         <div className="text-center py-6 bg-white rounded border border-dashed">
           <Text variant="small" className="text-gray-500 mb-3">
-            No price rules configured. Add a rule to create dynamic pricing based on other modifiers.
+            {t('noRules')}
           </Text>
         </div>
       )}
@@ -144,7 +146,7 @@ export default function PriceAdjustmentRuleEditor({
           <div key={index} className="bg-white border rounded-lg p-4">
             <div className="flex justify-between items-start mb-3">
               <Text variant="small" className="font-medium text-gray-700">
-                Rule #{index + 1}
+                {t('rule')} #{index + 1}
               </Text>
               <Button
                 variant="secondary"
@@ -152,14 +154,14 @@ export default function PriceAdjustmentRuleEditor({
                 onClick={() => handleRemoveRule(index)}
                 className="text-red-600 hover:bg-red-50"
               >
-                Remove
+                {t('remove')}
               </Button>
             </div>
 
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-gray-600 mb-1 block">
-                  When This Modifier Is Selected
+                  {t('whenModifierSelected')}
                 </label>
                 <Select
                   value={adjustment.targetOptionId}
@@ -183,7 +185,7 @@ export default function PriceAdjustmentRuleEditor({
               {option && (
                 <div>
                   <label className="text-xs text-gray-600 mb-1 block">
-                    Specific Choice (optional)
+                    {t('specificChoice')}
                   </label>
                   <Select
                     value={adjustment.targetChoiceId || ''}
@@ -192,7 +194,7 @@ export default function PriceAdjustmentRuleEditor({
                     })}
                     className="w-full"
                   >
-                    <option value="">Any choice from {option.name}</option>
+                    <option value="">{t('anyChoiceFrom')} {option.name}</option>
                     {option.choices.map((choice) => (
                       <option key={choice.id} value={choice.id}>
                         {choice.name}
@@ -205,7 +207,7 @@ export default function PriceAdjustmentRuleEditor({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-600 mb-1 block">
-                    Adjustment Type
+                    {t('adjustmentType')}
                   </label>
                   <Select
                     value={adjustment.adjustmentType}
@@ -214,9 +216,9 @@ export default function PriceAdjustmentRuleEditor({
                     })}
                     className="w-full"
                   >
-                    <option value="addition">Add to Price</option>
-                    <option value="multiplier">Multiply Price</option>
-                    <option value="fixed">Set Fixed Price</option>
+                    <option value="addition">{t('adjustmentTypes.addition')}</option>
+                    <option value="multiplier">{t('adjustmentTypes.multiplier')}</option>
+                    <option value="fixed">{t('adjustmentTypes.fixed')}</option>
                   </Select>
                 </div>
 
@@ -239,7 +241,7 @@ export default function PriceAdjustmentRuleEditor({
 
               <div className="bg-blue-50 border border-blue-200 rounded p-3">
                 <Text variant="small" className="text-blue-900">
-                  <strong>Example:</strong> {getAdjustmentDescription(adjustment)}
+                  <strong>{t('example')}:</strong> {getAdjustmentDescription(adjustment)}
                 </Text>
               </div>
             </div>
@@ -253,14 +255,14 @@ export default function PriceAdjustmentRuleEditor({
           onClick={handleAddRule}
           className="w-full"
         >
-          + Add Price Rule
+          + {t('addPriceRule')}
         </Button>
       )}
 
       {otherOptions.length === 0 && (
         <div className="text-center py-4">
           <Text variant="small" className="text-gray-500">
-            Add more modifiers to this item to create cross-modifier pricing rules.
+            {t('addMoreModifiers')}
           </Text>
         </div>
       )}
