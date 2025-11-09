@@ -3,22 +3,25 @@
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, User, LogOut, Plus } from 'lucide-react';
+import { ChevronDown, User, LogOut, Plus, Menu } from 'lucide-react';
 import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
 import { useUserRestaurants } from '@/hooks/useRestaurants';
 import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMenuSeparator } from '@/components/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PrivateHeaderProps {
   title?: string;
   subtitle?: string;
+  onMenuClick?: () => void;
 }
 
-export default function PrivateHeader({ title, subtitle }: PrivateHeaderProps) {
+export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateHeaderProps) {
   const t = useTranslations('header');
   const tSettings = useTranslations('settings');
   const tMenu = useTranslations('menu');
   const router = useRouter();
   const pathname = usePathname();
+  const isMobile = useIsMobile();
   const { data: user } = useCurrentUser();
   const { data: restaurants = [] } = useUserRestaurants();
   const signOutMutation = useSignOut();
@@ -57,26 +60,36 @@ export default function PrivateHeader({ title, subtitle }: PrivateHeaderProps) {
   const displaySubtitle = subtitle || pageInfo.subtitle;
 
   return (
-    <header className="bg-white shadow-sm min-h-16 flex items-center justify-between px-6 py-4">
-      <div>
-        <h1 className="text-xl font-bold text-brand-navy">
-          {displayTitle}
-        </h1>
-        {displaySubtitle && (
-          <p className="text-gray-600 mt-1 text-sm">
-            {displaySubtitle}
-          </p>
+    <header className="bg-white shadow-sm min-h-16 flex items-center justify-between px-4 md:px-6 py-4 w-full">
+      <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+        {isMobile && (
+          <button
+            onClick={onMenuClick}
+            className="text-brand-navy p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
         )}
+        <div className="min-w-0">
+          <h1 className="text-lg md:text-xl font-bold text-brand-navy truncate">
+            {displayTitle}
+          </h1>
+          {displaySubtitle && (
+            <p className="text-gray-600 mt-1 text-xs md:text-sm truncate">
+              {displaySubtitle}
+            </p>
+          )}
+        </div>
       </div>
-      
-      <div className="flex items-center space-x-6">
-        {restaurants.length > 0 && (
+
+      <div className="flex items-center space-x-2 md:space-x-6 flex-shrink-0">
+        {!isMobile && restaurants.length > 0 && (
           <div className="relative">
             <button
               className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               onClick={() => setRestaurantMenuOpen(!restaurantMenuOpen)}
             >
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium max-w-[150px] truncate">
                 {restaurants[0]?.name || t('selectRestaurant')}
               </span>
               <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -121,20 +134,21 @@ export default function PrivateHeader({ title, subtitle }: PrivateHeaderProps) {
             </DropdownMenu>
           </div>
         )}
-        
-        <div className="relative">
-          <button
-            className="flex items-center space-x-2"
-            onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-          >
-            <Avatar 
-              src={user?.image}
-              alt={user?.name || 'User'}
-              fallback={userInitial}
-              size="md"
-            />
-            <ChevronDown className="w-3 h-3 text-gray-500" />
-          </button>
+
+        {!isMobile && (
+          <div className="relative">
+            <button
+              className="flex items-center space-x-2"
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+            >
+              <Avatar
+                src={user?.image}
+                alt={user?.name || 'User'}
+                fallback={userInitial}
+                size="md"
+              />
+              <ChevronDown className="w-3 h-3 text-gray-500" />
+            </button>
           
           <DropdownMenu 
             isOpen={profileMenuOpen} 
@@ -169,7 +183,8 @@ export default function PrivateHeader({ title, subtitle }: PrivateHeaderProps) {
               </DropdownMenuItem>
             </div>
           </DropdownMenu>
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );

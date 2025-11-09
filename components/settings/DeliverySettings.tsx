@@ -134,10 +134,10 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="w-full md:max-w-4xl md:mx-auto p-3 md:p-6 space-y-6 md:space-y-8">
       <FormSection title="Delivery Service">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1 min-w-0 mr-4">
             <p className="text-sm font-medium text-gray-900">Enable Delivery</p>
             <p className="text-sm text-gray-600 mt-1">Allow customers to choose delivery for their orders</p>
           </div>
@@ -157,7 +157,7 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
       />
 
       <FormSection title="Delivery Zone" description="Set your delivery coverage area">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <FormField label="Maximum Delivery Radius" required>
             <Input
               type="number"
@@ -204,11 +204,11 @@ export function DeliverySettings({ restaurantId }: DeliverySettingsProps) {
         </FormSection>
       )}
 
-      <div className="flex justify-end pt-6 border-t border-gray-200">
+      <div className="flex justify-end pt-4 md:pt-6 border-t border-gray-200">
         <Button
           onClick={handleSave}
           disabled={saving || !data.enabled}
-          className="bg-brand-red hover:bg-brand-red/90 text-white px-8"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-6 md:px-8 w-full md:w-auto"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>

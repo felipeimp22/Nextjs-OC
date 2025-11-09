@@ -46,15 +46,15 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full md:max-w-7xl md:mx-auto">
       <Tabs
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={(tabId) => setActiveTab(tabId as Tab)}
-        className="mb-6"
+        className="mb-4 md:mb-6"
       />
 
-      <div className="bg-brand-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-brand-white rounded-none md:rounded-lg shadow-sm border-0 md:border border-gray-200 w-full">
         {activeTab === 'general' && <GeneralSettings restaurantId={restaurantId} />}
         {activeTab === 'financial' && <FinancialSettings restaurantId={restaurantId} />}
         {activeTab === 'delivery' && <DeliverySettings restaurantId={restaurantId} />}

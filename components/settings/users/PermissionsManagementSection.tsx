@@ -3,6 +3,7 @@
 import { FormSection, InfoCard } from '@/components/shared';
 import { Toggle } from '@/components/ui';
 import { Shield } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Page {
   id: string;
@@ -34,6 +35,8 @@ export default function PermissionsManagementSection({
   rolePermissions,
   onToggle,
 }: PermissionsManagementSectionProps) {
+  const isMobile = useIsMobile();
+
   return (
     <FormSection
       title="Role-Based Permissions"
@@ -49,10 +52,43 @@ export default function PermissionsManagementSection({
         </ul>
       </InfoCard>
 
-      <div className="overflow-x-auto">
-        <div className="inline-block min-w-full align-middle">
-          <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
+      {isMobile ? (
+        <div className="space-y-4">
+          {pages.map((page) => (
+            <div key={page.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="mb-3">
+                <h4 className="text-sm font-semibold text-gray-900">{page.label}</h4>
+                <p className="text-xs text-gray-500 mt-1">{page.description}</p>
+              </div>
+              <div className="space-y-3">
+                {roles.map((role) => {
+                  const roleData = rolePermissions.find((rp) => rp.role === role.id);
+                  const hasAccess = roleData?.permissions?.[page.id] || false;
+
+                  return (
+                    <div key={role.id} className="flex items-center justify-between bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-700">{role.label}</span>
+                      </div>
+                      <Toggle
+                        id={`${role.id}-${page.id}`}
+                        checked={hasAccess}
+                        onChange={() => onToggle(role.id, page.id)}
+                        size="sm"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <div className="inline-block min-w-full align-middle">
+            <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
+              <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th
@@ -116,7 +152,8 @@ export default function PermissionsManagementSection({
             </table>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         {roles.map((role) => {

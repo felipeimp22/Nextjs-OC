@@ -63,7 +63,7 @@ export default function PrivateSidebar({ isCollapsed, setIsCollapsed }: PrivateS
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-brand-navy text-white transition-all duration-300 z-40 flex flex-col ${
+      className={`hidden md:flex fixed left-0 top-0 h-screen bg-brand-navy text-white transition-all duration-300 z-40 flex-col ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
