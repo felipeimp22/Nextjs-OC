@@ -30,7 +30,6 @@ interface FinancialData {
   paymentProvider: string;
   stripeAccountId: string | null;
   stripeConnectStatus: string;
-  testMode: boolean;
 }
 
 export default function FinancialSettingsPage() {
@@ -54,7 +53,6 @@ export default function FinancialSettingsPage() {
     paymentProvider: 'stripe',
     stripeAccountId: null,
     stripeConnectStatus: 'not_connected',
-    testMode: true,
   });
 
   useEffect(() => {
@@ -71,10 +69,20 @@ export default function FinancialSettingsPage() {
       }
 
       const settings = result.data;
+      
+      // Type cast taxes to ensure proper types
+      const typedTaxes: TaxSetting[] = (settings.taxes || []).map((tax: any) => ({
+        name: tax.name,
+        enabled: tax.enabled,
+        rate: tax.rate,
+        type: tax.type as 'percentage' | 'fixed',
+        applyTo: tax.applyTo as 'entire_order' | 'per_item',
+      }));
+
       setData({
         currency: settings.currency || 'USD',
         currencySymbol: settings.currencySymbol || '$',
-        taxes: settings.taxes || [],
+        taxes: typedTaxes,
         globalFee: settings.globalFee || {
           enabled: true,
           threshold: 10,
@@ -84,7 +92,6 @@ export default function FinancialSettingsPage() {
         paymentProvider: settings.paymentProvider || 'stripe',
         stripeAccountId: settings.stripeAccountId,
         stripeConnectStatus: settings.stripeConnectStatus || 'not_connected',
-        testMode: settings.testMode ?? true,
       });
     } catch (error) {
       showToast('error', 'Failed to load settings');
@@ -102,7 +109,6 @@ export default function FinancialSettingsPage() {
         taxes: data.taxes,
         globalFee: data.globalFee,
         paymentProvider: data.paymentProvider,
-        testMode: data.testMode,
       });
 
       if (!result.success) {
@@ -222,13 +228,14 @@ export default function FinancialSettingsPage() {
       {/* Payment Provider Section */}
       <FormSection title="Payment Provider">
         <FormField label="Provider">
-          <Select
+          <select
             value={data.paymentProvider}
             onChange={(e) => setData({ ...data, paymentProvider: e.target.value })}
+            className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
           >
             <option value="stripe">Stripe</option>
             <option value="mercadopago">Mercado Pago</option>
-          </Select>
+          </select>
         </FormField>
 
         {data.paymentProvider === 'stripe' && data.stripeConnectStatus === 'connected' && data.stripeAccountId && (

@@ -60,7 +60,7 @@ export default function DeliverySettingsPage() {
         setData({
           enabled: settings.enabled ?? true,
           provider: (settings.driverProvider === 'shipday' ? 'shipday' : 'local') as DeliveryProvider,
-          distanceUnit: settings.distanceUnit || 'miles',
+          distanceUnit: settings.distanceUnit as "miles"| "km" || 'miles',
           maximumRadius: settings.maximumRadius || 10,
           pricingTier: {
             name: tier?.name || 'Default',

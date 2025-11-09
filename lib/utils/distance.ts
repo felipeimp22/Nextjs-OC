@@ -107,7 +107,7 @@ export async function geocodeAddress(address: Address): Promise<GeoLocation> {
 
     console.log('🗺️  Geocoding address:', query);
 
-    const response = await axios.get(
+    const response: any = await axios.get( 
       `${mapboxUrl}/${encodeURIComponent(query)}.json`,
       {
         params: {
@@ -169,7 +169,7 @@ export function calculateDeliveryFee(
   }
 
   // Calculate fees
-  let baseFee = applicableTier.baseFee;
+  const baseFee = applicableTier.baseFee; // ✅ Changed to const
   let distanceFee = 0;
 
   // If distance exceeds the tier's covered distance, calculate additional fee
@@ -213,7 +213,7 @@ export async function reverseGeocode(location: GeoLocation): Promise<Address> {
 
     console.log('🗺️  Reverse geocoding:', location);
 
-    const response = await axios.get(
+    const response: any = await axios.get( // ✅ Type as any
       `${mapboxUrl}/${location.lng},${location.lat}.json`,
       {
         params: {

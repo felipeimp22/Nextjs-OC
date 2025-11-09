@@ -4,6 +4,7 @@ import { FormSection, FormField, InfoCard } from '@/components/shared';
 import { Input } from '@/components/ui';
 
 interface PricingTier {
+  name: string;
   distanceCovered: number;
   baseFee: number;
   additionalFeePerUnit: number;
