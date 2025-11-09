@@ -652,10 +652,14 @@ export async function uploadMenuImage(restaurantId: string, imageFile: {
     const crypto = await import("crypto");
 
     const storage = StorageFactory.getProvider();
-    const base64Data = imageFile.data.replace(/^data:image\/\w+;base64,/, '');
+
+    const base64Data = imageFile.data.includes(',')
+      ? imageFile.data.split(',')[1]
+      : imageFile.data;
+
     const buffer = Buffer.from(base64Data, 'base64');
 
-    const fileExtension = imageFile.mimeType.split('/')[1];
+    const fileExtension = imageFile.mimeType.split('/')[1]?.split('+')[0] || 'png';
     const hash = crypto.randomBytes(8).toString('hex');
     const fileName = `${type}-${hash}.${fileExtension}`;
     const folder = `${restaurantId}/menu/${type === 'category' ? 'categories' : type === 'item' ? 'items' : 'options'}`;

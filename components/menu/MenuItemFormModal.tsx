@@ -107,7 +107,7 @@ export default function MenuItemFormModal({
           return;
         }
 
-        setFormData({ ...formData, image: result.data.url });
+        setFormData(prev => ({ ...prev, image: result.data.url }));
         showToast('success', 'Image uploaded successfully');
       };
       reader.readAsDataURL(file);
@@ -120,7 +120,7 @@ export default function MenuItemFormModal({
   };
 
   const handleImageRemove = () => {
-    setFormData({ ...formData, image: '' });
+    setFormData(prev => ({ ...prev, image: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
