@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import  Select from '@/components/ui/Select';
@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/shared/Pagination';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MenuItemFormModal from './MenuItemFormModal';
+import MenuItemModifiersModal from './MenuItemModifiersModal';
 import { getMenuItems, deleteMenuItem, getMenuCategories } from '@/lib/serverActions/menu.actions';
 
 interface MenuItem {
@@ -41,6 +42,8 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [isModifiersModalOpen, setIsModifiersModalOpen] = useState(false);
+  const [modifiersItem, setModifiersItem] = useState<MenuItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,6 +76,11 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
     setIsModalOpen(true);
+  };
+
+  const handleManageModifiers = (item: MenuItem) => {
+    setModifiersItem(item);
+    setIsModifiersModalOpen(true);
   };
 
   const handleDelete = async (item: MenuItem) => {
@@ -214,20 +222,29 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-3 border-t border-gray-200">
+              <div className="flex flex-col gap-2 pt-3 border-t border-gray-200">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-brand-navy bg-brand-navy/10 hover:bg-brand-navy/20 rounded-sm transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-sm transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
                 <button
-                  onClick={() => handleEdit(item)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-brand-navy bg-brand-navy/10 hover:bg-brand-navy/20 rounded-sm transition-colors"
+                  onClick={() => handleManageModifiers(item)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-sm transition-colors"
                 >
-                  <Pencil className="w-4 h-4" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(item)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-sm transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
+                  <Settings className="w-4 h-4" />
+                  Manage Modifiers
                 </button>
               </div>
             </div>
@@ -295,14 +312,23 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="flex gap-2 justify-end">
                       <button
+                        onClick={() => handleManageModifiers(item)}
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-sm transition-colors"
+                        title="Manage Modifiers"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleEdit(item)}
                         className="p-2 text-gray-600 hover:text-brand-navy hover:bg-gray-100 rounded-sm transition-colors"
+                        title="Edit"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(item)}
                         className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors"
+                        title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -332,6 +358,19 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
         categories={categories}
         item={editingItem}
       />
+
+      {modifiersItem && (
+        <MenuItemModifiersModal
+          isOpen={isModifiersModalOpen}
+          onClose={() => {
+            setIsModifiersModalOpen(false);
+            setModifiersItem(null);
+          }}
+          menuItemId={modifiersItem.id}
+          menuItemName={modifiersItem.name}
+          restaurantId={restaurantId}
+        />
+      )}
     </div>
   );
 }
