@@ -317,7 +317,18 @@
       "filterByCategory": "Filter by category",
       "allCategories": "All Categories",
       "available": "Available",
-      "unavailable": "Unavailable"
+      "unavailable": "Unavailable",
+      "edit": "Edit",
+      "delete": "Delete",
+      "manageModifiers": "Manage Modifiers",
+      "noCategoriesFound": "No categories found",
+      "createCategoryFirst": "Please create a category first before adding items.",
+      "itemDeletedSuccessfully": "Item deleted successfully",
+      "failedToDeleteItem": "Failed to delete item",
+      "failedToLoadItems": "Failed to load items",
+      "status": "Status",
+      "actions": "Actions",
+      "item": "Item"
     },
     "modifierCategories": {
       "title": "Modifier Categories",
@@ -357,8 +368,8 @@
       "choiceNamePlaceholder": "e.g., Small, Medium, Large",
       "basePrice": "Price",
       "basePricePlaceholder": "0.00",
-      "useNewPrice": "Replace item price",
       "isDefault": "Default choice",
+      "isAvailable": "Available",
       "removeChoice": "Remove",
       "selectionSettings": "Selection Settings",
       "multiSelect": "Allow Multiple Selections",
@@ -377,7 +388,72 @@
       "allCategories": "All Categories",
       "available": "Available",
       "unavailable": "Unavailable",
-      "atLeastOneChoice": "At least one choice is required"
+      "atLeastOneChoice": "At least one choice is required",
+      "maxDefaultsReached": "Maximum number of default selections ({max}) reached. Uncheck another choice first."
+    },
+    "itemModifiers": {
+      "title": "Configure Modifiers",
+      "subtitle": "Configure Modifiers - {itemName}",
+      "loading": "Loading...",
+      "tabs": {
+        "add": "Add Modifiers",
+        "configure": "Modifier Configuration"
+      },
+      "selector": {
+        "description": "Select the modifiers you want to apply to this menu item. You can configure pricing and rules in the next step.",
+        "noModifiers": "No modifiers available. Create modifiers first to add them to menu items.",
+        "selected": "{count} modifier{plural} selected",
+        "hint": "Switch to the <strong>Modifier Configuration</strong> tab to set up pricing and rules.",
+        "categoryChoices": "Choices: {count}"
+      },
+      "configuration": {
+        "description": "Configure the selected modifiers: set prices, mark as required, and define cross-modifier pricing rules.",
+        "noModifiersSelected": "No modifiers selected. Switch to the <strong>Add Modifiers</strong> tab to select modifiers for this item.",
+        "required": "Required",
+        "moveUp": "Move Up",
+        "moveDown": "Move Down"
+      },
+      "choiceEditor": {
+        "title": "Configure Choices & Pricing",
+        "priceAdjustment": "Price Adjustment",
+        "available": "Available",
+        "default": "Default",
+        "unavailable": "Unavailable",
+        "base": "Base",
+        "crossModifierRules": "Cross-Modifier Price Rules",
+        "maxDefaultsReached": "Maximum number of default selections ({max}) reached. Uncheck another choice first."
+      },
+      "rules": {
+        "title": "Price Rules for \"{choiceName}\"",
+        "description": "Configure how this choice's price changes based on other modifier selections.",
+        "noRules": "No price rules configured. Add a rule to create dynamic pricing based on other modifiers.",
+        "ruleNumber": "Rule #{number}",
+        "remove": "Remove",
+        "whenSelected": "When This Modifier Is Selected",
+        "specificChoice": "Specific Choice (optional)",
+        "anyChoice": "Any choice from {name}",
+        "adjustmentType": "Adjustment Type",
+        "add": "Add to Price",
+        "multiply": "Multiply Price",
+        "fixed": "Set Fixed Price",
+        "multiplyBy": "Multiply by",
+        "addAmount": "Add",
+        "setTo": "Set to",
+        "exampleLabel": "Example",
+        "addRule": "+ Add Price Rule",
+        "noOtherModifiers": "Add more modifiers to this item to create cross-modifier pricing rules."
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "save": "Save Configuration",
+        "saving": "Saving..."
+      },
+      "messages": {
+        "selectAtLeastOne": "Please select at least one modifier",
+        "savedSuccessfully": "Modifiers saved successfully",
+        "saveFailed": "Failed to save modifiers",
+        "loadFailed": "Failed to load modifiers"
+      }
     },
     "common": {
       "edit": "Edit",

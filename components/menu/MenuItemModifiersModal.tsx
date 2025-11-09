@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Typography';
@@ -15,6 +16,9 @@ interface Option {
   id: string;
   name: string;
   description?: string;
+  multiSelect: boolean;
+  minSelections: number;
+  maxSelections: number;
   choices: {
     id: string;
     name: string;
@@ -64,6 +68,7 @@ export default function MenuItemModifiersModal({
   restaurantId,
 }: MenuItemModifiersModalProps) {
   const isMobile = useIsMobile();
+  const t = useTranslations('menu.itemModifiers');
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -100,7 +105,7 @@ export default function MenuItemModifiersModal({
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      showToast('error', 'Failed to load modifiers');
+      showToast('error', t('messages.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -108,7 +113,7 @@ export default function MenuItemModifiersModal({
 
   const handleSave = async () => {
     if (appliedOptions.length === 0) {
-      showToast('error', 'Please select at least one modifier');
+      showToast('error', t('messages.selectAtLeastOne'));
       return;
     }
 
@@ -121,14 +126,14 @@ export default function MenuItemModifiersModal({
       });
 
       if (result.success) {
-        showToast('success', 'Modifiers saved successfully');
+        showToast('success', t('messages.savedSuccessfully'));
         onClose();
       } else {
-        showToast('error', result.error || 'Failed to save modifiers');
+        showToast('error', result.error || t('messages.saveFailed'));
       }
     } catch (error) {
       console.error('Error saving modifiers:', error);
-      showToast('error', 'Failed to save modifiers');
+      showToast('error', t('messages.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -168,8 +173,8 @@ export default function MenuItemModifiersModal({
   };
 
   const tabs = [
-    { id: 'add', label: 'Add Modifiers' },
-    { id: 'configure', label: 'Modifier Configuration' },
+    { id: 'add', label: t('tabs.add') },
+    { id: 'configure', label: t('tabs.configure') },
   ];
 
   return (
@@ -182,7 +187,7 @@ export default function MenuItemModifiersModal({
       <div className="flex flex-col h-full">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Text>Loading...</Text>
+            <Text>{t('loading')}</Text>
           </div>
         ) : (
           <>
@@ -207,7 +212,7 @@ export default function MenuItemModifiersModal({
             <div className="border-t px-6 py-4 bg-gray-50">
               <div className={`flex gap-3 ${isMobile ? 'flex-col-reverse' : 'flex-row justify-end'}`}>
                 <Button variant="secondary" onClick={onClose} className="flex-1 md:flex-none">
-                  Cancel
+                  {t('actions.cancel')}
                 </Button>
                 <Button
                   variant="primary"
@@ -215,7 +220,7 @@ export default function MenuItemModifiersModal({
                   disabled={saving || appliedOptions.length === 0}
                   className="flex-1 md:flex-none"
                 >
-                  {saving ? 'Saving...' : 'Save Configuration'}
+                  {saving ? t('actions.saving') : t('actions.save')}
                 </Button>
               </div>
             </div>

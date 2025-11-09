@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Typography';
@@ -13,6 +14,9 @@ interface Option {
   id: string;
   name: string;
   description?: string;
+  multiSelect: boolean;
+  minSelections: number;
+  maxSelections: number;
   choices: {
     id: string;
     name: string;
@@ -58,6 +62,7 @@ export default function ModifierConfiguration({
   onUpdate,
 }: ModifierConfigurationProps) {
   const isMobile = useIsMobile();
+  const t = useTranslations('menu.itemModifiers.configuration');
   const [expandedOptionId, setExpandedOptionId] = useState<string | null>(
     appliedOptions.length > 0 ? appliedOptions[0].optionId : null
   );
@@ -103,14 +108,12 @@ export default function ModifierConfiguration({
   return (
     <div className="h-full overflow-y-auto px-6 py-4">
       <Text className="mb-6 text-gray-600">
-        Configure the selected modifiers: set prices, mark as required, and define cross-modifier pricing rules.
+        {t('description')}
       </Text>
 
       {appliedOptions.length === 0 && (
         <div className="text-center py-12">
-          <Text className="text-gray-500">
-            No modifiers selected. Switch to the <strong>Add Modifiers</strong> tab to select modifiers for this item.
-          </Text>
+          <Text className="text-gray-500" dangerouslySetInnerHTML={{ __html: t('noModifiersSelected') }} />
         </div>
       )}
 
@@ -145,7 +148,7 @@ export default function ModifierConfiguration({
                         </Text>
                         {appliedOption.required && (
                           <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded">
-                            Required
+                            {t('required')}
                           </span>
                         )}
                       </div>
@@ -180,11 +183,16 @@ export default function ModifierConfiguration({
                       >
                         ↓
                       </Button>
-                      <div onClick={(e) => e.stopPropagation()}>
+                      <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-2">
+                        {!isMobile && (
+                          <Text variant="small" className="text-gray-600">
+                            {t('required')}
+                          </Text>
+                        )}
                         <Toggle
+                          id={`required-toggle-${appliedOption.optionId}`}
                           checked={appliedOption.required}
                           onChange={() => handleToggleRequired(appliedOption.optionId)}
-                          label={isMobile ? "" : "Required"}
                         />
                       </div>
                     </div>

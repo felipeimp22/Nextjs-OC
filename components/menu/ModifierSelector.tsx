@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Typography';
 import Toggle from '@/components/ui/Toggle';
@@ -33,6 +34,7 @@ export default function ModifierSelector({
   onUpdate,
 }: ModifierSelectorProps) {
   const isMobile = useIsMobile();
+  const t = useTranslations('menu.itemModifiers.selector');
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedOptionIds));
 
   const handleToggle = (optionId: string) => {
@@ -58,7 +60,7 @@ export default function ModifierSelector({
   return (
     <div className="h-full overflow-y-auto px-6 py-4">
         <Text className="mb-6 text-gray-600">
-          Select the modifiers you want to apply to this menu item. You can configure pricing and rules in the next step.
+          {t('description')}
         </Text>
 
         {Object.entries(groupedOptions).map(([categoryName, options]) => (
@@ -100,7 +102,7 @@ export default function ModifierSelector({
                       </div>
                       <div className="mt-3 ml-11">
                         <Text variant="small" className="text-gray-600 mb-2">
-                          Choices: {option.choices.length}
+                          {t('categoryChoices', { count: option.choices.length })}
                         </Text>
                         <div className="flex flex-wrap gap-2">
                           {option.choices.slice(0, isMobile ? 3 : 5).map((choice) => (
@@ -130,16 +132,15 @@ export default function ModifierSelector({
         {availableOptions.length === 0 && (
           <div className="text-center py-12">
             <Text className="text-gray-500">
-              No modifiers available. Create modifiers first to add them to menu items.
+              {t('noModifiers')}
             </Text>
           </div>
         )}
 
         <div className="mt-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <Text variant="small" className="text-blue-900">
-            <strong>{selected.size}</strong> modifier{selected.size !== 1 ? 's' : ''} selected.
-            Switch to the <strong>Modifier Configuration</strong> tab to set up pricing and rules.
-          </Text>
+          <Text variant="small" className="text-blue-900" dangerouslySetInnerHTML={{
+            __html: t('selected', { count: selected.size, plural: selected.size !== 1 ? 's' : '' }) + '. ' + t('hint')
+          }} />
         </div>
     </div>
   );

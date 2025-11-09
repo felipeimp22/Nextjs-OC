@@ -317,7 +317,18 @@
       "filterByCategory": "Filtrar por categoria",
       "allCategories": "Todas as Categorias",
       "available": "Disponível",
-      "unavailable": "Indisponível"
+      "unavailable": "Indisponível",
+      "edit": "Editar",
+      "delete": "Excluir",
+      "manageModifiers": "Gerenciar Modificadores",
+      "noCategoriesFound": "Nenhuma categoria encontrada",
+      "createCategoryFirst": "Por favor, crie uma categoria primeiro antes de adicionar itens.",
+      "itemDeletedSuccessfully": "Item excluído com sucesso",
+      "failedToDeleteItem": "Falha ao excluir item",
+      "failedToLoadItems": "Falha ao carregar itens",
+      "status": "Status",
+      "actions": "Ações",
+      "item": "Item"
     },
     "modifierCategories": {
       "title": "Categorias de Modificadores",
@@ -357,8 +368,8 @@
       "choiceNamePlaceholder": "ex: Pequeno, Médio, Grande",
       "basePrice": "Preço",
       "basePricePlaceholder": "0.00",
-      "useNewPrice": "Substituir preço do item",
       "isDefault": "Opção padrão",
+      "isAvailable": "Disponível",
       "removeChoice": "Remover",
       "selectionSettings": "Configurações de Seleção",
       "multiSelect": "Permitir Múltiplas Seleções",
@@ -377,7 +388,72 @@
       "allCategories": "Todas as Categorias",
       "available": "Disponível",
       "unavailable": "Indisponível",
-      "atLeastOneChoice": "Pelo menos uma opção é necessária"
+      "atLeastOneChoice": "Pelo menos uma opção é necessária",
+      "maxDefaultsReached": "Número máximo de seleções padrão ({max}) atingido. Desmarque outra opção primeiro."
+    },
+    "itemModifiers": {
+      "title": "Configurar Modificadores",
+      "subtitle": "Configurar Modificadores - {itemName}",
+      "loading": "Carregando...",
+      "tabs": {
+        "add": "Adicionar Modificadores",
+        "configure": "Configuração de Modificadores"
+      },
+      "selector": {
+        "description": "Selecione os modificadores que deseja aplicar a este item do cardápio. Você pode configurar preços e regras na próxima etapa.",
+        "noModifiers": "Nenhum modificador disponível. Crie modificadores primeiro para adicioná-los aos itens do cardápio.",
+        "selected": "{count} modificador{plural} selecionado{plural}",
+        "hint": "Mude para a aba <strong>Configuração de Modificadores</strong> para configurar preços e regras.",
+        "categoryChoices": "Opções: {count}"
+      },
+      "configuration": {
+        "description": "Configure os modificadores selecionados: defina preços, marque como obrigatório e defina regras de precificação entre modificadores.",
+        "noModifiersSelected": "Nenhum modificador selecionado. Mude para a aba <strong>Adicionar Modificadores</strong> para selecionar modificadores para este item.",
+        "required": "Obrigatório",
+        "moveUp": "Mover para Cima",
+        "moveDown": "Mover para Baixo"
+      },
+      "choiceEditor": {
+        "title": "Configurar Opções e Preços",
+        "priceAdjustment": "Ajuste de Preço",
+        "available": "Disponível",
+        "default": "Padrão",
+        "unavailable": "Indisponível",
+        "base": "Base",
+        "crossModifierRules": "Regras de Preço entre Modificadores",
+        "maxDefaultsReached": "Número máximo de seleções padrão ({max}) atingido. Desmarque outra opção primeiro."
+      },
+      "rules": {
+        "title": "Regras de Preço para \"{choiceName}\"",
+        "description": "Configure como o preço desta opção muda com base em outras seleções de modificadores.",
+        "noRules": "Nenhuma regra de preço configurada. Adicione uma regra para criar precificação dinâmica baseada em outros modificadores.",
+        "ruleNumber": "Regra #{number}",
+        "remove": "Remover",
+        "whenSelected": "Quando Este Modificador for Selecionado",
+        "specificChoice": "Opção Específica (opcional)",
+        "anyChoice": "Qualquer opção de {name}",
+        "adjustmentType": "Tipo de Ajuste",
+        "add": "Adicionar ao Preço",
+        "multiply": "Multiplicar Preço",
+        "fixed": "Definir Preço Fixo",
+        "multiplyBy": "Multiplicar por",
+        "addAmount": "Adicionar",
+        "setTo": "Definir para",
+        "exampleLabel": "Exemplo",
+        "addRule": "+ Adicionar Regra de Preço",
+        "noOtherModifiers": "Adicione mais modificadores a este item para criar regras de precificação entre modificadores."
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "save": "Salvar Configuração",
+        "saving": "Salvando..."
+      },
+      "messages": {
+        "selectAtLeastOne": "Por favor, selecione pelo menos um modificador",
+        "savedSuccessfully": "Modificadores salvos com sucesso",
+        "saveFailed": "Falha ao salvar modificadores",
+        "loadFailed": "Falha ao carregar modificadores"
+      }
     },
     "common": {
       "edit": "Editar",

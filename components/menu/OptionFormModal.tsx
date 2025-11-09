@@ -17,7 +17,6 @@ interface Choice {
   id?: string;
   name: string;
   basePrice: number;
-  useNewPrice: boolean;
   isDefault: boolean;
   isAvailable: boolean;
 }
@@ -58,7 +57,7 @@ export default function OptionFormModal({
     isVisible: true,
   });
   const [choices, setChoices] = useState<Choice[]>([
-    { name: '', basePrice: 0, useNewPrice: false, isDefault: false, isAvailable: true },
+    { name: '', basePrice: 0, isDefault: false, isAvailable: true },
   ]);
 
   useEffect(() => {
@@ -81,7 +80,6 @@ export default function OptionFormModal({
         id: choice.id,
         name: choice.name,
         basePrice: choice.basePrice,
-        useNewPrice: choice.useNewPrice,
         isDefault: choice.isDefault,
         isAvailable: choice.isAvailable ?? true,
       })));
@@ -101,7 +99,7 @@ export default function OptionFormModal({
         isVisible: true,
       });
       setChoices([
-        { name: '', basePrice: 0, useNewPrice: false, isDefault: false, isAvailable: true },
+        { name: '', basePrice: 0, isDefault: false, isAvailable: true },
       ]);
     }
   }, [option, isOpen, categories]);
@@ -109,7 +107,7 @@ export default function OptionFormModal({
   const handleAddChoice = () => {
     setChoices([
       ...choices,
-      { name: '', basePrice: 0, useNewPrice: false, isDefault: false, isAvailable: true },
+      { name: '', basePrice: 0, isDefault: false, isAvailable: true },
     ]);
   };
 
@@ -123,6 +121,40 @@ export default function OptionFormModal({
     const newChoices = [...choices];
     newChoices[index] = { ...newChoices[index], [field]: value };
     setChoices(newChoices);
+  };
+
+  const handleToggleDefault = (index: number) => {
+    const currentChoice = choices[index];
+    if (!currentChoice) return;
+
+    // If unchecking, always allow
+    if (currentChoice.isDefault) {
+      const newChoices = [...choices];
+      newChoices[index] = { ...newChoices[index], isDefault: false };
+      setChoices(newChoices);
+      return;
+    }
+
+    // If checking, validate based on multiSelect and maxSelections
+    const currentDefaultCount = choices.filter(c => c.isDefault).length;
+
+    if (!formData.multiSelect) {
+      // Single select: only one can be default
+      const newChoices = choices.map((c, i) => ({
+        ...c,
+        isDefault: i === index,
+      }));
+      setChoices(newChoices);
+    } else {
+      // Multi select: check if we haven't exceeded maxSelections
+      if (currentDefaultCount >= formData.maxSelections) {
+        showToast('error', t('maxDefaultsReached', { max: formData.maxSelections }));
+        return;
+      }
+      const newChoices = [...choices];
+      newChoices[index] = { ...newChoices[index], isDefault: true };
+      setChoices(newChoices);
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -305,19 +337,19 @@ export default function OptionFormModal({
                     />
                   </FormField>
 
-                  <FormField label={t('useNewPrice')}>
-                    <Toggle
-                      id={`choice-use-new-price-${index}`}
-                      checked={choice.useNewPrice}
-                      onChange={(checked) => handleChoiceChange(index, 'useNewPrice', checked)}
-                    />
-                  </FormField>
-
                   <FormField label={t('isDefault')}>
                     <Toggle
                       id={`choice-is-default-${index}`}
                       checked={choice.isDefault}
-                      onChange={(checked) => handleChoiceChange(index, 'isDefault', checked)}
+                      onChange={() => handleToggleDefault(index)}
+                    />
+                  </FormField>
+
+                  <FormField label={t('isAvailable')}>
+                    <Toggle
+                      id={`choice-is-available-${index}`}
+                      checked={choice.isAvailable}
+                      onChange={(checked) => handleChoiceChange(index, 'isAvailable', checked)}
                     />
                   </FormField>
                 </div>
