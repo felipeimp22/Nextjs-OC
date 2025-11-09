@@ -8,9 +8,15 @@ import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
 import { useUserRestaurants } from '@/hooks/useRestaurants';
 import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMenuSeparator } from '@/components/ui';
 
-export default function PrivateHeader() {
+interface PrivateHeaderProps {
+  title?: string;
+  subtitle?: string;
+}
+
+export default function PrivateHeader({ title, subtitle }: PrivateHeaderProps) {
   const t = useTranslations('header');
   const tSettings = useTranslations('settings');
+  const tMenu = useTranslations('menu');
   const router = useRouter();
   const pathname = usePathname();
   const { data: user } = useCurrentUser();
@@ -26,19 +32,42 @@ export default function PrivateHeader() {
 
   const userInitial = user?.name?.charAt(0).toUpperCase() || 'U';
 
-  // Determine page title based on pathname
-  const getPageTitle = () => {
-    if (pathname?.includes('/settings')) {
-      return t('settings');
+  // Determine page title and subtitle based on pathname (if not provided as props)
+  const getPageInfo = () => {
+    if (pathname?.includes('/menu')) {
+      return {
+        title: tMenu('title'),
+        subtitle: tMenu('description'),
+      };
     }
-    return t('dashboard');
+    if (pathname?.includes('/settings')) {
+      return {
+        title: t('settings'),
+        subtitle: tSettings('description'),
+      };
+    }
+    return {
+      title: t('dashboard'),
+      subtitle: undefined,
+    };
   };
 
+  const pageInfo = getPageInfo();
+  const displayTitle = title || pageInfo.title;
+  const displaySubtitle = subtitle || pageInfo.subtitle;
+
   return (
-    <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6">
-      <h1 className="text-xl font-semibold text-brand-navy">
-        {getPageTitle()}
-      </h1>
+    <header className="bg-white shadow-sm min-h-16 flex items-center justify-between px-6 py-4">
+      <div>
+        <h1 className="text-xl font-bold text-brand-navy">
+          {displayTitle}
+        </h1>
+        {displaySubtitle && (
+          <p className="text-gray-600 mt-1 text-sm">
+            {displaySubtitle}
+          </p>
+        )}
+      </div>
       
       <div className="flex items-center space-x-6">
         {restaurants.length > 0 && (
