@@ -45,11 +45,6 @@ export default function MenuManagementPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-brand-navy">{t('title')}</h1>
-        <p className="text-gray-600 mt-2">{t('description')}</p>
-      </div>
-
       <Tabs
         tabs={tabs}
         activeTab={activeTab}

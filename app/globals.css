@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply bg-black text-stone-100 antialiased;
+  @apply bg-white text-brand-navy antialiased;
 }
 /* Toast animations */
 @keyframes slide-in {

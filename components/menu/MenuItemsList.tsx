@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import  Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastContainer';
+import Pagination from '@/components/shared/Pagination';
 import MenuItemFormModal from './MenuItemFormModal';
 import { getMenuItems, deleteMenuItem, getMenuCategories } from '@/lib/serverActions/menu.actions';
 
@@ -40,6 +41,8 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const loadData = async () => {
     setLoading(true);
@@ -97,6 +100,14 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
     const matchesCategory = !filterCategory || item.category.id === filterCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterCategory]);
 
   if (loading) {
     return (
@@ -181,7 +192,7 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
@@ -238,6 +249,15 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {filteredItems.length > 0 && totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          className="mt-6"
+        />
       )}
 
       <MenuItemFormModal
