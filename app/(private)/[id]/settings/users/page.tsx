@@ -9,7 +9,7 @@ import { getRestaurantUsers, updateRolePermissions } from '@/lib/serverActions/s
 
 const PAGES = [
   { id: 'dashboard', label: 'Dashboard', description: 'View main dashboard and overview' },
-  { id: 'menu', label: 'Menu Management', description: 'Create and edit menu items' },
+  { id: 'menuManagement', label: 'Menu Management', description: 'Create and edit menu items' },
   { id: 'orders', label: 'Orders', description: 'View and manage orders' },
   { id: 'kitchen', label: 'Kitchen Display', description: 'Access kitchen order display' },
   { id: 'customers', label: 'Customers', description: 'View and manage customer data' },
@@ -56,7 +56,7 @@ export default function UsersSettingsPage() {
               role: role.id,
               permissions: {
                 dashboard: true,
-                menu: role.id === 'manager',
+                menuManagement: role.id === 'manager',
                 orders: true,
                 kitchen: role.id !== 'staff',
                 customers: role.id !== 'kitchen',

@@ -143,22 +143,33 @@ export async function getStoreHours(restaurantId: string) {
       return { success: true, data: null, error: null };
     }
 
-    // Convert individual day fields to schedule array format for the frontend
-    const schedule = [
-      { day: 'monday', isOpen: settings.monday.isOpen, timeSlots: [{ openTime: settings.monday.open, closeTime: settings.monday.close }] },
-      { day: 'tuesday', isOpen: settings.tuesday.isOpen, timeSlots: [{ openTime: settings.tuesday.open, closeTime: settings.tuesday.close }] },
-      { day: 'wednesday', isOpen: settings.wednesday.isOpen, timeSlots: [{ openTime: settings.wednesday.open, closeTime: settings.wednesday.close }] },
-      { day: 'thursday', isOpen: settings.thursday.isOpen, timeSlots: [{ openTime: settings.thursday.open, closeTime: settings.thursday.close }] },
-      { day: 'friday', isOpen: settings.friday.isOpen, timeSlots: [{ openTime: settings.friday.open, closeTime: settings.friday.close }] },
-      { day: 'saturday', isOpen: settings.saturday.isOpen, timeSlots: [{ openTime: settings.saturday.open, closeTime: settings.saturday.close }] },
-      { day: 'sunday', isOpen: settings.sunday.isOpen, timeSlots: [{ openTime: settings.sunday.open, closeTime: settings.sunday.close }] },
-    ];
+    // Use the schedule field directly if it exists, otherwise migrate from legacy fields
+    let schedule = settings.schedule && settings.schedule.length > 0
+      ? settings.schedule
+      : null;
+
+    // Migration: If schedule doesn't exist but legacy fields do, convert them
+    if (!schedule && settings.monday) {
+      schedule = [
+        { day: 'monday', isOpen: settings.monday.isOpen, timeSlots: [{ openTime: settings.monday.open, closeTime: settings.monday.close }] },
+        { day: 'tuesday', isOpen: settings.tuesday.isOpen, timeSlots: [{ openTime: settings.tuesday.open, closeTime: settings.tuesday.close }] },
+        { day: 'wednesday', isOpen: settings.wednesday.isOpen, timeSlots: [{ openTime: settings.wednesday.open, closeTime: settings.wednesday.close }] },
+        { day: 'thursday', isOpen: settings.thursday.isOpen, timeSlots: [{ openTime: settings.thursday.open, closeTime: settings.thursday.close }] },
+        { day: 'friday', isOpen: settings.friday.isOpen, timeSlots: [{ openTime: settings.friday.open, closeTime: settings.friday.close }] },
+        { day: 'saturday', isOpen: settings.saturday.isOpen, timeSlots: [{ openTime: settings.saturday.open, closeTime: settings.saturday.close }] },
+        { day: 'sunday', isOpen: settings.sunday.isOpen, timeSlots: [{ openTime: settings.sunday.open, closeTime: settings.sunday.close }] },
+      ];
+    }
 
     return {
       success: true,
       data: {
-        ...settings,
+        id: settings.id,
+        restaurantId: settings.restaurantId,
+        timezone: settings.timezone,
         schedule,
+        createdAt: settings.createdAt,
+        updatedAt: settings.updatedAt,
       },
       error: null
     };
@@ -191,34 +202,22 @@ export async function updateStoreHours(restaurantId: string, data: any) {
       return { success: false, error: 'Unauthorized', data: null };
     }
 
-    // Convert schedule array to individual day fields for the schema
-    const dayFields: any = {};
+    // Use the new schedule field directly - no more conversion needed!
+    const updateData: any = {
+      timezone: data.timezone,
+    };
 
     if (data.schedule && Array.isArray(data.schedule)) {
-      data.schedule.forEach((daySchedule: any) => {
-        const timeSlot = daySchedule.timeSlots?.[0];
-        if (timeSlot) {
-          dayFields[daySchedule.day] = {
-            isOpen: daySchedule.isOpen,
-            open: timeSlot.openTime || '09:00',
-            close: timeSlot.closeTime || '17:00',
-          };
-        }
-      });
+      updateData.schedule = data.schedule;
     }
 
     const settings = await prisma.storeHours.upsert({
       where: { restaurantId },
-      update: dayFields,
+      update: updateData,
       create: {
         restaurantId,
-        monday: dayFields.monday || { isOpen: true, open: '09:00', close: '17:00' },
-        tuesday: dayFields.tuesday || { isOpen: true, open: '09:00', close: '17:00' },
-        wednesday: dayFields.wednesday || { isOpen: true, open: '09:00', close: '17:00' },
-        thursday: dayFields.thursday || { isOpen: true, open: '09:00', close: '17:00' },
-        friday: dayFields.friday || { isOpen: true, open: '09:00', close: '17:00' },
-        saturday: dayFields.saturday || { isOpen: true, open: '09:00', close: '17:00' },
-        sunday: dayFields.sunday || { isOpen: true, open: '09:00', close: '17:00' },
+        timezone: data.timezone || 'America/New_York',
+        schedule: data.schedule || [],
       },
     });
 

@@ -8,6 +8,7 @@ type DeliveryProvider = 'shipday' | 'local';
 interface DeliveryProviderSectionProps {
   provider: DeliveryProvider;
   onProviderChange: (provider: DeliveryProvider) => void;
+  t: (key: string) => string;
 }
 
 function ProviderCard({
@@ -55,20 +56,20 @@ function ProviderCard({
   );
 }
 
-export default function DeliveryProviderSection({ provider, onProviderChange }: DeliveryProviderSectionProps) {
+export default function DeliveryProviderSection({ provider, onProviderChange, t }: DeliveryProviderSectionProps) {
   return (
-    <FormSection title="Delivery Provider" description="Choose how you want to handle deliveries">
+    <FormSection title={t('provider')} description={t('providerDescription')}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ProviderCard
           icon={Package}
-          title="Local Delivery"
-          description="Manage deliveries with your own drivers or system"
+          title={t('localDelivery')}
+          description={t('localDescription')}
           isSelected={provider === 'local'}
           onSelect={() => onProviderChange('local')}
         />
         <ProviderCard
           icon={Truck}
-          title="Shipday"
+          title={t('shipday')}
           description="Professional third-party delivery service integration"
           isSelected={provider === 'shipday'}
           onSelect={() => onProviderChange('shipday')}
@@ -76,17 +77,16 @@ export default function DeliveryProviderSection({ provider, onProviderChange }: 
       </div>
 
       {provider === 'shipday' && (
-        <InfoCard type="success" title="Shipday Integration" className="mt-6">
+        <InfoCard type="success" title={t('shipdayIntegration')} className="mt-6">
           <p>
-            Shipday delivery is managed by our platform. No additional configuration needed -
-            all deliveries will be automatically dispatched through our Shipday integration.
+            {t('shipdayIntegrationMessage')}
           </p>
         </InfoCard>
       )}
 
       {provider === 'local' && (
         <InfoCard type="success" className="mt-6">
-          With local delivery, you'll manage delivery assignments and tracking through your own system.
+          {t('localMessage')}
         </InfoCard>
       )}
     </FormSection>
