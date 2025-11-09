@@ -4,14 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import PrivateHeader from './PrivateHeader';
 import PrivateSidebar from './PrivateSidebar';
+import MobileMenu from './MobileMenu';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { ToastProvider } from '@/components/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function PrivateLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const isMobile = useIsMobile();
   const { data: user, isLoading } = useCurrentUser();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebarCollapsed');
@@ -45,9 +49,12 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
     <ToastProvider>
       <div className="flex min-h-screen bg-gray-100">
         <PrivateSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-        <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
-          <PrivateHeader />
-          <main className="p-6">
+        <MobileMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        <div className={`flex-1 transition-all duration-300 ${
+          isMobile ? 'ml-0' : isCollapsed ? 'ml-20' : 'ml-64'
+        }`}>
+          <PrivateHeader onMenuClick={() => setMobileMenuOpen(true)} />
+          <main className="p-4 md:p-6">
             {children}
           </main>
         </div>

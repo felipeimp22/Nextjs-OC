@@ -143,14 +143,14 @@ export function StoreHoursSettings({ restaurantId }: StoreHoursSettingsProps) {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center">
+      <div className="p-4 md:p-6 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-4 md:p-6 space-y-6 md:space-y-8">
       <section>
         <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
           Timezone
@@ -176,7 +176,7 @@ export function StoreHoursSettings({ restaurantId }: StoreHoursSettingsProps) {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-brand-red hover:bg-brand-red/90 text-white px-6"
+          className="bg-brand-red hover:bg-brand-red/90 text-white px-6 md:px-8 w-full md:w-auto"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>

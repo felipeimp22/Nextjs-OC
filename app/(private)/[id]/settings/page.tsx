@@ -51,10 +51,10 @@ export default function SettingsPage() {
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={(tabId) => setActiveTab(tabId as Tab)}
-        className="mb-6"
+        className="mb-4 md:mb-6"
       />
 
-      <div className="bg-brand-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-brand-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         {activeTab === 'general' && <GeneralSettings restaurantId={restaurantId} />}
         {activeTab === 'financial' && <FinancialSettings restaurantId={restaurantId} />}
         {activeTab === 'delivery' && <DeliverySettings restaurantId={restaurantId} />}

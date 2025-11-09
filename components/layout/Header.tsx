@@ -71,8 +71,8 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-md border-b border-traces-gold-900/20">
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <Link href={user ? "/setup" : "/"} className="text-2xl font-bold text-traces-gold-300 tracking-wider">
+      <div className="container mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+        <Link href={user ? "/setup" : "/"} className="text-xl md:text-2xl font-bold text-traces-gold-300 tracking-wider">
           ORDERCHOP
         </Link>
 
@@ -137,14 +137,14 @@ export default function Header() {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-black/95 border-t border-traces-gold-900/20">
-          <nav className="container mx-auto px-6 py-4 flex flex-col gap-4">
+          <nav className="container mx-auto px-4 py-4 flex flex-col gap-3">
             {user ? (
               <>
                 {getFilteredMenu('mobile').map((item) => (
                   <Link
                     key={item.translationKey}
                     href={item.href}
-                    className="text-traces-gold-100 hover:text-traces-gold-300 transition-colors font-light tracking-wide flex items-center gap-2"
+                    className="text-traces-gold-100 hover:text-traces-gold-300 transition-colors font-light tracking-wide flex items-center gap-2 py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <item.icon size={18} />
@@ -153,20 +153,34 @@ export default function Header() {
                 ))}
                 <button
                   onClick={handleLogout}
-                  className="text-left text-traces-gold-100 hover:text-traces-gold-300 transition-colors font-light tracking-wide flex items-center gap-2"
+                  className="text-left text-traces-gold-100 hover:text-traces-gold-300 transition-colors font-light tracking-wide flex items-center gap-2 py-2"
                 >
                   <LogOut size={18} />
                   {t('logout')}
                 </button>
               </>
             ) : (
-              <Link
-                href="/auth/signin"
-                className="text-traces-gold-100 hover:text-traces-gold-300 transition-colors font-light tracking-wide"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t('login')}
-              </Link>
+              <>
+                {publicMenuKeys.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      document.getElementById(key)?.scrollIntoView({ behavior: 'smooth' });
+                      setIsMenuOpen(false);
+                    }}
+                    className="text-left text-traces-gold-100 hover:text-traces-gold-300 transition-colors font-light tracking-wide py-2"
+                  >
+                    {t(key)}
+                  </button>
+                ))}
+                <Link
+                  href="/auth/signin"
+                  className="text-traces-gold-100 hover:text-traces-gold-300 transition-colors font-light tracking-wide py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t('login')}
+                </Link>
+              </>
             )}
           </nav>
         </div>
