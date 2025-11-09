@@ -150,7 +150,7 @@ export function StoreHoursSettings({ restaurantId }: StoreHoursSettingsProps) {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6 md:space-y-8">
+    <div className="w-full p-4 md:p-6 space-y-6 md:space-y-8">
       <section>
         <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
           Timezone

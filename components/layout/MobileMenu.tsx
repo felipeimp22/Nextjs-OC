@@ -68,22 +68,22 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-brand-navy">
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <div className="flex items-center">
-            <div className="flex items-center bg-white rounded-lg p-2">
+    <div className="fixed inset-0 z-50 bg-brand-navy w-full h-full overflow-hidden">
+      <div className="flex flex-col h-full w-full overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-white/10 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center bg-white rounded-lg p-2 flex-shrink-0">
               <img
                 src="/images/iconLogo.png"
                 alt="OrderChop Icon"
                 className="w-8 h-8"
               />
             </div>
-            <span className="text-slate-50 text-lg font-bold ml-2">OrderChop</span>
+            <span className="text-slate-50 text-lg font-bold truncate">OrderChop</span>
           </div>
           <button
             onClick={onClose}
-            className="text-white p-2"
+            className="text-white p-2 flex-shrink-0"
           >
             <X className="w-6 h-6" />
           </button>
@@ -187,8 +187,8 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 fallback={userInitial}
                 size="md"
               />
-              <div className="ml-3">
-                <h3 className="font-medium text-sm text-white">{user?.name}</h3>
+              <div className="ml-3 flex-1 min-w-0">
+                <h3 className="font-medium text-sm text-white truncate">{user?.name}</h3>
                 <p className="text-xs text-white/60 truncate">{user?.email || ''}</p>
               </div>
             </div>

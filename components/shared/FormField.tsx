@@ -20,12 +20,14 @@ export default function FormField({
   className,
 }: FormFieldProps) {
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn('space-y-2 w-full', className)}>
       <label className="block text-sm font-medium text-gray-900">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      {children}
+      <div className="w-full">
+        {children}
+      </div>
       {description && !error && (
         <p className="text-xs text-gray-500">{description}</p>
       )}

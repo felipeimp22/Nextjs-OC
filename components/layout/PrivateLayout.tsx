@@ -47,14 +47,14 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
 
   return (
     <ToastProvider>
-      <div className="flex min-h-screen bg-gray-100">
+      <div className="flex min-h-screen bg-gray-100 w-full overflow-x-hidden">
         <PrivateSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
         <MobileMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-        <div className={`flex-1 transition-all duration-300 ${
+        <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
           isMobile ? 'ml-0' : isCollapsed ? 'ml-20' : 'ml-64'
         }`}>
           <PrivateHeader onMenuClick={() => setMobileMenuOpen(true)} />
-          <main className="p-4 md:p-6">
+          <main className="flex-1 p-4 md:p-6 w-full overflow-x-hidden">
             {children}
           </main>
         </div>

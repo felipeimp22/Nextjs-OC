@@ -60,8 +60,8 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
   const displaySubtitle = subtitle || pageInfo.subtitle;
 
   return (
-    <header className="bg-white shadow-sm min-h-16 flex items-center justify-between px-4 md:px-6 py-4">
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+    <header className="bg-white shadow-sm min-h-16 flex items-center justify-between px-4 md:px-6 py-4 w-full">
+      <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
         {isMobile && (
           <button
             onClick={onMenuClick}
@@ -82,7 +82,7 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
         </div>
       </div>
 
-      <div className="flex items-center space-x-3 md:space-x-6 flex-shrink-0">
+      <div className="flex items-center space-x-2 md:space-x-6 flex-shrink-0">
         {!isMobile && restaurants.length > 0 && (
           <div className="relative">
             <button

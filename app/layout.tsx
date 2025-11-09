@@ -18,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "OrderChop - Restaurant Management Platform",
   description: "Turn your restaurant into a profit machine",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+  },
 };
 
 export default async function RootLayout({
@@ -28,8 +33,8 @@ export default async function RootLayout({
   const messages = await getMessages();
   
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className="h-full">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-x-hidden`}>
         <QueryProvider>
           <NextIntlClientProvider messages={messages}>
             {children}
