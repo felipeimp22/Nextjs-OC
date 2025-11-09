@@ -15,6 +15,7 @@ interface DeliveryPricingSectionProps {
   maximumRadius: number;
   distanceUnit: string;
   onPricingChange: (tier: PricingTier) => void;
+  t: (key: string) => string;
 }
 
 export default function DeliveryPricingSection({
@@ -22,18 +23,22 @@ export default function DeliveryPricingSection({
   maximumRadius,
   distanceUnit,
   onPricingChange,
+  t,
 }: DeliveryPricingSectionProps) {
+  const unitLabel = distanceUnit === 'miles' ? t('miles') : t('kilometers');
+  const perUnitLabel = distanceUnit === 'miles' ? t('additionalFeePerMile') : t('additionalFeePerKm');
+
   return (
     <FormSection
-      title="Delivery Pricing"
-      description="Configure distance-based pricing for local deliveries"
+      title={t('pricing')}
+      description={t('pricingDescription')}
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
-            label={`Base Distance Covered (${distanceUnit})`}
+            label={`${t('baseDistanceCovered')} (${unitLabel})`}
             required
-            description="Distance included in base fee"
+            description={t('baseDistanceDescription')}
           >
             <Input
               type="number"
@@ -50,9 +55,9 @@ export default function DeliveryPricingSection({
           </FormField>
 
           <FormField
-            label="Base Fee"
+            label={t('baseFee')}
             required
-            description="Fee for base distance"
+            description={t('baseFeeDescription')}
           >
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
@@ -76,9 +81,9 @@ export default function DeliveryPricingSection({
         </div>
 
         <FormField
-          label={`Additional Fee per ${distanceUnit === 'miles' ? 'Mile' : 'Kilometer'}`}
+          label={perUnitLabel}
           required
-          description={`Charged for each ${distanceUnit === 'miles' ? 'mile' : 'kilometer'} beyond base distance`}
+          description={t('additionalFeeDescription').replace('{unit}', unitLabel.toLowerCase())}
         >
           <div className="relative max-w-xs">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
@@ -103,36 +108,36 @@ export default function DeliveryPricingSection({
         {/* Pricing Examples */}
         <div className="space-y-3">
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div className="text-sm font-medium text-gray-700 mb-2">Pricing Examples:</div>
+            <div className="text-sm font-medium text-gray-700 mb-2">{t('pricingExamples')}</div>
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex justify-between">
-                <span>Delivery at {pricingTier.distanceCovered} {distanceUnit} or less:</span>
+                <span>{t('deliveryAt').replace('{distance}', String(pricingTier.distanceCovered)).replace('{unit}', unitLabel)}</span>
                 <span className="font-semibold text-gray-900">
                   ${pricingTier.baseFee.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Delivery at {pricingTier.distanceCovered + 5} {distanceUnit}:</span>
+                <span>{t('deliveryAt').replace('{distance}', String(pricingTier.distanceCovered + 5)).replace('{unit}', unitLabel)}</span>
                 <span className="font-semibold text-gray-900">
                   ${(pricingTier.baseFee + (5 * pricingTier.additionalFeePerUnit)).toFixed(2)}
                 </span>
               </div>
               <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-300">
-                Calculation: ${pricingTier.baseFee.toFixed(2)} (base) +
+                {t('calculation')}: ${pricingTier.baseFee.toFixed(2)} (base) +
                 ${(5 * pricingTier.additionalFeePerUnit).toFixed(2)}
-                (5 {distanceUnit} × ${pricingTier.additionalFeePerUnit.toFixed(2)})
+                (5 {unitLabel} × ${pricingTier.additionalFeePerUnit.toFixed(2)})
               </div>
             </div>
           </div>
 
           <InfoCard type="info">
             <p className="mb-2">
-              <strong>How it works:</strong>
+              <strong>{t('howItWorks')}:</strong>
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Deliveries within {pricingTier.distanceCovered} {distanceUnit} = ${pricingTier.baseFee.toFixed(2)} flat fee</li>
-              <li>Beyond {pricingTier.distanceCovered} {distanceUnit} = Base fee + ${pricingTier.additionalFeePerUnit.toFixed(2)} per {distanceUnit === 'miles' ? 'mile' : 'km'}</li>
-              <li>Maximum delivery range: {maximumRadius} {distanceUnit} (orders beyond this will be rejected)</li>
+              <li>{t('withinDistance').replace('{distance}', String(pricingTier.distanceCovered)).replace('{unit}', unitLabel).replace('{baseFee}', pricingTier.baseFee.toFixed(2))}</li>
+              <li>{t('beyondDistance').replace('{distance}', String(pricingTier.distanceCovered)).replace('{unit}', unitLabel).replace('{additionalFee}', pricingTier.additionalFeePerUnit.toFixed(2)).replace('{unit}', unitLabel)}</li>
+              <li>{t('maxRange').replace('{range}', String(maximumRadius)).replace('{unit}', unitLabel)}</li>
             </ul>
           </InfoCard>
         </div>

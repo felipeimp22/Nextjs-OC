@@ -156,6 +156,7 @@ export default function DeliverySettingsPage() {
       <DeliveryProviderSection
         provider={data.provider}
         onProviderChange={(provider) => setData({ ...data, provider })}
+        t={t}
       />
 
       {/* Delivery Zone Configuration */}
@@ -195,6 +196,7 @@ export default function DeliverySettingsPage() {
           maximumRadius={data.maximumRadius}
           distanceUnit={data.distanceUnit}
           onPricingChange={(tier) => setData({ ...data, pricingTier: tier })}
+          t={t}
         />
       )}
 
