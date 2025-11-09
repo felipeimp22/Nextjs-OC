@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Typography';
 import Toggle from '@/components/ui/Toggle';
@@ -177,9 +178,14 @@ export default function ChoiceAdjustmentEditor({
                     variant="secondary"
                     size="sm"
                     onClick={() => setExpandedChoiceId(isExpanded ? null : choiceAdjustment.choiceId)}
-                    className="w-full"
+                    className="w-full flex items-center justify-center gap-2"
                   >
-                    {isExpanded ? '− Hide' : '+ Add'} Cross-Modifier Price Rules
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                    <span>Cross-Modifier Price Rules</span>
                     {choiceAdjustment.adjustments.length > 0 && (
                       <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
                         {choiceAdjustment.adjustments.length}
@@ -190,7 +196,12 @@ export default function ChoiceAdjustmentEditor({
               )}
             </div>
 
-            {isExpanded && (
+            <div
+              className={`
+                overflow-hidden transition-all duration-300 ease-in-out
+                ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}
+              `}
+            >
               <div className="border-t bg-gray-50 p-3">
                 <PriceAdjustmentRuleEditor
                   choiceAdjustment={choiceAdjustment}
@@ -202,7 +213,7 @@ export default function ChoiceAdjustmentEditor({
                   }
                 />
               </div>
-            )}
+            </div>
           </div>
         );
       })}

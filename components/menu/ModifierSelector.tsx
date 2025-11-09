@@ -24,15 +24,13 @@ interface Option {
 interface ModifierSelectorProps {
   availableOptions: Option[];
   selectedOptionIds: string[];
-  onSelect: (selectedIds: string[]) => void;
-  onCancel: () => void;
+  onUpdate: (selectedIds: string[]) => void;
 }
 
 export default function ModifierSelector({
   availableOptions,
   selectedOptionIds,
-  onSelect,
-  onCancel,
+  onUpdate,
 }: ModifierSelectorProps) {
   const isMobile = useIsMobile();
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedOptionIds));
@@ -45,10 +43,7 @@ export default function ModifierSelector({
       newSelected.add(optionId);
     }
     setSelected(newSelected);
-  };
-
-  const handleContinue = () => {
-    onSelect(Array.from(selected));
+    onUpdate(Array.from(newSelected));
   };
 
   const groupedOptions = availableOptions.reduce((acc, option) => {
@@ -61,8 +56,7 @@ export default function ModifierSelector({
   }, {} as Record<string, Option[]>);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+    <div className="h-full overflow-y-auto px-6 py-4">
         <Text className="mb-6 text-gray-600">
           Select the modifiers you want to apply to this menu item. You can configure pricing and rules in the next step.
         </Text>
@@ -140,28 +134,13 @@ export default function ModifierSelector({
             </Text>
           </div>
         )}
-      </div>
 
-      <div className="border-t px-6 py-4 bg-gray-50">
-        <div className="flex justify-between items-center mb-3">
-          <Text variant="small" className="text-gray-600">
-            {selected.size} modifier{selected.size !== 1 ? 's' : ''} selected
+        <div className="mt-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <Text variant="small" className="text-blue-900">
+            <strong>{selected.size}</strong> modifier{selected.size !== 1 ? 's' : ''} selected.
+            Switch to the <strong>Modifier Configuration</strong> tab to set up pricing and rules.
           </Text>
         </div>
-        <div className={`flex gap-3 ${isMobile ? 'flex-col-reverse' : 'flex-row justify-end'}`}>
-          <Button variant="secondary" onClick={onCancel} className="flex-1 md:flex-none">
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleContinue}
-            disabled={selected.size === 0}
-            className="flex-1 md:flex-none"
-          >
-            Continue to Configuration
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

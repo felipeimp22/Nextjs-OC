@@ -7,6 +7,7 @@ import { Text } from '@/components/ui/Typography';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getOptions, getMenuRules, createOrUpdateMenuRules } from '@/lib/serverActions/menu.actions';
 import { useToast } from '@/components/ui/ToastContainer';
+import Tabs from '@/components/shared/Tabs';
 import ModifierSelector from './ModifierSelector';
 import ModifierConfiguration from './ModifierConfiguration';
 
@@ -68,7 +69,7 @@ export default function MenuItemModifiersModal({
   const [saving, setSaving] = useState(false);
   const [availableOptions, setAvailableOptions] = useState<Option[]>([]);
   const [appliedOptions, setAppliedOptions] = useState<AppliedOption[]>([]);
-  const [step, setStep] = useState<'select' | 'configure'>('select');
+  const [activeTab, setActiveTab] = useState<string>('add');
 
   useEffect(() => {
     if (isOpen) {
@@ -91,11 +92,11 @@ export default function MenuItemModifiersModal({
       if (rulesResult.success && rulesResult.data) {
         setAppliedOptions(rulesResult.data.appliedOptions || []);
         if (rulesResult.data.appliedOptions && rulesResult.data.appliedOptions.length > 0) {
-          setStep('configure');
+          setActiveTab('configure');
         }
       } else {
         setAppliedOptions([]);
-        setStep('select');
+        setActiveTab('add');
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -133,7 +134,7 @@ export default function MenuItemModifiersModal({
     }
   };
 
-  const handleSelectModifiers = (selectedOptionIds: string[]) => {
+  const handleUpdateSelectedOptions = (selectedOptionIds: string[]) => {
     const newAppliedOptions: AppliedOption[] = selectedOptionIds.map((optionId, index) => {
       const existingOption = appliedOptions.find(ao => ao.optionId === optionId);
       if (existingOption) {
@@ -160,16 +161,16 @@ export default function MenuItemModifiersModal({
     }).filter(Boolean) as AppliedOption[];
 
     setAppliedOptions(newAppliedOptions);
-    setStep('configure');
-  };
-
-  const handleBackToSelect = () => {
-    setStep('select');
   };
 
   const handleUpdateAppliedOptions = (options: AppliedOption[]) => {
     setAppliedOptions(options);
   };
+
+  const tabs = [
+    { id: 'add', label: 'Add Modifiers' },
+    { id: 'configure', label: 'Modifier Configuration' },
+  ];
 
   return (
     <Modal
@@ -185,23 +186,39 @@ export default function MenuItemModifiersModal({
           </div>
         ) : (
           <>
-            {step === 'select' ? (
-              <ModifierSelector
-                availableOptions={availableOptions}
-                selectedOptionIds={appliedOptions.map(ao => ao.optionId)}
-                onSelect={handleSelectModifiers}
-                onCancel={onClose}
-              />
-            ) : (
-              <ModifierConfiguration
-                availableOptions={availableOptions}
-                appliedOptions={appliedOptions}
-                onUpdate={handleUpdateAppliedOptions}
-                onBack={handleBackToSelect}
-                onSave={handleSave}
-                saving={saving}
-              />
-            )}
+            <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} className="px-6" />
+
+            <div className="flex-1 overflow-hidden transition-all duration-300 ease-in-out">
+              {activeTab === 'add' ? (
+                <ModifierSelector
+                  availableOptions={availableOptions}
+                  selectedOptionIds={appliedOptions.map(ao => ao.optionId)}
+                  onUpdate={handleUpdateSelectedOptions}
+                />
+              ) : (
+                <ModifierConfiguration
+                  availableOptions={availableOptions}
+                  appliedOptions={appliedOptions}
+                  onUpdate={handleUpdateAppliedOptions}
+                />
+              )}
+            </div>
+
+            <div className="border-t px-6 py-4 bg-gray-50">
+              <div className={`flex gap-3 ${isMobile ? 'flex-col-reverse' : 'flex-row justify-end'}`}>
+                <Button variant="secondary" onClick={onClose} className="flex-1 md:flex-none">
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleSave}
+                  disabled={saving || appliedOptions.length === 0}
+                  className="flex-1 md:flex-none"
+                >
+                  {saving ? 'Saving...' : 'Save Configuration'}
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Typography';
 import Toggle from '@/components/ui/Toggle';
@@ -49,18 +50,12 @@ interface ModifierConfigurationProps {
   availableOptions: Option[];
   appliedOptions: AppliedOption[];
   onUpdate: (options: AppliedOption[]) => void;
-  onBack: () => void;
-  onSave: () => void;
-  saving: boolean;
 }
 
 export default function ModifierConfiguration({
   availableOptions,
   appliedOptions,
   onUpdate,
-  onBack,
-  onSave,
-  saving,
 }: ModifierConfigurationProps) {
   const isMobile = useIsMobile();
   const [expandedOptionId, setExpandedOptionId] = useState<string | null>(
@@ -106,11 +101,18 @@ export default function ModifierConfiguration({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        <Text className="mb-6 text-gray-600">
-          Configure the selected modifiers: set prices, mark as required, and define cross-modifier pricing rules.
-        </Text>
+    <div className="h-full overflow-y-auto px-6 py-4">
+      <Text className="mb-6 text-gray-600">
+        Configure the selected modifiers: set prices, mark as required, and define cross-modifier pricing rules.
+      </Text>
+
+      {appliedOptions.length === 0 && (
+        <div className="text-center py-12">
+          <Text className="text-gray-500">
+            No modifiers selected. Switch to the <strong>Add Modifiers</strong> tab to select modifiers for this item.
+          </Text>
+        </div>
+      )}
 
         <div className="space-y-4">
           {appliedOptions.map((appliedOption, index) => {
@@ -122,13 +124,20 @@ export default function ModifierConfiguration({
             return (
               <div
                 key={appliedOption.optionId}
-                className="border rounded-lg bg-white overflow-hidden"
+                className="border rounded-lg bg-white overflow-hidden transition-shadow duration-200 hover:shadow-md"
               >
                 <div
-                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="p-4 cursor-pointer hover:bg-gray-50 transition-all duration-200"
                   onClick={() => setExpandedOptionId(isExpanded ? null : appliedOption.optionId)}
                 >
                   <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                      {isExpanded ? (
+                        <ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-200" />
+                      ) : (
+                        <ChevronRight className="w-5 h-5 text-gray-500 transition-transform duration-200" />
+                      )}
+                    </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <Text className="font-semibold">
@@ -182,7 +191,12 @@ export default function ModifierConfiguration({
                   </div>
                 </div>
 
-                {isExpanded && (
+                <div
+                  className={`
+                    overflow-hidden transition-all duration-300 ease-in-out
+                    ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}
+                  `}
+                >
                   <div className="border-t bg-gray-50 p-4">
                     <ChoiceAdjustmentEditor
                       optionDetails={optionDetails}
@@ -194,28 +208,11 @@ export default function ModifierConfiguration({
                       }
                     />
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
         </div>
-      </div>
-
-      <div className="border-t px-6 py-4 bg-gray-50">
-        <div className={`flex gap-3 ${isMobile ? 'flex-col-reverse' : 'flex-row justify-between'}`}>
-          <Button variant="secondary" onClick={onBack} className="flex-1 md:flex-none">
-            Back to Selection
-          </Button>
-          <Button
-            variant="primary"
-            onClick={onSave}
-            disabled={saving}
-            className="flex-1 md:flex-none"
-          >
-            {saving ? 'Saving...' : 'Save Configuration'}
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
