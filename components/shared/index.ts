@@ -5,3 +5,5 @@ export { default as InfoCard } from './InfoCard';
 export { default as ImageUpload } from './ImageUpload';
 export { default as Pagination } from './Pagination';
 export { default as Tabs } from './Tabs';
+export { default as LocationAutocomplete } from './LocationAutocomplete';
+export { ValidationInput } from './ValidationInput';

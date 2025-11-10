@@ -60,15 +60,22 @@ export default function PaymentProviderSettings({
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Stripe Connect</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Accept credit card payments directly to your Stripe account
-              </p>
+    <div className="space-y-4">
+      <Card className="overflow-hidden">
+        <div className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <svg className="w-8 h-8 text-[#635BFF]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z"/>
+                </svg>
+                <div>
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900">Stripe Connect</h3>
+                  <p className="text-xs md:text-sm text-gray-600 mt-0.5">
+                    Accept credit card payments directly to your account
+                  </p>
+                </div>
+              </div>
             </div>
             {financialSettings?.stripeConnectStatus &&
               getStatusBadge(financialSettings.stripeConnectStatus)}
@@ -127,9 +134,16 @@ export default function PaymentProviderSettings({
                       onClick={handleConnectStripe}
                       variant="primary"
                       disabled={isConnecting}
-                      className="mt-3"
+                      className="mt-3 bg-[#635BFF] hover:bg-[#5851DF] text-white"
                     >
-                      {isConnecting ? 'Loading...' : 'Continue Onboarding'}
+                      {isConnecting ? (
+                        <span className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Connecting...
+                        </span>
+                      ) : (
+                        'Continue Onboarding'
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -144,8 +158,16 @@ export default function PaymentProviderSettings({
                   onClick={handleConnectStripe}
                   variant="primary"
                   disabled={isConnecting}
+                  className="bg-[#635BFF] hover:bg-[#5851DF] text-white"
                 >
-                  {isConnecting ? 'Loading...' : 'Connect Stripe Account'}
+                  {isConnecting ? (
+                    <span className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Connecting...
+                    </span>
+                  ) : (
+                    'Connect Stripe Account'
+                  )}
                 </Button>
               </div>
             )}
@@ -171,16 +193,23 @@ export default function PaymentProviderSettings({
         </div>
       </Card>
 
-      <Card>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">MercadoPago (Coming Soon)</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Accept payments via MercadoPago for Latin American markets
-              </p>
+      <Card className="overflow-hidden">
+        <div className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <svg className="w-8 h-8 text-[#00B1EA]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M15.185 7.4h-3.228c-.255 0-.461.206-.461.461v6.281c0 1.401-.866 2.175-2.185 2.175-1.318 0-2.185-.774-2.185-2.175V7.861c0-.255-.206-.461-.461-.461H3.437c-.255 0-.461.206-.461.461v6.362c0 2.988 2.179 4.927 5.369 4.927 3.189 0 5.369-1.939 5.369-4.927V7.861c0-.255-.206-.461-.461-.461h.932zm5.369 0h-3.228c-.255 0-.461.206-.461.461v10.372c0 .255.206.461.461.461h3.228c.255 0 .461-.206.461-.461V7.861c0-.255-.206-.461-.461-.461z"/>
+                </svg>
+                <div>
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900">MercadoPago</h3>
+                  <p className="text-xs md:text-sm text-gray-600 mt-0.5">
+                    Accept payments for Latin American markets
+                  </p>
+                </div>
+              </div>
             </div>
-            <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+            <span className="px-3 py-1 rounded-full text-xs md:text-sm font-medium bg-blue-100 text-blue-700">
               Coming Soon
             </span>
           </div>

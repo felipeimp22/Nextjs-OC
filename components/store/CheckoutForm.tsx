@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import {Button} from '@/components/ui/Button';
 import {Input} from '@/components/ui/Input';
-import LocationAutocomplete from './LocationAutocomplete';
+import LocationAutocomplete from '@/components/shared/LocationAutocomplete';
+import { ValidationInput } from '@/components/shared/ValidationInput';
 import type { AddressComponents } from '@/lib/utils/mapbox';
 
 interface CustomerInfo {
@@ -47,6 +48,8 @@ export default function CheckoutForm({
     email: '',
     phone: '',
   });
+  const [isEmailValid, setIsEmailValid] = useState(false);
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,12 +143,13 @@ export default function CheckoutForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email *
             </label>
-            <Input
+            <ValidationInput
               type="email"
               value={customerInfo.email}
-              onChange={(e) =>
-                setCustomerInfo({ ...customerInfo, email: e.target.value })
-              }
+              onChange={(value, isValid) => {
+                setCustomerInfo({ ...customerInfo, email: value });
+                setIsEmailValid(isValid);
+              }}
               placeholder="john@example.com"
               required
             />
@@ -155,12 +159,13 @@ export default function CheckoutForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Phone *
             </label>
-            <Input
-              type="tel"
+            <ValidationInput
+              type="phone"
               value={customerInfo.phone}
-              onChange={(e) =>
-                setCustomerInfo({ ...customerInfo, phone: e.target.value })
-              }
+              onChange={(value, isValid) => {
+                setCustomerInfo({ ...customerInfo, phone: value });
+                setIsPhoneValid(isValid);
+              }}
               placeholder="+1 (555) 123-4567"
               required
             />
@@ -249,7 +254,7 @@ export default function CheckoutForm({
         type="submit"
         variant="primary"
         className="w-full"
-        disabled={isProcessing || isLoadingCalculation || !orderSummary}
+        disabled={isProcessing || isLoadingCalculation || !orderSummary || !isEmailValid || !isPhoneValid}
       >
         {isProcessing ? 'Processing...' : 'Continue to Payment'}
       </Button>
