@@ -10,7 +10,13 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const signature = request.headers.get('stripe-signature');
 
+    console.log('📨 Webhook received:', {
+      hasSignature: !!signature,
+      bodyLength: body.length,
+    });
+
     if (!signature) {
+      console.error('❌ Missing stripe-signature header');
       return NextResponse.json(
         { error: 'Missing stripe-signature header' },
         { status: 400 }
@@ -18,12 +24,25 @@ export async function POST(request: NextRequest) {
     }
 
     const provider = await PaymentFactory.getProvider('stripe') as StripePaymentProvider;
-    const event = provider.verifyWebhook({
-      payload: body,
-      signature,
-    }) as Stripe.Event;
 
-    console.log(`🔔 Stripe webhook received: ${event.type}`);
+    let event: Stripe.Event;
+    try {
+      event = provider.verifyWebhook({
+        payload: body,
+        signature,
+      }) as Stripe.Event;
+    } catch (err: any) {
+      console.error('❌ Webhook signature verification failed:', err.message);
+      return NextResponse.json(
+        { error: `Webhook Error: ${err.message}` },
+        { status: 400 }
+      );
+    }
+
+    console.log(`🔔 Stripe webhook verified: ${event.type}`, {
+      eventId: event.id,
+      created: new Date(event.created * 1000).toISOString(),
+    });
 
     switch (event.type) {
       case 'payment_intent.succeeded': {
@@ -68,43 +87,65 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   const orderId = paymentIntent.metadata.order_id;
   const restaurantId = paymentIntent.metadata.restaurant_id;
 
+  console.log('💳 Processing payment_intent.succeeded:', {
+    paymentIntentId: paymentIntent.id,
+    orderId,
+    restaurantId,
+    amount: paymentIntent.amount / 100,
+    applicationFee: (paymentIntent.application_fee_amount || 0) / 100,
+  });
+
   if (!orderId) {
-    console.warn('Payment intent succeeded but no order_id in metadata');
+    console.warn('⚠️ Payment intent succeeded but no order_id in metadata');
     return;
   }
 
-  await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      paymentStatus: 'paid',
-      status: 'confirmed',
-    },
-  });
-
-  const applicationFee = paymentIntent.application_fee_amount || 0;
-
-  await prisma.transaction.create({
-    data: {
-      orderId,
-      restaurantId: restaurantId!,
-      amount: paymentIntent.amount / 100,
-      platformFee: applicationFee / 100,
-      restaurantAmount: (paymentIntent.amount - applicationFee) / 100,
-      paymentProvider: 'stripe',
-      paymentIntentId: paymentIntent.id,
-      chargeId: typeof paymentIntent.latest_charge === 'string'
-        ? paymentIntent.latest_charge
-        : paymentIntent.latest_charge?.id,
-      status: 'succeeded',
-      testMode: paymentIntent.livemode === false,
-      metadata: {
-        currency: paymentIntent.currency,
-        paymentMethod: paymentIntent.payment_method,
+  try {
+    // Update order status
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        paymentStatus: 'paid',
+        status: 'confirmed',
       },
-    },
-  });
+    });
 
-  console.log(`✅ Payment intent succeeded for order ${orderId}`);
+    console.log(`✅ Order ${updatedOrder.orderNumber} marked as paid`);
+
+    // Create transaction record
+    const applicationFee = paymentIntent.application_fee_amount || 0;
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        orderId,
+        restaurantId: restaurantId!,
+        amount: paymentIntent.amount / 100,
+        platformFee: applicationFee / 100,
+        restaurantAmount: (paymentIntent.amount - applicationFee) / 100,
+        paymentProvider: 'stripe',
+        paymentIntentId: paymentIntent.id,
+        chargeId: typeof paymentIntent.latest_charge === 'string'
+          ? paymentIntent.latest_charge
+          : paymentIntent.latest_charge?.id,
+        status: 'succeeded',
+        testMode: paymentIntent.livemode === false,
+        metadata: {
+          currency: paymentIntent.currency,
+          paymentMethod: paymentIntent.payment_method,
+        },
+      },
+    });
+
+    console.log(`✅ Transaction created:`, {
+      transactionId: transaction.id,
+      amount: transaction.amount,
+      platformFee: transaction.platformFee,
+      restaurantAmount: transaction.restaurantAmount,
+    });
+  } catch (error: any) {
+    console.error(`❌ Failed to process payment for order ${orderId}:`, error.message);
+    throw error;
+  }
 }
 
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
