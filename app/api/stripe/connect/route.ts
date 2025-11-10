@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentFactory } from '@/lib/payment/PaymentFactory';
 import { StripePaymentProvider } from '@/lib/payment/providers/StripePaymentProvider';
-import { prisma } from '@/lib/db';
+import prisma  from '@/lib/prisma';
+
 
 export async function GET(request: NextRequest) {
   try {

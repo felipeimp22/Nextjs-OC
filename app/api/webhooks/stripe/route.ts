@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentFactory } from '@/lib/payment/PaymentFactory';
 import { StripePaymentProvider } from '@/lib/payment/providers/StripePaymentProvider';
-import { prisma } from '@/lib/db';
+import prisma  from '@/lib/prisma';
+
 import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
