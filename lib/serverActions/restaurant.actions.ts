@@ -92,6 +92,7 @@ export async function createRestaurant(data: CreateRestaurantData) {
         restaurantId: restaurant.id,
         currency: 'USD',
         currencySymbol: '$',
+        usePlatformAccountFallback: false,
         globalFee: {
           enabled: true,
           threshold: 10,
