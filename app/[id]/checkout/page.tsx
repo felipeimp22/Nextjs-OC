@@ -14,7 +14,7 @@ import type { AddressComponents } from '@/lib/utils/mapbox';
 export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
-  const restaurantId = params.restaurantId as string;
+  const restaurantId = params.id as string;
   const { showToast } = useToast();
 
   const { items, clearCart } = useCartStore();

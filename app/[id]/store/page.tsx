@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function StorePage() {
   const params = useParams();
   const router = useRouter();
-  const restaurantId = params.restaurantId as string;
+  const restaurantId = params.id as string;
   const isMobile = useIsMobile();
   const { showToast } = useToast();
 

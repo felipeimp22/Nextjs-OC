@@ -20,7 +20,7 @@
 
 This multi-tenant restaurant platform enables restaurants to sell food online with a complete order and payment flow. Key highlights:
 
-- **Customer-facing storefront** at `/{restaurantId}/store`
+- **Customer-facing storefront** at `/{id}/store`
 - **Stripe Connect** for direct payments to restaurants
 - **Multi-currency support** with automatic conversion for platform fees
 - **Location-based delivery** with Mapbox autocomplete
@@ -266,9 +266,9 @@ Create a test restaurant with:
 
 #### 1. Access Storefront
 
-Navigate to: `http://localhost:3001/{restaurantId}/store`
+Navigate to: `http://localhost:3001/{id}/store`
 
-Replace `{restaurantId}` with actual restaurant ID from database.
+Replace `{id}` with actual restaurant ID from database.
 
 #### 2. Browse Menu
 
@@ -589,8 +589,8 @@ Update `fetchLiveExchangeRates()` function.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/[restaurantId]/store` | GET | Customer-facing storefront |
-| `/[restaurantId]/checkout` | GET | Checkout page |
+| `/[id]/store` | GET | Customer-facing storefront |
+| `/[id]/checkout` | GET | Checkout page |
 | `/api/webhooks/stripe` | POST | Stripe webhook handler |
 
 ### Protected Endpoints (Require Auth)
