@@ -8,8 +8,15 @@ import { useCartStore } from '@/stores/useCartStore';
 import { createOrder, createPaymentIntent, createOrderDraft } from '@/lib/serverActions/order.actions';
 import { getPublicRestaurantData } from '@/lib/serverActions/order.actions';
 import CheckoutForm from '@/components/store/CheckoutForm';
+import PaymentForm from '@/components/store/PaymentForm';
 import { useToast } from '@/components/ui/ToastContainer';
 import type { AddressComponents } from '@/lib/utils/mapbox';
+
+interface CustomerInfo {
+  name: string;
+  email: string;
+  phone: string;
+}
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -20,13 +27,16 @@ export default function CheckoutPage() {
   const { items, clearCart } = useCartStore();
 
   const [restaurant, setRestaurant] = useState<any>(null);
-  const [stripePromise, setStripePromise] = useState<any>(null);
-  const [clientSecret, setClientSecret] = useState<string>('');
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>('pickup');
   const [deliveryAddress, setDeliveryAddress] = useState<AddressComponents | null>(null);
   const [orderSummary, setOrderSummary] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  const [step, setStep] = useState<'info' | 'payment'>('info');
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
+  const [clientSecret, setClientSecret] = useState<string>('');
+  const [stripePromise, setStripePromise] = useState<any>(null);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -117,6 +127,60 @@ export default function CheckoutPage() {
     setDeliveryAddress(address);
   };
 
+  const handleCheckoutSubmit = async (info: CustomerInfo) => {
+    setCustomerInfo(info);
+
+    const orderItems = items.map((item) => ({
+      menuItemId: item.menuItemId,
+      quantity: item.quantity,
+      selectedOptions: item.selectedOptions.map((opt) => ({
+        optionId: opt.optionId,
+        choiceId: opt.choiceId,
+        quantity: opt.quantity || 1,
+      })),
+      specialInstructions: item.specialInstructions,
+    }));
+
+    const orderResult = await createOrder({
+      restaurantId,
+      items: orderItems,
+      orderType,
+      customerName: info.name,
+      customerEmail: info.email,
+      customerPhone: info.phone,
+      customerAddress: deliveryAddress ? {
+        street: deliveryAddress.street,
+        houseNumber: deliveryAddress.houseNumber,
+        city: deliveryAddress.city,
+        state: deliveryAddress.state,
+        zipCode: deliveryAddress.zipCode,
+        country: deliveryAddress.country,
+        fullAddress: deliveryAddress.fullAddress,
+      } : undefined,
+      customerLocation: deliveryAddress ? deliveryAddress.coordinates : undefined,
+    });
+
+    if (!orderResult.success || !orderResult.data) {
+      showToast('error', orderResult.error || 'Failed to create order');
+      return;
+    }
+
+    const paymentResult = await createPaymentIntent(orderResult.data.id);
+
+    if (!paymentResult.success || !paymentResult.data) {
+      showToast('error', paymentResult.error || 'Failed to initialize payment');
+      return;
+    }
+
+    setClientSecret(paymentResult.data.clientSecret);
+
+    const publishableKey = paymentResult.data.publicKey;
+    const stripe = await loadStripe(publishableKey);
+    setStripePromise(stripe);
+
+    setStep('payment');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -128,15 +192,6 @@ export default function CheckoutPage() {
   if (!restaurant) {
     return null;
   }
-
-  const stripeOptions = clientSecret
-    ? {
-        clientSecret,
-        appearance: {
-          theme: 'stripe' as const,
-        },
-      }
-    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,19 +206,7 @@ export default function CheckoutPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
-        {stripePromise && stripeOptions ? (
-          <Elements stripe={stripePromise} options={stripeOptions}>
-            <CheckoutForm
-              orderType={orderType}
-              onOrderTypeChange={handleOrderTypeChange}
-              deliveryEnabled={restaurant.deliveryEnabled}
-              onDeliveryAddressChange={handleDeliveryAddressChange}
-              currencySymbol={restaurant.currencySymbol}
-              orderSummary={orderSummary}
-              isLoadingCalculation={isCalculating}
-            />
-          </Elements>
-        ) : (
+        {step === 'info' ? (
           <CheckoutForm
             orderType={orderType}
             onOrderTypeChange={handleOrderTypeChange}
@@ -172,7 +215,26 @@ export default function CheckoutPage() {
             currencySymbol={restaurant.currencySymbol}
             orderSummary={orderSummary}
             isLoadingCalculation={isCalculating}
+            onSubmit={handleCheckoutSubmit}
           />
+        ) : (
+          stripePromise && clientSecret && customerInfo && (
+            <Elements
+              stripe={stripePromise}
+              options={{
+                clientSecret,
+                appearance: {
+                  theme: 'stripe',
+                },
+              }}
+            >
+              <PaymentForm
+                currencySymbol={restaurant.currencySymbol}
+                total={orderSummary?.total || 0}
+                customerEmail={customerInfo.email}
+              />
+            </Elements>
+          )
         )}
       </div>
     </div>
