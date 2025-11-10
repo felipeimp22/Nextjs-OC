@@ -20,11 +20,18 @@ export default function PaymentForm({
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isElementReady, setIsElementReady] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!stripe || !elements) {
+      console.error('Stripe or Elements not loaded');
+      return;
+    }
+
+    if (!isElementReady) {
+      setErrorMessage('Payment form is still loading. Please wait a moment.');
       return;
     }
 
@@ -42,10 +49,11 @@ export default function PaymentForm({
 
       if (error) {
         setErrorMessage(error.message || 'Payment failed');
+        setIsProcessing(false);
       }
     } catch (err: any) {
+      console.error('Payment error:', err);
       setErrorMessage(err.message || 'An error occurred');
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -56,7 +64,16 @@ export default function PaymentForm({
         <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Information</h2>
 
         <div className="mb-4">
-          <PaymentElement />
+          <PaymentElement
+            onReady={() => {
+              console.log('PaymentElement ready');
+              setIsElementReady(true);
+            }}
+            onLoadError={(error) => {
+              console.error('PaymentElement load error:', error);
+              setErrorMessage('Failed to load payment form. Please refresh the page.');
+            }}
+          />
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -81,9 +98,9 @@ export default function PaymentForm({
           type="submit"
           variant="primary"
           className="w-full"
-          disabled={!stripe || isProcessing}
+          disabled={!stripe || !isElementReady || isProcessing}
         >
-          {isProcessing ? 'Processing...' : `Pay ${currencySymbol}${total.toFixed(2)}`}
+          {!isElementReady ? 'Loading payment form...' : isProcessing ? 'Processing...' : `Pay ${currencySymbol}${total.toFixed(2)}`}
         </Button>
       </div>
     </form>
