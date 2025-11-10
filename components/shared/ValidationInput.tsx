@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { Input } from '@/components/ui/Input';
 import { isValidEmailFormat, isValidPhoneFormat } from '@/lib/utils/validation';
-import { validateEmailAction, validatePhoneAction } from '@/lib/serverActions/validation.actions';
 
 interface ValidationInputProps {
   type: 'email' | 'phone';
@@ -26,12 +25,11 @@ export function ValidationInput({
   disabled = false,
   className,
 }: ValidationInputProps) {
-  const [isValidating, setIsValidating] = useState(false);
   const [validationStatus, setValidationStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
   const [validationMessage, setValidationMessage] = useState<string>('');
   const debounceRef = useRef<NodeJS.Timeout>();
 
-  const handleValidation = async (inputValue: string) => {
+  const handleValidation = (inputValue: string) => {
     if (!inputValue) {
       setValidationStatus('idle');
       setValidationMessage('');
@@ -43,47 +41,14 @@ export function ValidationInput({
       ? isValidEmailFormat(inputValue)
       : isValidPhoneFormat(inputValue);
 
-    if (!isValidFormat) {
+    if (isValidFormat) {
+      setValidationStatus('valid');
+      setValidationMessage(type === 'email' ? 'Email format is valid' : 'Phone format is valid');
+      onChange(inputValue, true);
+    } else {
       setValidationStatus('invalid');
       setValidationMessage(type === 'email' ? 'Invalid email format' : 'Invalid phone format');
       onChange(inputValue, false);
-      return;
-    }
-
-    setIsValidating(true);
-
-    try {
-      if (type === 'email') {
-        const response = await validateEmailAction(inputValue);
-
-        if (response.success && response.data?.valid) {
-          setValidationStatus('valid');
-          setValidationMessage('Email verified');
-          onChange(inputValue, true);
-        } else {
-          setValidationStatus('invalid');
-          setValidationMessage(response.data?.reason || response.error || 'Invalid email');
-          onChange(inputValue, false);
-        }
-      } else {
-        const response = await validatePhoneAction(inputValue, countryCode);
-
-        if (response.success && response.data?.valid) {
-          setValidationStatus('valid');
-          setValidationMessage('Phone number verified');
-          onChange(inputValue, true);
-        } else {
-          setValidationStatus('invalid');
-          setValidationMessage(response.data?.reason || response.error || 'Invalid phone number');
-          onChange(inputValue, false);
-        }
-      }
-    } catch (error: any) {
-      setValidationStatus('invalid');
-      setValidationMessage('Validation service unavailable');
-      onChange(inputValue, false);
-    } finally {
-      setIsValidating(false);
     }
   };
 
@@ -98,7 +63,7 @@ export function ValidationInput({
 
     debounceRef.current = setTimeout(() => {
       handleValidation(inputValue);
-    }, 1000);
+    }, 500);
   };
 
   return (
@@ -110,17 +75,11 @@ export function ValidationInput({
           onChange={(e) => handleInputChange(e.target.value)}
           placeholder={placeholder}
           required={required}
-          disabled={disabled || isValidating}
+          disabled={disabled}
           className={className}
         />
 
-        {isValidating && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-navy"></div>
-          </div>
-        )}
-
-        {!isValidating && validationStatus === 'valid' && (
+        {validationStatus === 'valid' && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <svg
               className="w-5 h-5 text-green-600"
@@ -136,7 +95,7 @@ export function ValidationInput({
           </div>
         )}
 
-        {!isValidating && validationStatus === 'invalid' && (
+        {validationStatus === 'invalid' && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <svg
               className="w-5 h-5 text-red-600"
