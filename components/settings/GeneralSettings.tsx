@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button, Input, useToast } from '@/components/ui';
-import { FormSection, FormField } from '@/components/shared';
+import { FormSection, FormField, LocationAutocomplete } from '@/components/shared';
 import { LogoSection, BrandColorsSection } from '@/components/settings/general';
 import { getRestaurant, updateRestaurant } from '@/lib/serverActions/restaurant.actions';
 import { uploadRestaurantPhoto } from '@/lib/serverActions/settings.actions';
+import type { AddressComponents } from '@/lib/utils/mapbox';
 
 interface RestaurantData {
   name: string;
@@ -18,6 +19,8 @@ interface RestaurantData {
   state: string;
   zipCode: string;
   country: string;
+  geoLat: number | null;
+  geoLng: number | null;
   logo: string;
   primaryColor: string;
   secondaryColor: string;
@@ -35,6 +38,7 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [addressSelected, setAddressSelected] = useState(false);
   const [data, setData] = useState<RestaurantData>({
     name: '',
     description: '',
@@ -45,6 +49,8 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
     state: '',
     zipCode: '',
     country: 'US',
+    geoLat: null,
+    geoLng: null,
     logo: '',
     primaryColor: '#282e59',
     secondaryColor: '#f03e42',
@@ -77,17 +83,38 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
         state: restaurant.state || '',
         zipCode: restaurant.zipCode || '',
         country: restaurant.country || 'US',
+        geoLat: restaurant.geoLat || null,
+        geoLng: restaurant.geoLng || null,
         logo: restaurant.logo || '',
         primaryColor: restaurant.primaryColor || '#282e59',
         secondaryColor: restaurant.secondaryColor || '#f03e42',
         accentColor: restaurant.accentColor || '#ffffff',
       });
+
+      if (restaurant.geoLat && restaurant.geoLng) {
+        setAddressSelected(true);
+      }
     } catch (error) {
       showToast('error', 'Failed to load settings');
       console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddressSelect = (address: AddressComponents) => {
+    setData(prev => ({
+      ...prev,
+      street: `${address.houseNumber} ${address.street}`.trim(),
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: address.country,
+      geoLat: address.coordinates.lat,
+      geoLng: address.coordinates.lng,
+    }));
+    setAddressSelected(true);
+    setErrors({});
   };
 
   const validateForm = (): boolean => {
@@ -242,61 +269,41 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
 
       <FormSection title={t('location')}>
         <div className="space-y-4 md:space-y-6">
-          <FormField label={t('street')} required error={errors.street}>
-            <Input
-              value={data.street}
-              onChange={(e) => {
-                setData({ ...data, street: e.target.value });
-                if (errors.street) setErrors({ ...errors, street: undefined });
-              }}
-              placeholder="123 Main Street"
+          <FormField label={t('address')} required description={t('addressHint') || 'Search for your restaurant address'}>
+            <LocationAutocomplete
+              onSelect={handleAddressSelect}
+              placeholder={t('searchAddress') || 'Search for your restaurant address...'}
+              required
             />
           </FormField>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <FormField label={t('city')} required error={errors.city}>
-              <Input
-                value={data.city}
-                onChange={(e) => {
-                  setData({ ...data, city: e.target.value });
-                  if (errors.city) setErrors({ ...errors, city: undefined });
-                }}
-                placeholder="New York"
-              />
-            </FormField>
-
-            <FormField label={t('state')} required error={errors.state}>
-              <Input
-                value={data.state}
-                onChange={(e) => {
-                  setData({ ...data, state: e.target.value });
-                  if (errors.state) setErrors({ ...errors, state: undefined });
-                }}
-                placeholder="NY"
-                maxLength={2}
-              />
-            </FormField>
-
-            <FormField label={t('zipCode')} required error={errors.zipCode}>
-              <Input
-                value={data.zipCode}
-                onChange={(e) => {
-                  setData({ ...data, zipCode: e.target.value });
-                  if (errors.zipCode) setErrors({ ...errors, zipCode: undefined });
-                }}
-                placeholder="10001"
-              />
-            </FormField>
-          </div>
-
-          <FormField label={t('country')}>
-            <Input
-              value={data.country}
-              onChange={(e) => setData({ ...data, country: e.target.value })}
-              placeholder="US"
-              maxLength={2}
-            />
-          </FormField>
+          {addressSelected && data.geoLat && data.geoLng && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg
+                  className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-900">{t('addressConfirmed') || 'Address Confirmed'}</p>
+                  <p className="text-sm text-green-700 mt-1">
+                    {data.street}, {data.city}, {data.state} {data.zipCode}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    {t('coordinates') || 'Coordinates'}: {data.geoLat.toFixed(6)}, {data.geoLng.toFixed(6)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </FormSection>
 

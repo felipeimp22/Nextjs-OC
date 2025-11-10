@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useCreateRestaurant } from '@/hooks/useRestaurants';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { Button } from '@/components/ui';
+import { LocationAutocomplete } from '@/components/shared';
+import type { AddressComponents } from '@/lib/utils/mapbox';
 
 interface FormData {
   name: string;
@@ -15,6 +17,8 @@ interface FormData {
   state: string;
   zipCode: string;
   country: string;
+  geoLat: number | null;
+  geoLng: number | null;
   phone: string;
   email: string;
   logo: string;
@@ -36,6 +40,7 @@ export default function RestaurantForm() {
 
   const [step, setStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState('');
+  const [addressSelected, setAddressSelected] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
@@ -44,6 +49,8 @@ export default function RestaurantForm() {
     state: '',
     zipCode: '',
     country: 'US',
+    geoLat: null,
+    geoLng: null,
     phone: '',
     email: '',
     logo: '',
@@ -79,6 +86,20 @@ export default function RestaurantForm() {
 
   const handleColorChange = (colorType: 'primaryColor' | 'secondaryColor' | 'accentColor', value: string) => {
     setFormData(prev => ({ ...prev, [colorType]: value }));
+  };
+
+  const handleAddressSelect = (address: AddressComponents) => {
+    setFormData(prev => ({
+      ...prev,
+      street: `${address.houseNumber} ${address.street}`.trim(),
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: address.country,
+      geoLat: address.coordinates.lat,
+      geoLng: address.coordinates.lng,
+    }));
+    setAddressSelected(true);
   };
 
   const nextStep = () => setStep(prev => prev + 1);
@@ -218,96 +239,56 @@ export default function RestaurantForm() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('stepLocation')}</h3>
 
             <div>
-              <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('street')} {t('required')}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('address')} {t('required')}
               </label>
-              <input
-                id="street"
-                name="street"
-                type="text"
+              <LocationAutocomplete
+                onSelect={handleAddressSelect}
+                placeholder={t('searchAddress') || 'Search for your restaurant address...'}
                 required
-                value={formData.street}
-                onChange={handleChange}
-                placeholder={t('streetPlaceholder')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-navy focus:border-transparent"
               />
+              <p className="mt-2 text-sm text-gray-500">
+                {t('addressHint') || 'Start typing your restaurant address to find it'}
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('city')} {t('required')}
-                </label>
-                <input
-                  id="city"
-                  name="city"
-                  type="text"
-                  required
-                  value={formData.city}
-                  onChange={handleChange}
-                  placeholder={t('cityPlaceholder')}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-navy focus:border-transparent"
-                />
+            {addressSelected && formData.geoLat && formData.geoLng && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900">Address Confirmed</p>
+                    <p className="text-sm text-blue-700 mt-1">
+                      {formData.street}, {formData.city}, {formData.state} {formData.zipCode}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      Coordinates: {formData.geoLat.toFixed(6)}, {formData.geoLng.toFixed(6)}
+                    </p>
+                  </div>
+                </div>
               </div>
-
-              <div>
-                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('state')} {t('required')}
-                </label>
-                <input
-                  id="state"
-                  name="state"
-                  type="text"
-                  required
-                  value={formData.state}
-                  onChange={handleChange}
-                  placeholder={t('statePlaceholder')}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-navy focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('zipCode')} {t('required')}
-                </label>
-                <input
-                  id="zipCode"
-                  name="zipCode"
-                  type="text"
-                  required
-                  value={formData.zipCode}
-                  onChange={handleChange}
-                  placeholder={t('zipCodePlaceholder')}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-navy focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('country')} {t('required')}
-                </label>
-                <select
-                  id="country"
-                  name="country"
-                  required
-                  value={formData.country}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-navy focus:border-transparent"
-                >
-                  <option value="US">United States</option>
-                  <option value="CA">Canada</option>
-                  <option value="BR">Brazil</option>
-                </select>
-              </div>
-            </div>
+            )}
 
             <div className="flex justify-between">
               <Button type="button" onClick={prevStep} className="bg-gray-200 text-gray-700 hover:bg-gray-300">
                 {t('previous')}
               </Button>
-              <Button type="button" onClick={nextStep} className="bg-brand-navy hover:bg-brand-navy/90">
+              <Button
+                type="button"
+                onClick={nextStep}
+                className="bg-brand-navy hover:bg-brand-navy/90"
+                disabled={!addressSelected}
+              >
                 {t('next')}
               </Button>
             </div>
