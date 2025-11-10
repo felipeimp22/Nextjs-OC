@@ -23,6 +23,7 @@ interface RolePermissions {
 }
 
 interface PermissionsManagementSectionProps {
+  t: (key: string) => string;
   pages: Page[];
   roles: Role[];
   rolePermissions: RolePermissions[];
@@ -30,6 +31,7 @@ interface PermissionsManagementSectionProps {
 }
 
 export default function PermissionsManagementSection({
+  t,
   pages,
   roles,
   rolePermissions,
@@ -39,16 +41,16 @@ export default function PermissionsManagementSection({
 
   return (
     <FormSection
-      title="Role-Based Permissions"
-      description="Control which pages each role can access in your restaurant"
+      title={t('rolePermissions')}
+      description={t('rolePermissionsDescription')}
     >
-      <InfoCard type="info" title="About Permissions" className="mb-6">
-        <p className="mb-2">Configure access permissions for different user roles:</p>
+      <InfoCard type="info" title={t('aboutPermissions')} className="mb-6">
+        <p className="mb-2">{t('aboutPermissionsText')}</p>
         <ul className="list-disc list-inside space-y-1 text-sm">
-          <li><strong>Manager:</strong> Can access most features except owner-specific settings</li>
-          <li><strong>Kitchen:</strong> Focused on order management and kitchen display</li>
-          <li><strong>Staff:</strong> Limited access for front-of-house operations</li>
-          <li><strong>Owner:</strong> Has full access to everything (cannot be modified)</li>
+          <li><strong>{t('manager')}:</strong> {t('managerDescription')}</li>
+          <li><strong>{t('kitchen')}:</strong> {t('kitchenDescription')}</li>
+          <li><strong>{t('staff')}:</strong> {t('staffDescription')}</li>
+          <li><strong>{t('owner')}:</strong> {t('ownerDescription')}</li>
         </ul>
       </InfoCard>
 
@@ -95,7 +97,7 @@ export default function PermissionsManagementSection({
                     scope="col"
                     className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-1/3"
                   >
-                    Feature / Page
+                    {t('featurePage')}
                   </th>
                   {roles.map((role) => (
                     <th
@@ -173,7 +175,7 @@ export default function PermissionsManagementSection({
                 <h4 className="font-semibold text-gray-900">{role.label}</h4>
               </div>
               <p className="text-sm text-gray-600">
-                {enabledCount} of {totalCount} features enabled
+                {t('featuresEnabled', { count: enabledCount.toString(), total: totalCount.toString() })}
               </p>
               <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                 <div

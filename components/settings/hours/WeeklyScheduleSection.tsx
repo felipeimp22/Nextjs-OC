@@ -15,6 +15,7 @@ interface DaySchedule {
 }
 
 interface WeeklyScheduleSectionProps {
+  t: (key: string) => string;
   schedule: DaySchedule[];
   onToggleDay: (dayIndex: number) => void;
   onUpdateTimeSlot: (dayIndex: number, slotIndex: number, field: 'openTime' | 'closeTime', value: string) => void;
@@ -22,27 +23,28 @@ interface WeeklyScheduleSectionProps {
   onRemoveTimeSlot: (dayIndex: number, slotIndex: number) => void;
 }
 
-const DAY_LABELS: Record<string, string> = {
-  monday: 'Monday',
-  tuesday: 'Tuesday',
-  wednesday: 'Wednesday',
-  thursday: 'Thursday',
-  friday: 'Friday',
-  saturday: 'Saturday',
-  sunday: 'Sunday',
-};
-
 export default function WeeklyScheduleSection({
+  t,
   schedule,
   onToggleDay,
   onUpdateTimeSlot,
   onAddTimeSlot,
   onRemoveTimeSlot,
 }: WeeklyScheduleSectionProps) {
+  const DAY_LABELS: Record<string, string> = {
+    monday: t('monday'),
+    tuesday: t('tuesday'),
+    wednesday: t('wednesday'),
+    thursday: t('thursday'),
+    friday: t('friday'),
+    saturday: t('saturday'),
+    sunday: t('sunday'),
+  };
+
   return (
     <section>
       <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
-        Weekly Schedule
+        {t('weeklySchedule')}
       </h3>
 
       <div className="space-y-3">
@@ -57,7 +59,7 @@ export default function WeeklyScheduleSection({
               </span>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600">
-                  {daySchedule.isOpen ? 'Open' : 'Closed'}
+                  {daySchedule.isOpen ? t('open') : t('closed')}
                 </span>
                 <Toggle
                   id={`day-${dayIndex}`}
@@ -78,7 +80,7 @@ export default function WeeklyScheduleSection({
                     <div className="flex flex-col md:flex-row md:items-center gap-3">
                       <div className="flex-1">
                         <label className="block text-xs text-gray-600 mb-1">
-                          Open
+                          {t('open')}
                         </label>
                         <input
                           type="time"
@@ -94,7 +96,7 @@ export default function WeeklyScheduleSection({
 
                       <div className="flex-1">
                         <label className="block text-xs text-gray-600 mb-1">
-                          Close
+                          {t('close')}
                         </label>
                         <input
                           type="time"
@@ -122,7 +124,7 @@ export default function WeeklyScheduleSection({
                   onClick={() => onAddTimeSlot(dayIndex)}
                   className="w-full text-sm text-brand-red hover:text-brand-red/80 font-medium py-2 border border-dashed border-gray-300 rounded-md hover:border-brand-red transition-colors"
                 >
-                  + Add Time Slot
+                  + {t('addTimeSlot')}
                 </button>
               </div>
             )}

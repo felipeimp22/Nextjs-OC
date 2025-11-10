@@ -4,6 +4,7 @@ import { FormSection, FormField } from '@/components/shared';
 import { Input, ColorPicker } from '@/components/ui';
 
 interface BrandColorsSectionProps {
+  t: (key: string) => string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -13,6 +14,7 @@ interface BrandColorsSectionProps {
 }
 
 export default function BrandColorsSection({
+  t,
   primaryColor,
   secondaryColor,
   accentColor,
@@ -21,9 +23,9 @@ export default function BrandColorsSection({
   onAccentChange,
 }: BrandColorsSectionProps) {
   return (
-    <FormSection title="Brand Colors" description="Customize your restaurant's brand colors">
+    <FormSection title={t('brandColors')} description={t('brandColorsDescription')}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <FormField label="Primary Color">
+        <FormField label={t('primaryColor')}>
           <div className="flex gap-3">
             <ColorPicker value={primaryColor} onChange={onPrimaryChange} />
             <Input
@@ -35,7 +37,7 @@ export default function BrandColorsSection({
           </div>
         </FormField>
 
-        <FormField label="Secondary Color">
+        <FormField label={t('secondaryColor')}>
           <div className="flex gap-3">
             <ColorPicker value={secondaryColor} onChange={onSecondaryChange} />
             <Input
@@ -47,7 +49,7 @@ export default function BrandColorsSection({
           </div>
         </FormField>
 
-        <FormField label="Accent Color">
+        <FormField label={t('accentColor')}>
           <div className="flex gap-3">
             <ColorPicker value={accentColor} onChange={onAccentChange} />
             <Input
@@ -60,30 +62,29 @@ export default function BrandColorsSection({
         </FormField>
       </div>
 
-      {/* Color Preview */}
       <div className="mt-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-sm font-medium text-gray-700 mb-4">Color Preview</p>
+        <p className="text-sm font-medium text-gray-700 mb-4">{t('colorPreview')}</p>
         <div className="flex gap-4">
           <div className="flex-1 text-center">
             <div
               className="h-16 rounded-lg shadow-sm border border-gray-200"
               style={{ backgroundColor: primaryColor }}
             />
-            <p className="text-xs text-gray-600 mt-2">Primary</p>
+            <p className="text-xs text-gray-600 mt-2">{t('primary')}</p>
           </div>
           <div className="flex-1 text-center">
             <div
               className="h-16 rounded-lg shadow-sm border border-gray-200"
               style={{ backgroundColor: secondaryColor }}
             />
-            <p className="text-xs text-gray-600 mt-2">Secondary</p>
+            <p className="text-xs text-gray-600 mt-2">{t('secondary')}</p>
           </div>
           <div className="flex-1 text-center">
             <div
               className="h-16 rounded-lg shadow-sm border border-gray-200"
               style={{ backgroundColor: accentColor }}
             />
-            <p className="text-xs text-gray-600 mt-2">Accent</p>
+            <p className="text-xs text-gray-600 mt-2">{t('accent')}</p>
           </div>
         </div>
       </div>

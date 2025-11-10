@@ -70,7 +70,7 @@ export default function DeliveryProviderSection({ provider, onProviderChange, t 
         <ProviderCard
           icon={Truck}
           title={t('shipday')}
-          description="Professional third-party delivery service integration"
+          description={t('shipdayIntegration')}
           isSelected={provider === 'shipday'}
           onSelect={() => onProviderChange('shipday')}
         />

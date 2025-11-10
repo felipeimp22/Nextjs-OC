@@ -1,26 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, useToast } from '@/components/ui';
 import { PermissionsManagementSection } from '@/components/settings/users';
 import { getRestaurantUsers, updateRolePermissions } from '@/lib/serverActions/settings.actions';
-
-const PAGES = [
-  { id: 'dashboard', label: 'Dashboard', description: 'View main dashboard and overview' },
-  { id: 'menuManagement', label: 'Menu Management', description: 'Create and edit menu items' },
-  { id: 'orders', label: 'Orders', description: 'View and manage orders' },
-  { id: 'kitchen', label: 'Kitchen Display', description: 'Access kitchen order display' },
-  { id: 'customers', label: 'Customers', description: 'View and manage customer data' },
-  { id: 'marketing', label: 'Marketing', description: 'Manage promotions and campaigns' },
-  { id: 'analytics', label: 'Analytics', description: 'View reports and insights' },
-  { id: 'settings', label: 'Settings', description: 'Modify restaurant settings' },
-];
-
-const ROLES = [
-  { id: 'manager', label: 'Manager', color: 'blue' },
-  { id: 'kitchen', label: 'Kitchen', color: 'green' },
-  { id: 'staff', label: 'Staff', color: 'purple' },
-];
 
 interface RolePermissions {
   role: string;
@@ -32,11 +16,30 @@ interface UsersSettingsProps {
 }
 
 export function UsersSettings({ restaurantId }: UsersSettingsProps) {
+  const t = useTranslations('settings.users');
+  const tSidebar = useTranslations('sidebar');
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions[]>([]);
+
+  const PAGES = [
+    { id: 'dashboard', label: tSidebar('dashboard'), description: 'View main dashboard and overview' },
+    { id: 'menuManagement', label: tSidebar('menuManagement'), description: 'Create and edit menu items' },
+    { id: 'orders', label: tSidebar('orders'), description: 'View and manage orders' },
+    { id: 'kitchen', label: tSidebar('kitchen'), description: 'Access kitchen order display' },
+    { id: 'customers', label: tSidebar('customers'), description: 'View and manage customer data' },
+    { id: 'marketing', label: tSidebar('marketing'), description: 'Manage promotions and campaigns' },
+    { id: 'analytics', label: tSidebar('analytics'), description: 'View reports and insights' },
+    { id: 'settings', label: tSidebar('settings'), description: 'Modify restaurant settings' },
+  ];
+
+  const ROLES = [
+    { id: 'manager', label: t('manager'), color: 'blue' },
+    { id: 'kitchen', label: t('kitchen'), color: 'green' },
+    { id: 'staff', label: t('staff'), color: 'purple' },
+  ];
 
   useEffect(() => {
     fetchData();
@@ -70,7 +73,7 @@ export function UsersSettings({ restaurantId }: UsersSettingsProps) {
         }
       }
     } catch (error) {
-      showToast('error', 'Failed to load settings');
+      showToast('error', t('saving'));
       console.error('Error fetching permissions:', error);
     } finally {
       setLoading(false);
@@ -99,14 +102,14 @@ export function UsersSettings({ restaurantId }: UsersSettingsProps) {
       const result = await updateRolePermissions(restaurantId, rolePermissions);
 
       if (!result.success) {
-        showToast('error', result.error || 'Failed to save permissions');
+        showToast('error', result.error || t('saving'));
         return;
       }
 
-      showToast('success', 'Permissions saved successfully!');
+      showToast('success', t('savePermissions'));
       await fetchData();
     } catch (error) {
-      showToast('error', 'Failed to save permissions');
+      showToast('error', t('saving'));
       console.error('Error saving permissions:', error);
     } finally {
       setSaving(false);
@@ -124,6 +127,7 @@ export function UsersSettings({ restaurantId }: UsersSettingsProps) {
   return (
     <div className="w-full md:max-w-6xl md:mx-auto p-3 md:p-6 space-y-6 md:space-y-8">
       <PermissionsManagementSection
+        t={t}
         pages={PAGES}
         roles={ROLES}
         rolePermissions={rolePermissions}
@@ -136,7 +140,7 @@ export function UsersSettings({ restaurantId }: UsersSettingsProps) {
           disabled={saving}
           className="bg-brand-red hover:bg-brand-red/90 text-white px-6 md:px-8 w-full md:w-auto"
         >
-          {saving ? 'Saving...' : 'Save Permissions'}
+          {saving ? t('saving') : t('savePermissions')}
         </Button>
       </div>
     </div>
