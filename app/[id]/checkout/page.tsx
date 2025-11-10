@@ -172,12 +172,32 @@ export default function CheckoutPage() {
       return;
     }
 
+    console.log('Payment intent created:', {
+      hasClientSecret: !!paymentResult.data.clientSecret,
+      hasPublicKey: !!paymentResult.data.publicKey,
+      accountType: paymentResult.data.accountType,
+    });
+
     setClientSecret(paymentResult.data.clientSecret);
 
     const publishableKey = paymentResult.data.publicKey;
-    const stripe = await loadStripe(publishableKey);
-    setStripePromise(stripe);
 
+    if (!publishableKey) {
+      showToast('error', 'Missing Stripe publishable key');
+      console.error('No publishable key in payment result:', paymentResult.data);
+      return;
+    }
+
+    console.log('Loading Stripe with key:', publishableKey.substring(0, 20) + '...');
+    const stripe = await loadStripe(publishableKey);
+
+    if (!stripe) {
+      showToast('error', 'Failed to initialize Stripe');
+      console.error('loadStripe returned null');
+      return;
+    }
+
+    setStripePromise(stripe);
     setStep('payment');
   };
 

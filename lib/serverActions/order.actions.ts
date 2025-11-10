@@ -238,11 +238,20 @@ export async function createPaymentIntent(orderId: string) {
     const hasStripeAccount = !!financialSettings.stripeAccountId;
     const isFullyConnected = financialSettings.stripeConnectStatus === 'connected';
     const isPending = financialSettings.stripeConnectStatus === 'pending';
+    const connectedAccountPublicKey = financialSettings.stripePublicKey;
 
     if (hasStripeAccount && (isFullyConnected || isPending)) {
       // Use Stripe Connect - payments go to restaurant account with platform fee
       paymentIntentOptions.connectedAccountId = financialSettings.stripeAccountId;
       paymentIntentOptions.applicationFeeAmount = platformFeeInCents;
+
+      if (!connectedAccountPublicKey) {
+        console.error(`❌ Connected account missing publishable key for restaurant ${order.restaurantId}`);
+        return {
+          success: false,
+          error: 'Restaurant payment configuration incomplete. Please reconnect Stripe account.',
+        };
+      }
 
       if (isPending) {
         console.warn(`⚠️ Using Stripe Connect with pending status for restaurant ${order.restaurantId} - Complete onboarding for full features`);
@@ -272,6 +281,9 @@ export async function createPaymentIntent(orderId: string) {
 
     const paymentIntent = await provider.createPaymentIntent(paymentIntentOptions);
 
+    // Use connected account's publishable key if available, otherwise platform key
+    const publicKeyToUse = connectedAccountPublicKey || paymentIntent.publicKey;
+
     await prisma.order.update({
       where: { id: orderId },
       data: {
@@ -280,13 +292,20 @@ export async function createPaymentIntent(orderId: string) {
       },
     });
 
-    console.log(`✅ Payment intent created for order ${order.orderNumber}`);
+    console.log(`✅ Payment intent created for order ${order.orderNumber}`, {
+      paymentIntentId: paymentIntent.paymentIntentId,
+      accountType: paymentIntent.accountType,
+      hasClientSecret: !!paymentIntent.clientSecret,
+      hasPublicKey: !!publicKeyToUse,
+      publicKeyPrefix: publicKeyToUse?.substring(0, 20),
+      usingConnectedAccountKey: !!connectedAccountPublicKey,
+    });
 
     return {
       success: true,
       data: {
         clientSecret: paymentIntent.clientSecret,
-        publicKey: paymentIntent.publicKey,
+        publicKey: publicKeyToUse,
         accountType: paymentIntent.accountType,
       },
     };
