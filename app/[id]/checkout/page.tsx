@@ -172,7 +172,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    const { clientSecret, publicKey, accountType } = paymentResult.data;
+    const { clientSecret, publicKey, accountType, stripeAccountId } = paymentResult.data;
 
     console.log('🔑 Payment Intent Details:', {
       hasClientSecret: !!clientSecret,
@@ -181,6 +181,7 @@ export default function CheckoutPage() {
       publicKeyPrefix: publicKey?.substring(0, 20),
       publicKeyFull: publicKey,
       accountType,
+      stripeAccountId: stripeAccountId || 'platform',
     });
 
     if (!clientSecret) {
@@ -214,9 +215,13 @@ export default function CheckoutPage() {
     console.log('🔄 Loading Stripe.js with:', {
       keyType: publicKey.startsWith('pk_test_') ? 'TEST' : 'LIVE',
       keyPrefix: publicKey.substring(0, 20),
+      stripeAccount: stripeAccountId || 'none (using platform)',
     });
 
-    const stripe = await loadStripe(publicKey);
+    // Pass stripeAccount when using connected account (Direct Charges)
+    const stripe = await loadStripe(publicKey, stripeAccountId ? {
+      stripeAccount: stripeAccountId,
+    } : {});
 
     if (!stripe) {
       showToast('error', 'Failed to initialize Stripe');

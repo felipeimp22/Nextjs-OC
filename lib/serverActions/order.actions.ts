@@ -322,6 +322,7 @@ export async function createPaymentIntent(orderId: string) {
         clientSecret: paymentIntent.clientSecret,
         publicKey: publicKeyToUse,
         accountType: paymentIntent.accountType,
+        stripeAccountId: financialSettings.stripeAccountId || undefined, // Pass connected account ID
       },
     };
   } catch (error: any) {
