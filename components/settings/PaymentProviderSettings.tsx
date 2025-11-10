@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Card, Toggle, useToast } from '@/components/ui';
+import { createStripeOnboardingLink } from '@/lib/serverActions/settings.actions';
 
 interface PaymentProviderSettingsProps {
   restaurantId: string;
@@ -39,18 +40,12 @@ export default function PaymentProviderSettings({
     setIsConnecting(true);
 
     try {
-      const response = await fetch('/api/stripe/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ restaurantId }),
-      });
+      const result = await createStripeOnboardingLink(restaurantId);
 
-      const data = await response.json();
-
-      if (data.success && data.url) {
-        window.location.href = data.url;
+      if (result.success && result.url) {
+        window.location.href = result.url;
       } else {
-        showToast('error', data.error || 'Failed to connect Stripe');
+        showToast('error', result.error || 'Failed to connect Stripe');
       }
     } catch (error: any) {
       showToast('error', error.message || 'Failed to connect Stripe');

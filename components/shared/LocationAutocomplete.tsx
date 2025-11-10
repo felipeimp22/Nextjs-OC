@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { searchAddresses, retrieveAddress, parseAddress, validateAddressHasHouseNumber, type AddressComponents } from '@/lib/utils/mapbox';
+import { searchAddressesAction, retrieveAddressAction } from '@/lib/serverActions/address.actions';
+import type { AddressComponents } from '@/lib/utils/mapbox';
 import {Input} from '@/components/ui/Input';
 
 interface LocationAutocompleteProps {
@@ -47,9 +48,14 @@ export default function LocationAutocomplete({
     setValidationError('');
 
     try {
-      const results = await searchAddresses(searchQuery);
-      setSuggestions(results.features || []);
-      setShowSuggestions(true);
+      const response = await searchAddressesAction(searchQuery);
+
+      if (response.success && response.data) {
+        setSuggestions(response.data);
+        setShowSuggestions(true);
+      } else {
+        setValidationError(response.error || 'Failed to search addresses. Please try again.');
+      }
     } catch (err: any) {
       console.error('Address search failed:', err);
       setValidationError('Failed to search addresses. Please try again.');
@@ -76,19 +82,16 @@ export default function LocationAutocomplete({
     setValidationError('');
 
     try {
-      const fullFeature = await retrieveAddress(suggestion.mapbox_id);
-      const addressComponents = parseAddress(fullFeature);
+      const response = await retrieveAddressAction(suggestion.mapbox_id);
 
-      if (!validateAddressHasHouseNumber(addressComponents)) {
-        setValidationError('Please select an address with a house number for delivery.');
-        setIsLoading(false);
-        return;
+      if (response.success && response.data) {
+        setSelectedAddress(response.data);
+        setQuery(response.data.fullAddress);
+        setShowSuggestions(false);
+        onSelect(response.data);
+      } else {
+        setValidationError(response.error || 'Failed to retrieve address details. Please try again.');
       }
-
-      setSelectedAddress(addressComponents);
-      setQuery(addressComponents.fullAddress);
-      setShowSuggestions(false);
-      onSelect(addressComponents);
     } catch (err: any) {
       console.error('Address retrieval failed:', err);
       setValidationError('Failed to retrieve address details. Please try again.');
