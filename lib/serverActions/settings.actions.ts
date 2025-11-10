@@ -131,7 +131,14 @@ export async function createStripeOnboardingLink(restaurantId: string) {
       });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      return {
+        success: false,
+        error: 'APP_URL environment variable must start with http:// or https://',
+      };
+    }
 
     const accountLink = await provider.createAccountLink(
       stripeAccountId,

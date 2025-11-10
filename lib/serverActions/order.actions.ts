@@ -234,20 +234,26 @@ export async function createPaymentIntent(orderId: string) {
       },
     };
 
-    // Require Stripe Connect account - payments must go to restaurant account with platform fee
-    if (
-      !financialSettings.stripeAccountId ||
-      financialSettings.stripeConnectStatus !== 'connected'
-    ) {
+    // Check if restaurant has Stripe Connect configured
+    const hasStripeConnect =
+      financialSettings.stripeAccountId &&
+      financialSettings.stripeConnectStatus === 'connected';
+
+    if (hasStripeConnect) {
+      // Use Stripe Connect - payments go to restaurant account with platform fee
+      paymentIntentOptions.connectedAccountId = financialSettings.stripeAccountId;
+      paymentIntentOptions.applicationFeeAmount = platformFeeInCents;
+      console.log(`💳 Using Stripe Connect for restaurant ${order.restaurantId}`);
+    } else if (financialSettings.usePlatformAccountFallback) {
+      // Allow platform account fallback if explicitly enabled for testing
+      console.warn(`⚠️ Using platform account fallback for restaurant ${order.restaurantId} - TESTING ONLY`);
+    } else {
+      // No Stripe Connect and fallback disabled
       return {
         success: false,
         error: 'Restaurant payment account not connected. Please contact the restaurant to set up payment processing.',
       };
     }
-
-    // Set connected account and application fee (platform fee goes to OrderChop)
-    paymentIntentOptions.connectedAccountId = financialSettings.stripeAccountId;
-    paymentIntentOptions.applicationFeeAmount = platformFeeInCents;
 
     const paymentIntent = await provider.createPaymentIntent(paymentIntentOptions);
 
