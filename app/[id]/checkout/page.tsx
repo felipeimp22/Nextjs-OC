@@ -172,30 +172,59 @@ export default function CheckoutPage() {
       return;
     }
 
-    console.log('Payment intent created:', {
-      hasClientSecret: !!paymentResult.data.clientSecret,
-      hasPublicKey: !!paymentResult.data.publicKey,
-      accountType: paymentResult.data.accountType,
+    const { clientSecret, publicKey, accountType } = paymentResult.data;
+
+    console.log('🔑 Payment Intent Details:', {
+      hasClientSecret: !!clientSecret,
+      clientSecretPrefix: clientSecret?.substring(0, 10),
+      hasPublicKey: !!publicKey,
+      publicKeyPrefix: publicKey?.substring(0, 20),
+      publicKeyFull: publicKey,
+      accountType,
     });
 
-    setClientSecret(paymentResult.data.clientSecret);
-
-    const publishableKey = paymentResult.data.publicKey;
-
-    if (!publishableKey) {
-      showToast('error', 'Missing Stripe publishable key');
-      console.error('No publishable key in payment result:', paymentResult.data);
+    if (!clientSecret) {
+      showToast('error', 'Missing payment client secret');
+      console.error('❌ No client secret in payment result:', paymentResult.data);
       return;
     }
 
-    console.log('Loading Stripe with key:', publishableKey.substring(0, 20) + '...');
-    const stripe = await loadStripe(publishableKey);
+    if (!publicKey) {
+      showToast('error', 'Missing Stripe publishable key');
+      console.error('❌ No publishable key in payment result:', paymentResult.data);
+      return;
+    }
+
+    // Validate client secret format
+    if (!clientSecret.startsWith('pi_') && !clientSecret.includes('_secret_')) {
+      showToast('error', 'Invalid payment client secret format');
+      console.error('❌ Invalid client secret format:', clientSecret.substring(0, 20));
+      return;
+    }
+
+    // Validate publishable key format
+    if (!publicKey.startsWith('pk_test_') && !publicKey.startsWith('pk_live_')) {
+      showToast('error', 'Invalid Stripe publishable key format');
+      console.error('❌ Invalid publishable key format:', publicKey.substring(0, 20));
+      return;
+    }
+
+    setClientSecret(clientSecret);
+
+    console.log('🔄 Loading Stripe.js with:', {
+      keyType: publicKey.startsWith('pk_test_') ? 'TEST' : 'LIVE',
+      keyPrefix: publicKey.substring(0, 20),
+    });
+
+    const stripe = await loadStripe(publicKey);
 
     if (!stripe) {
       showToast('error', 'Failed to initialize Stripe');
-      console.error('loadStripe returned null');
+      console.error('❌ loadStripe returned null for key:', publicKey.substring(0, 20));
       return;
     }
+
+    console.log('✅ Stripe.js loaded successfully');
 
     setStripePromise(stripe);
     setStep('payment');

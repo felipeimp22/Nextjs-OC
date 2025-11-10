@@ -64,16 +64,34 @@ export default function PaymentForm({
         <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Information</h2>
 
         <div className="mb-4">
-          <PaymentElement
-            onReady={() => {
-              console.log('PaymentElement ready');
-              setIsElementReady(true);
-            }}
-            onLoadError={(error) => {
-              console.error('PaymentElement load error:', error);
-              setErrorMessage('Failed to load payment form. Please refresh the page.');
-            }}
-          />
+          {!isElementReady && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading payment form...</span>
+            </div>
+          )}
+          <div className={!isElementReady ? 'hidden' : ''}>
+            <PaymentElement
+              onReady={() => {
+                console.log('✅ PaymentElement ready');
+                setIsElementReady(true);
+              }}
+              onLoadError={(error) => {
+                console.error('❌ PaymentElement load error:', error);
+                console.error('❌ Error type:', typeof error);
+                console.error('❌ Error keys:', Object.keys(error || {}));
+                console.error('❌ Error stringified:', JSON.stringify(error, null, 2));
+                setErrorMessage(`Failed to load payment form. ${error?.message || 'Please check your Stripe configuration and try again.'}`);
+              }}
+              onChange={(event) => {
+                if (event.complete) {
+                  console.log('✅ PaymentElement completed');
+                } else if (event.empty) {
+                  console.log('⚠️ PaymentElement empty');
+                }
+              }}
+            />
+          </div>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
