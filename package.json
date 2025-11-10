@@ -15,7 +15,8 @@
     "docker:prune": "docker volume prune -f",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    "seed:essentials": "tsx seeds/seedProfileEssentials.ts"
+    "seed:essentials": "tsx seeds/seedProfileEssentials.ts",
+    "stripe:webhook":"stripe listen --forward-to http://localhost:3000/api/webhooks/stripe"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
