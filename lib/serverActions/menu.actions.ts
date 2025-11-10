@@ -461,7 +461,6 @@ export async function createOption(data: {
   choices: Array<{
     name: string;
     basePrice: number;
-    useNewPrice?: boolean;
     isDefault?: boolean;
     isAvailable?: boolean;
   }>;
@@ -503,7 +502,6 @@ export async function createOption(data: {
           id: crypto.randomUUID(),
           name: choice.name,
           basePrice: choice.basePrice,
-          useNewPrice: choice.useNewPrice ?? false,
           isDefault: choice.isDefault ?? false,
           isAvailable: choice.isAvailable ?? true,
           disableWhenFinishInventory: false,
@@ -539,7 +537,6 @@ export async function updateOption(id: string, data: {
     id?: string;
     name: string;
     basePrice: number;
-    useNewPrice?: boolean;
     isDefault?: boolean;
     isAvailable?: boolean;
   }>;
@@ -578,7 +575,6 @@ export async function updateOption(id: string, data: {
         id: choice.id || crypto.randomUUID(),
         name: choice.name,
         basePrice: choice.basePrice,
-        useNewPrice: choice.useNewPrice ?? false,
         isDefault: choice.isDefault ?? false,
         isAvailable: choice.isAvailable ?? true,
         disableWhenFinishInventory: false,
