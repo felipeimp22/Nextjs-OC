@@ -2,6 +2,7 @@
 export { Button, type ButtonProps } from './Button';
 export { Card, type CardProps } from './Card';
 export { Input, type InputProps } from './Input';
+export { NumberInput, type NumberInputProps } from './NumberInput';
 export { Container, type ContainerProps } from './Container';
 export { Heading, Text, type HeadingProps, type TextProps } from './Typography';
 export { default as Toggle } from './Toggle';

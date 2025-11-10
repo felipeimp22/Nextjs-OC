@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Input, NumberInput } from '@/components/ui';
 import Select  from '@/components/ui/Select';
 import Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
@@ -239,24 +239,22 @@ export default function MenuItemFormModal({
 
         <div className="grid grid-cols-2 gap-4">
           <FormField label={t('price')} required>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
+            <NumberInput
+              step={0.01}
+              min={0}
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+              onChange={(value) => setFormData({ ...formData, price: value })}
               placeholder={t('pricePlaceholder')}
               required
             />
           </FormField>
 
           <FormField label={t('cost')}>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
+            <NumberInput
+              step={0.01}
+              min={0}
               value={formData.cost}
-              onChange={(e) => setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 })}
+              onChange={(value) => setFormData({ ...formData, cost: value })}
               placeholder={t('costPlaceholder')}
             />
           </FormField>

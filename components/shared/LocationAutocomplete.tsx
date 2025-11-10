@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { searchAddressesAction, retrieveAddressAction } from '@/lib/serverActions/address.actions';
 import type { AddressComponents } from '@/lib/utils/mapbox';
 import {Input} from '@/components/ui/Input';
@@ -20,7 +20,7 @@ export default function LocationAutocomplete({
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<AddressComponents | null>(null);
   const [validationError, setValidationError] = useState<string>('');
@@ -38,13 +38,14 @@ export default function LocationAutocomplete({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearch = async (searchQuery: string) => {
+  const handleSearch = useCallback(async (searchQuery: string) => {
     if (searchQuery.length < 3) {
       setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
-    setIsLoading(true);
+    setIsSearching(true);
     setValidationError('');
 
     try {
@@ -54,17 +55,20 @@ export default function LocationAutocomplete({
         setSuggestions(response.data);
         setShowSuggestions(true);
       } else {
+        setSuggestions([]);
         setValidationError(response.error || 'Failed to search addresses. Please try again.');
       }
     } catch (err: any) {
       console.error('Address search failed:', err);
+      setSuggestions([]);
       setValidationError('Failed to search addresses. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
     }
-  };
+  }, []);
 
-  const handleInputChange = (value: string) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     setQuery(value);
     setSelectedAddress(null);
 
@@ -72,14 +76,21 @@ export default function LocationAutocomplete({
       clearTimeout(debounceRef.current);
     }
 
+    if (value.length < 3) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
     debounceRef.current = setTimeout(() => {
       handleSearch(value);
-    }, 300);
+    }, 500);
   };
 
   const handleSelectSuggestion = async (suggestion: any) => {
-    setIsLoading(true);
+    setIsSearching(true);
     setValidationError('');
+    setShowSuggestions(false);
 
     try {
       const response = await retrieveAddressAction(suggestion.mapbox_id);
@@ -87,7 +98,6 @@ export default function LocationAutocomplete({
       if (response.success && response.data) {
         setSelectedAddress(response.data);
         setQuery(response.data.fullAddress);
-        setShowSuggestions(false);
         onSelect(response.data);
       } else {
         setValidationError(response.error || 'Failed to retrieve address details. Please try again.');
@@ -96,7 +106,7 @@ export default function LocationAutocomplete({
       console.error('Address retrieval failed:', err);
       setValidationError('Failed to retrieve address details. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
     }
   };
 
@@ -104,14 +114,13 @@ export default function LocationAutocomplete({
     <div ref={wrapperRef} className="relative">
       <Input
         value={query}
-        onChange={(e) => handleInputChange(e.target.value)}
+        onChange={handleInputChange}
         placeholder={placeholder}
         required={required}
-        disabled={isLoading}
       />
 
-      {isLoading && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+      {isSearching && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-navy"></div>
         </div>
       )}
@@ -121,6 +130,7 @@ export default function LocationAutocomplete({
           {suggestions.map((suggestion) => (
             <button
               key={suggestion.mapbox_id}
+              type="button"
               onClick={() => handleSelectSuggestion(suggestion)}
               className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
             >
