@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PaymentFactory } from '@/lib/payment/PaymentFactory';
 import { StripePaymentProvider } from '@/lib/payment/providers/StripePaymentProvider';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import prisma  from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
