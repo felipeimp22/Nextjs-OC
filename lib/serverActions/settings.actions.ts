@@ -504,3 +504,70 @@ export async function uploadRestaurantPhoto(restaurantId: string, logoFile: {
     return { success: false, error: 'Failed to upload photo', data: null };
   }
 }
+
+export async function refreshStripeConnectStatus(restaurantId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const financialSettings = await prisma.financialSettings.findUnique({
+      where: { restaurantId },
+    });
+
+    if (!financialSettings?.stripeAccountId) {
+      return {
+        success: false,
+        error: 'No Stripe account connected',
+        data: {
+          status: 'not_connected',
+          accountId: null,
+          chargesEnabled: false,
+          payoutsEnabled: false,
+        },
+      };
+    }
+
+    const provider = await PaymentFactory.getProvider('stripe') as StripePaymentProvider;
+    const account = await provider.getConnectedAccount(financialSettings.stripeAccountId);
+
+    const newStatus = account.charges_enabled && account.payouts_enabled
+      ? 'connected'
+      : account.details_submitted
+      ? 'pending'
+      : 'not_connected';
+
+    await prisma.financialSettings.update({
+      where: { restaurantId },
+      data: {
+        stripeConnectStatus: newStatus,
+        stripeConnectDetails: {
+          ...(typeof financialSettings.stripeConnectDetails === 'object' ? financialSettings.stripeConnectDetails : {}),
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled,
+          detailsSubmitted: account.details_submitted,
+        },
+      },
+    });
+
+    console.log(`✅ Refreshed Stripe status for restaurant ${restaurantId}: ${newStatus}`);
+
+    return {
+      success: true,
+      data: {
+        status: newStatus,
+        accountId: financialSettings.stripeAccountId,
+        chargesEnabled: account.charges_enabled,
+        payoutsEnabled: account.payouts_enabled,
+        detailsSubmitted: account.details_submitted,
+      },
+    };
+  } catch (error: any) {
+    console.error('❌ Failed to refresh Stripe status:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to refresh Stripe status',
+    };
+  }
+}

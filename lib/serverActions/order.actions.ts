@@ -235,23 +235,38 @@ export async function createPaymentIntent(orderId: string) {
     };
 
     // Check if restaurant has Stripe Connect configured
-    const hasStripeConnect =
-      financialSettings.stripeAccountId &&
-      financialSettings.stripeConnectStatus === 'connected';
+    const hasStripeAccount = !!financialSettings.stripeAccountId;
+    const isFullyConnected = financialSettings.stripeConnectStatus === 'connected';
+    const isPending = financialSettings.stripeConnectStatus === 'pending';
 
-    if (hasStripeConnect) {
+    if (hasStripeAccount && (isFullyConnected || isPending)) {
       // Use Stripe Connect - payments go to restaurant account with platform fee
       paymentIntentOptions.connectedAccountId = financialSettings.stripeAccountId;
       paymentIntentOptions.applicationFeeAmount = platformFeeInCents;
-      console.log(`💳 Using Stripe Connect for restaurant ${order.restaurantId}`);
+
+      if (isPending) {
+        console.warn(`⚠️ Using Stripe Connect with pending status for restaurant ${order.restaurantId} - Complete onboarding for full features`);
+      } else {
+        console.log(`💳 Using Stripe Connect for restaurant ${order.restaurantId}`);
+      }
     } else if (financialSettings.usePlatformAccountFallback) {
       // Allow platform account fallback if explicitly enabled for testing
       console.warn(`⚠️ Using platform account fallback for restaurant ${order.restaurantId} - TESTING ONLY`);
     } else {
-      // No Stripe Connect and fallback disabled
+      // No Stripe Connect and fallback disabled - provide detailed error
+      const statusMessage = hasStripeAccount
+        ? `Stripe account status: ${financialSettings.stripeConnectStatus}. Please complete Stripe onboarding.`
+        : 'No Stripe account connected. Please set up Stripe Connect in restaurant settings.';
+
+      console.error(`❌ Payment blocked for restaurant ${order.restaurantId}:`, {
+        hasAccountId: hasStripeAccount,
+        status: financialSettings.stripeConnectStatus,
+        fallbackEnabled: financialSettings.usePlatformAccountFallback,
+      });
+
       return {
         success: false,
-        error: 'Restaurant payment account not connected. Please contact the restaurant to set up payment processing.',
+        error: `Restaurant payment account not set up. ${statusMessage}`,
       };
     }
 
