@@ -18,12 +18,14 @@ export interface StripeConfig {
   publishableKey: string;
   webhookSecret?: string;
   apiVersion?: string;
+  clientId?: string;
 }
 
 export class StripePaymentProvider implements IPaymentProvider {
   private stripe: Stripe | null = null;
   private publishableKey: string = '';
   private webhookSecret: string = '';
+  private clientId: string = '';
 
   async initialize(config: StripeConfig): Promise<void> {
     if (!config.secretKey) {
@@ -36,6 +38,7 @@ export class StripePaymentProvider implements IPaymentProvider {
 
     this.publishableKey = config.publishableKey;
     this.webhookSecret = config.webhookSecret || '';
+    this.clientId = config.clientId || '';
 
     console.log('✅ Stripe Payment Provider initialized');
   }
@@ -224,5 +227,136 @@ export class StripePaymentProvider implements IPaymentProvider {
 
   getProviderName(): string {
     return 'stripe';
+  }
+
+  /**
+   * Generate Stripe Connect OAuth URL for restaurant onboarding
+   * @param restaurantId - Restaurant ID to include in state
+   * @param redirectUri - Redirect URI after OAuth
+   * @returns OAuth URL
+   */
+  generateConnectUrl(restaurantId: string, redirectUri: string): string {
+    if (!this.clientId) {
+      throw new Error('Stripe Client ID not configured');
+    }
+
+    const state = Buffer.from(JSON.stringify({ restaurantId })).toString('base64');
+
+    const params = new URLSearchParams({
+      client_id: this.clientId,
+      state,
+      scope: 'read_write',
+      redirect_uri: redirectUri,
+      'stripe_user[business_type]': 'company',
+    });
+
+    return `https://connect.stripe.com/oauth/authorize?${params.toString()}`;
+  }
+
+  /**
+   * Exchange authorization code for connected account credentials
+   * @param code - Authorization code from OAuth redirect
+   * @returns Connected account details
+   */
+  async completeConnectOAuth(code: string): Promise<{
+    stripeUserId: string;
+    accessToken: string;
+    refreshToken: string;
+    publishableKey: string;
+  }> {
+    if (!this.stripe) {
+      throw new Error('Stripe not initialized');
+    }
+
+    try {
+      const response = await this.stripe.oauth.token({
+        grant_type: 'authorization_code',
+        code,
+      });
+
+      return {
+        stripeUserId: response.stripe_user_id,
+        accessToken: response.access_token,
+        refreshToken: response.refresh_token || '',
+        publishableKey: response.stripe_publishable_key || '',
+      };
+    } catch (error: any) {
+      console.error('❌ Stripe Connect OAuth failed:', error.message);
+      throw new Error(`Failed to complete OAuth: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get connected account details
+   * @param accountId - Stripe connected account ID
+   * @returns Account details
+   */
+  async getConnectedAccount(accountId: string): Promise<Stripe.Account> {
+    if (!this.stripe) {
+      throw new Error('Stripe not initialized');
+    }
+
+    try {
+      return await this.stripe.accounts.retrieve(accountId);
+    } catch (error: any) {
+      console.error('❌ Failed to retrieve connected account:', error.message);
+      throw new Error(`Failed to get account: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create account link for onboarding
+   * @param accountId - Stripe connected account ID
+   * @param refreshUrl - URL to redirect if link expires
+   * @param returnUrl - URL to redirect after onboarding
+   * @returns Account link
+   */
+  async createAccountLink(
+    accountId: string,
+    refreshUrl: string,
+    returnUrl: string
+  ): Promise<Stripe.AccountLink> {
+    if (!this.stripe) {
+      throw new Error('Stripe not initialized');
+    }
+
+    try {
+      return await this.stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: 'account_onboarding',
+      });
+    } catch (error: any) {
+      console.error('❌ Failed to create account link:', error.message);
+      throw new Error(`Failed to create account link: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create Express account for restaurant
+   * @param email - Restaurant email
+   * @param country - Country code
+   * @returns Created account
+   */
+  async createExpressAccount(email: string, country: string = 'US'): Promise<Stripe.Account> {
+    if (!this.stripe) {
+      throw new Error('Stripe not initialized');
+    }
+
+    try {
+      return await this.stripe.accounts.create({
+        type: 'express',
+        country,
+        email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+      });
+    } catch (error: any) {
+      console.error('❌ Failed to create Express account:', error.message);
+      throw new Error(`Failed to create account: ${error.message}`);
+    }
   }
 }
