@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button, Input, useToast } from '@/components/ui';
 import { FormSection, FormField, InfoCard } from '@/components/shared';
 import { TaxManagementSection } from '@/components/settings/financial';
+import PaymentProviderSettings from '@/components/settings/PaymentProviderSettings';
 import { getFinancialSettings, updateFinancialSettings } from '@/lib/serverActions/settings.actions';
 import { AMERICAS_CURRENCIES } from '@/lib/constants/currencies';
 
@@ -224,28 +225,11 @@ export function FinancialSettings({ restaurantId }: FinancialSettingsProps) {
       />
 
       <FormSection title={t('payment')}>
-        <FormField label={t('paymentProvider')}>
-          <select
-            value={data.paymentProvider}
-            onChange={(e) => setData({ ...data, paymentProvider: e.target.value })}
-            className="w-full px-4 py-2.5 rounded-lg bg-transparent border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition-colors"
-          >
-            <option value="stripe">{t('stripe')}</option>
-            <option value="mercadopago">{t('mercadopago')}</option>
-          </select>
-        </FormField>
-
-        {data.paymentProvider === 'stripe' && data.stripeConnectStatus === 'connected' && data.stripeAccountId && (
-          <InfoCard type="success" title={t('stripeConnected')} className="mt-4">
-            <p>Account ID: <span className="font-mono text-xs">{data.stripeAccountId}</span></p>
-          </InfoCard>
-        )}
-
-        {data.paymentProvider === 'stripe' && data.stripeConnectStatus !== 'connected' && (
-          <InfoCard type="warning" className="mt-4">
-            {t('connectStripe')}
-          </InfoCard>
-        )}
+        <PaymentProviderSettings
+          restaurantId={restaurantId}
+          financialSettings={data}
+          onUpdate={fetchSettings}
+        />
       </FormSection>
 
       <div className="flex justify-end pt-4 md:pt-6 border-t border-gray-200">

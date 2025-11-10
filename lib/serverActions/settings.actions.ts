@@ -3,6 +3,8 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { PaymentFactory } from '@/lib/payment/PaymentFactory';
+import { StripePaymentProvider } from '@/lib/payment/providers/StripePaymentProvider';
 
 // Financial Settings
 export async function getFinancialSettings(restaurantId: string) {
@@ -63,6 +65,97 @@ export async function updateFinancialSettings(restaurantId: string, data: any) {
   } catch (error) {
     console.error('Error updating financial settings:', error);
     return { success: false, error: 'Failed to save settings', data: null };
+  }
+}
+
+export async function createStripeOnboardingLink(restaurantId: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        restaurants: {
+          where: { restaurantId },
+        },
+      },
+    });
+
+    if (!user || user.restaurants.length === 0) {
+      return { success: false, error: 'Access denied' };
+    }
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+    });
+
+    if (!restaurant) {
+      return { success: false, error: 'Restaurant not found' };
+    }
+
+    const provider = await PaymentFactory.getProvider('stripe') as StripePaymentProvider;
+
+    const financialSettings = await prisma.financialSettings.findUnique({
+      where: { restaurantId },
+    });
+
+    let stripeAccountId = financialSettings?.stripeAccountId;
+
+    if (!stripeAccountId) {
+      const account = await provider.createExpressAccount(
+        restaurant.email,
+        restaurant.country
+      );
+
+      stripeAccountId = account.id;
+
+      await prisma.financialSettings.upsert({
+        where: { restaurantId },
+        create: {
+          restaurantId,
+          currency: 'USD',
+          currencySymbol: '$',
+          stripeEnabled: false,
+          stripeAccountId,
+          stripeConnectStatus: 'pending',
+          paymentProvider: 'stripe',
+        },
+        update: {
+          stripeAccountId,
+          stripeConnectStatus: 'pending',
+        },
+      });
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      return {
+        success: false,
+        error: 'APP_URL environment variable must start with http:// or https://',
+      };
+    }
+
+    const accountLink = await provider.createAccountLink(
+      stripeAccountId,
+      `${baseUrl}/api/stripe/onboarding?restaurantId=${restaurantId}`,
+      `${baseUrl}/${restaurantId}/settings?tab=financial&success=stripe_onboarded`
+    );
+
+    return {
+      success: true,
+      url: accountLink.url,
+    };
+  } catch (error: any) {
+    console.error('Stripe onboarding failed:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to create onboarding link',
+    };
   }
 }
 
@@ -409,5 +502,72 @@ export async function uploadRestaurantPhoto(restaurantId: string, logoFile: {
   } catch (error) {
     console.error('Error uploading photo:', error);
     return { success: false, error: 'Failed to upload photo', data: null };
+  }
+}
+
+export async function refreshStripeConnectStatus(restaurantId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const financialSettings = await prisma.financialSettings.findUnique({
+      where: { restaurantId },
+    });
+
+    if (!financialSettings?.stripeAccountId) {
+      return {
+        success: false,
+        error: 'No Stripe account connected',
+        data: {
+          status: 'not_connected',
+          accountId: null,
+          chargesEnabled: false,
+          payoutsEnabled: false,
+        },
+      };
+    }
+
+    const provider = await PaymentFactory.getProvider('stripe') as StripePaymentProvider;
+    const account = await provider.getConnectedAccount(financialSettings.stripeAccountId);
+
+    const newStatus = account.charges_enabled && account.payouts_enabled
+      ? 'connected'
+      : account.details_submitted
+      ? 'pending'
+      : 'not_connected';
+
+    await prisma.financialSettings.update({
+      where: { restaurantId },
+      data: {
+        stripeConnectStatus: newStatus,
+        stripeConnectDetails: {
+          ...(typeof financialSettings.stripeConnectDetails === 'object' ? financialSettings.stripeConnectDetails : {}),
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled,
+          detailsSubmitted: account.details_submitted,
+        },
+      },
+    });
+
+    console.log(`✅ Refreshed Stripe status for restaurant ${restaurantId}: ${newStatus}`);
+
+    return {
+      success: true,
+      data: {
+        status: newStatus,
+        accountId: financialSettings.stripeAccountId,
+        chargesEnabled: account.charges_enabled,
+        payoutsEnabled: account.payouts_enabled,
+        detailsSubmitted: account.details_submitted,
+      },
+    };
+  } catch (error: any) {
+    console.error('❌ Failed to refresh Stripe status:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to refresh Stripe status',
+    };
   }
 }

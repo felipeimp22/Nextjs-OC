@@ -30,7 +30,10 @@ export class PaymentFactory {
             publishableKey: process.env.NODE_ENV === 'production'
               ? process.env.STRIPE_LIVE_PUBLISHABLE_KEY!
               : process.env.STRIPE_TEST_PUBLISHABLE_KEY!,
-            webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+            webhookSecret: process.env.NODE_ENV === 'production'
+              ? process.env.STRIPE_LIVE_WEBHOOK_SECRET
+              : process.env.STRIPE_TEST_WEBHOOK_SECRET,
+            clientId: process.env.STRIPE_CLIENT_ID,
           });
 
           this.instance = stripeProvider;

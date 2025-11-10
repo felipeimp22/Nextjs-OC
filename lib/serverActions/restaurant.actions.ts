@@ -68,6 +68,8 @@ export async function createRestaurant(data: CreateRestaurantData) {
         state: data.state.trim(),
         zipCode: data.zipCode.trim(),
         country: data.country || 'US',
+        geoLat: data.geoLat,
+        geoLng: data.geoLng,
         phone: data.phone.trim(),
         email: data.email.trim(),
         primaryColor: data.primaryColor || '#282e59',
@@ -90,6 +92,7 @@ export async function createRestaurant(data: CreateRestaurantData) {
         restaurantId: restaurant.id,
         currency: 'USD',
         currencySymbol: '$',
+        usePlatformAccountFallback: false,
         globalFee: {
           enabled: true,
           threshold: 10,
@@ -423,6 +426,8 @@ export async function updateRestaurant(id: string, data: Partial<CreateRestauran
     if (data.state) updateData.state = data.state.trim();
     if (data.zipCode) updateData.zipCode = data.zipCode.trim();
     if (data.country) updateData.country = data.country;
+    if (data.geoLat !== undefined) updateData.geoLat = data.geoLat;
+    if (data.geoLng !== undefined) updateData.geoLng = data.geoLng;
     if (data.phone) updateData.phone = data.phone.trim();
     if (data.email) updateData.email = data.email.trim();
     if (data.logo !== undefined) updateData.logo = data.logo;
