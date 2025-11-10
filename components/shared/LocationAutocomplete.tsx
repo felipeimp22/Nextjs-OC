@@ -125,7 +125,7 @@ export default function LocationAutocomplete({
               className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
             >
               <div className="font-medium text-gray-900">{suggestion.name}</div>
-              <div className="text-sm text-gray-500">{suggestion.place_name}</div>
+              <div className="text-sm text-gray-500">{suggestion.full_address || suggestion.place_formatted}</div>
             </button>
           ))}
         </div>

@@ -30,19 +30,26 @@ export async function validateEmail(email: string): Promise<EmailValidationResul
     const url = new URL(`${apiUrl}/v2/email_verify/instant`);
     url.searchParams.set('email', email);
 
+    console.log('Validating email:', email, 'URL:', url.toString());
+
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        Authorization: `Bearer:${apiToken}`,
+        'Authorization': `Bearer:${apiToken}`,
         'Content-Type': 'application/json',
       },
     });
 
+    console.log('Email validation response status:', response.status);
+
     if (!response.ok) {
-      throw new Error('Email validation failed');
+      const errorText = await response.text();
+      console.error('Email validation error response:', errorText);
+      throw new Error(`Email validation failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Email validation data:', data);
 
     return {
       valid: data.status === 'valid',
@@ -54,6 +61,7 @@ export async function validateEmail(email: string): Promise<EmailValidationResul
       role: data.role,
     };
   } catch (error: any) {
+    console.error('Email validation error:', error);
     throw new Error(`Email validation error: ${error.message}`);
   }
 }
@@ -71,19 +79,26 @@ export async function validatePhone(phone: string, countryCode: string = 'US'): 
     url.searchParams.set('phone', phone);
     url.searchParams.set('country_code', countryCode);
 
+    console.log('Validating phone:', phone, 'URL:', url.toString());
+
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        Authorization: `Bearer:${apiToken}`,
+        'Authorization': `Bearer:${apiToken}`,
         'Content-Type': 'application/json',
       },
     });
 
+    console.log('Phone validation response status:', response.status);
+
     if (!response.ok) {
-      throw new Error('Phone validation failed');
+      const errorText = await response.text();
+      console.error('Phone validation error response:', errorText);
+      throw new Error(`Phone validation failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Phone validation data:', data);
 
     return {
       valid: data.status === 'valid',
@@ -95,6 +110,7 @@ export async function validatePhone(phone: string, countryCode: string = 'US'): 
       reason: data.reason,
     };
   } catch (error: any) {
+    console.error('Phone validation error:', error);
     throw new Error(`Phone validation error: ${error.message}`);
   }
 }

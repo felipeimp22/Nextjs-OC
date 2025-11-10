@@ -12,14 +12,16 @@ export async function searchAddressesAction(query: string) {
       };
     }
 
+    console.log('[Address Search] Searching for:', query);
     const results = await searchAddresses(query);
+    console.log('[Address Search] Suggestions count:', results.suggestions?.length || 0);
 
     return {
       success: true,
-      data: results.features || [],
+      data: results.suggestions || [],
     };
   } catch (error: any) {
-    console.error('Address search error:', error);
+    console.error('[Address Search] Error:', error);
     return {
       success: false,
       error: error.message || 'Failed to search addresses',
