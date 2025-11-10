@@ -269,10 +269,10 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
 
       <FormSection title={t('location')}>
         <div className="space-y-4 md:space-y-6">
-          <FormField label={t('address')} required description={t('addressHint') || 'Search for your restaurant address'}>
+          <FormField label={t('address')} required description={t('addressHint')}>
             <LocationAutocomplete
               onSelect={handleAddressSelect}
-              placeholder={t('searchAddress') || 'Search for your restaurant address...'}
+              placeholder={t('searchAddress')}
               required
             />
           </FormField>
@@ -293,12 +293,12 @@ export function GeneralSettings({ restaurantId }: GeneralSettingsProps) {
                   <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-green-900">{t('addressConfirmed') || 'Address Confirmed'}</p>
+                  <p className="text-sm font-medium text-green-900">{t('addressConfirmed')}</p>
                   <p className="text-sm text-green-700 mt-1">
                     {data.street}, {data.city}, {data.state} {data.zipCode}
                   </p>
                   <p className="text-xs text-green-600 mt-1">
-                    {t('coordinates') || 'Coordinates'}: {data.geoLat.toFixed(6)}, {data.geoLng.toFixed(6)}
+                    {t('coordinates')}: {data.geoLat.toFixed(6)}, {data.geoLng.toFixed(6)}
                   </p>
                 </div>
               </div>

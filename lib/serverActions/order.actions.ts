@@ -359,3 +359,20 @@ export async function getOrder(orderId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function getOrderByPaymentIntent(paymentIntentId: string) {
+  try {
+    const order = await prisma.order.findFirst({
+      where: { paymentIntentId },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    return { success: true, data: order };
+  } catch (error: any) {
+    console.error('❌ Get order by payment intent failed:', error);
+    return { success: false, error: error.message };
+  }
+}

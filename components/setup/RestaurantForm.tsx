@@ -244,11 +244,11 @@ export default function RestaurantForm() {
               </label>
               <LocationAutocomplete
                 onSelect={handleAddressSelect}
-                placeholder={t('searchAddress') || 'Search for your restaurant address...'}
+                placeholder={t('searchAddress')}
                 required
               />
               <p className="mt-2 text-sm text-gray-500">
-                {t('addressHint') || 'Start typing your restaurant address to find it'}
+                {t('addressHint')}
               </p>
             </div>
 
@@ -267,12 +267,12 @@ export default function RestaurantForm() {
                     <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900">Address Confirmed</p>
+                    <p className="text-sm font-medium text-blue-900">{t('addressConfirmed')}</p>
                     <p className="text-sm text-blue-700 mt-1">
                       {formData.street}, {formData.city}, {formData.state} {formData.zipCode}
                     </p>
                     <p className="text-xs text-blue-600 mt-1">
-                      Coordinates: {formData.geoLat.toFixed(6)}, {formData.geoLng.toFixed(6)}
+                      {t('coordinates')}: {formData.geoLat.toFixed(6)}, {formData.geoLng.toFixed(6)}
                     </p>
                   </div>
                 </div>
