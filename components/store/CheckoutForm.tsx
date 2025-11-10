@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import {Button} from '@/components/ui/Button';
+import {Input} from '@/components/ui/Input';
 import LocationAutocomplete from './LocationAutocomplete';
 import type { AddressComponents } from '@/lib/utils/mapbox';
 

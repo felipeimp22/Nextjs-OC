@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { searchAddresses, retrieveAddress, parseAddress, validateAddressHasHouseNumber, type AddressComponents } from '@/lib/utils/mapbox';
-import Input from '@/components/ui/Input';
+import {Input} from '@/components/ui/Input';
 
 interface LocationAutocompleteProps {
   onSelect: (address: AddressComponents) => void;
