@@ -7,7 +7,7 @@ import { useCartStore } from '@/stores/useCartStore';
 import MenuItem from '@/components/store/MenuItem';
 import CartSidebar from '@/components/store/CartSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/ToastContainer';
 
 export default function StorePage() {
   const params = useParams();

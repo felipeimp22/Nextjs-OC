@@ -182,7 +182,6 @@ type Choice {
   id String @default(uuid())
   name String
   basePrice Float @default(0)
-  useNewPrice Boolean @default(false)
   isDefault Boolean @default(false)
   disableWhenFinishInventory Boolean @default(false)
   isAvailable Boolean @default(true)

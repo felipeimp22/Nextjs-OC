@@ -1,7 +1,7 @@
 'use client';
 
 import { useCartStore } from '@/stores/useCartStore';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui/Button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CartSidebarProps {

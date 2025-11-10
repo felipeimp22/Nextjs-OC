@@ -8,7 +8,7 @@ import { useCartStore } from '@/stores/useCartStore';
 import { createOrder, createPaymentIntent, createOrderDraft } from '@/lib/serverActions/order.actions';
 import { getPublicRestaurantData } from '@/lib/serverActions/order.actions';
 import CheckoutForm from '@/components/store/CheckoutForm';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/ToastContainer';
 import type { AddressComponents } from '@/lib/utils/mapbox';
 
 export default function CheckoutPage() {

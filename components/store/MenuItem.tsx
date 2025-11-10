@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import {Card} from '@/components/ui/Card';
+import { Button } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import ModifierSelector from './ModifierSelector';
 import { useIsMobile } from '@/hooks/use-mobile';

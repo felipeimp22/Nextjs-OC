@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/db';
+import prisma from "@/lib/prisma";
 import { PaymentFactory } from '@/lib/payment/PaymentFactory';
 import { StripePaymentProvider } from '@/lib/payment/providers/StripePaymentProvider';
 import { calculateOrderDraft, OrderDraftInput, OrderItemInput } from '@/lib/utils/orderDraftCalculator';
