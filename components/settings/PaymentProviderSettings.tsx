@@ -1,11 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import Select from '@/components/ui/Select';
-import Toggle from '@/components/ui/Toggle';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { Button, Card, Toggle, useToast } from '@/components/ui';
 
 interface PaymentProviderSettingsProps {
   restaurantId: string;
@@ -54,10 +50,10 @@ export default function PaymentProviderSettings({
       if (data.success && data.url) {
         window.location.href = data.url;
       } else {
-        showToast(data.error || 'Failed to connect Stripe', 'error');
+        showToast('error', data.error || 'Failed to connect Stripe');
       }
     } catch (error: any) {
-      showToast(error.message || 'Failed to connect Stripe', 'error');
+      showToast('error', error.message || 'Failed to connect Stripe');
     } finally {
       setIsConnecting(false);
     }

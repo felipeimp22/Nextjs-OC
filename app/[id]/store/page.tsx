@@ -36,7 +36,7 @@ export default function StorePage() {
         setSelectedCategory(result.data.categories[0].id);
       }
     } else {
-      showToast(result.error || 'Restaurant not found', 'error');
+      showToast('error', result.error || 'Restaurant not found');
     }
 
     setIsLoading(false);
@@ -65,7 +65,7 @@ export default function StorePage() {
       restaurantId
     );
 
-    showToast('Item added to cart!', 'success');
+    showToast('success', 'Item added to cart!');
   };
 
   const handleCheckout = () => {

@@ -53,7 +53,7 @@ export default function CheckoutPage() {
     if (result.success && result.data) {
       setRestaurant(result.data);
     } else {
-      showToast(result.error || 'Restaurant not found', 'error');
+      showToast('error', result.error || 'Restaurant not found');
       router.push(`/${restaurantId}/store`);
       return;
     }
@@ -100,7 +100,7 @@ export default function CheckoutPage() {
     if (draftResult.success && draftResult.data) {
       setOrderSummary(draftResult.data);
     } else {
-      showToast(draftResult.error || 'Failed to calculate order', 'error');
+      showToast('error', draftResult.error || 'Failed to calculate order');
     }
 
     setIsCalculating(false);
