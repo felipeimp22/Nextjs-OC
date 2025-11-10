@@ -41,10 +41,10 @@ export interface AddressComponents {
 }
 
 export async function searchAddresses(query: string): Promise<MapboxSearchResult> {
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.MAPBOX_TOKEN;
+  const token = process.env.MAPBOX_TOKEN;
 
   if (!token) {
-    throw new Error('Mapbox token not configured');
+    throw new Error('Mapbox token not configured. Please set MAPBOX_TOKEN in environment variables.');
   }
 
   const url = new URL('https://api.mapbox.com/search/searchbox/v1/suggest');
@@ -65,10 +65,10 @@ export async function searchAddresses(query: string): Promise<MapboxSearchResult
 }
 
 export async function retrieveAddress(mapboxId: string): Promise<MapboxFeature> {
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.MAPBOX_TOKEN;
+  const token = process.env.MAPBOX_TOKEN;
 
   if (!token) {
-    throw new Error('Mapbox token not configured');
+    throw new Error('Mapbox token not configured. Please set MAPBOX_TOKEN in environment variables.');
   }
 
   const url = new URL(`https://api.mapbox.com/search/searchbox/v1/retrieve/${mapboxId}`);
