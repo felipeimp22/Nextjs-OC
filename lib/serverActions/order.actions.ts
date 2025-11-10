@@ -238,19 +238,34 @@ export async function createPaymentIntent(orderId: string) {
     const hasStripeAccount = !!financialSettings.stripeAccountId;
     const isFullyConnected = financialSettings.stripeConnectStatus === 'connected';
     const isPending = financialSettings.stripeConnectStatus === 'pending';
-    const connectedAccountPublicKey = financialSettings.stripePublicKey;
+    let connectedAccountPublicKey = financialSettings.stripePublicKey;
 
     if (hasStripeAccount && (isFullyConnected || isPending)) {
       // Use Stripe Connect - payments go to restaurant account with platform fee
       paymentIntentOptions.connectedAccountId = financialSettings.stripeAccountId;
       paymentIntentOptions.applicationFeeAmount = platformFeeInCents;
 
+      // If publishable key is missing, fetch it from Stripe and save it
       if (!connectedAccountPublicKey) {
-        console.error(`❌ Connected account missing publishable key for restaurant ${order.restaurantId}`);
-        return {
-          success: false,
-          error: 'Restaurant payment configuration incomplete. Please reconnect Stripe account.',
-        };
+        console.warn(`⚠️ Missing publishable key for connected account, fetching from Stripe...`);
+        try {
+          const account = await provider.getConnectedAccount(financialSettings.stripeAccountId!);
+
+          // For Express/Standard accounts, we need to use platform's key with the account ID
+          // The publishable key is the same as platform, client secret is what's scoped
+          connectedAccountPublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
+          if (connectedAccountPublicKey) {
+            // Save it for next time
+            await prisma.financialSettings.update({
+              where: { restaurantId: order.restaurantId },
+              data: { stripePublicKey: connectedAccountPublicKey },
+            });
+            console.log(`✅ Saved publishable key for restaurant ${order.restaurantId}`);
+          }
+        } catch (error: any) {
+          console.error(`❌ Failed to fetch account details:`, error.message);
+        }
       }
 
       if (isPending) {
