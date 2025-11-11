@@ -50,6 +50,7 @@ export default function OptionFormModal({
     multiSelect: false,
     minSelections: 1,
     maxSelections: 1,
+    requiresSelection: false,
     allowQuantity: false,
     minQuantity: 0,
     maxQuantity: 1,
@@ -70,6 +71,7 @@ export default function OptionFormModal({
         multiSelect: option.multiSelect,
         minSelections: option.minSelections,
         maxSelections: option.maxSelections,
+        requiresSelection: option.requiresSelection ?? false,
         allowQuantity: option.allowQuantity,
         minQuantity: option.minQuantity,
         maxQuantity: option.maxQuantity,
@@ -92,6 +94,7 @@ export default function OptionFormModal({
         multiSelect: false,
         minSelections: 1,
         maxSelections: 1,
+        requiresSelection: false,
         allowQuantity: false,
         minQuantity: 0,
         maxQuantity: 1,
@@ -127,8 +130,15 @@ export default function OptionFormModal({
     const currentChoice = choices[index];
     if (!currentChoice) return;
 
-    // If unchecking, always allow
+    // If unchecking, check if requiresSelection is enabled
     if (currentChoice.isDefault) {
+      if (formData.requiresSelection) {
+        const defaultCount = choices.filter(c => c.isDefault).length;
+        if (defaultCount === 1) {
+          showToast('error', 'At least one choice must be default when "Requires Selection" is enabled');
+          return;
+        }
+      }
       const newChoices = [...choices];
       newChoices[index] = { ...newChoices[index], isDefault: false };
       setChoices(newChoices);
@@ -154,6 +164,20 @@ export default function OptionFormModal({
       const newChoices = [...choices];
       newChoices[index] = { ...newChoices[index], isDefault: true };
       setChoices(newChoices);
+    }
+  };
+
+  const handleRequiresSelectionToggle = (checked: boolean) => {
+    setFormData({ ...formData, requiresSelection: checked });
+
+    if (checked) {
+      const hasDefaultChoice = choices.some(c => c.isDefault);
+      if (!hasDefaultChoice && choices.length > 0 && choices[0].name) {
+        const newChoices = [...choices];
+        newChoices[0] = { ...newChoices[0], isDefault: true };
+        setChoices(newChoices);
+        showToast('info', 'First choice has been set as default');
+      }
     }
   };
 
@@ -210,6 +234,14 @@ export default function OptionFormModal({
     if (choices.length === 0 || !choices[0].name) {
       showToast('error', t('atLeastOneChoice'));
       return;
+    }
+
+    if (formData.requiresSelection) {
+      const hasDefaultChoice = choices.some(c => c.isDefault);
+      if (!hasDefaultChoice) {
+        showToast('error', 'When "Requires Selection" is enabled, at least one choice must be set as default');
+        return;
+      }
     }
 
     setSaving(true);
@@ -370,17 +402,27 @@ export default function OptionFormModal({
         <div className="border-t border-gray-200 pt-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('selectionSettings')}</h3>
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label={t('multiSelect')}>
-              <Toggle
-                id="option-multi-select"
-                checked={formData.multiSelect}
-                onChange={(checked) => setFormData({ ...formData, multiSelect: checked })}
-              />
-            </FormField>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label={t('multiSelect')}>
+                <Toggle
+                  id="option-multi-select"
+                  checked={formData.multiSelect}
+                  onChange={(checked) => setFormData({ ...formData, multiSelect: checked })}
+                />
+              </FormField>
+
+              <FormField label="Requires Selection">
+                <Toggle
+                  id="option-requires-selection"
+                  checked={formData.requiresSelection}
+                  onChange={handleRequiresSelectionToggle}
+                />
+              </FormField>
+            </div>
 
             {formData.multiSelect && (
-              <>
+              <div className="grid grid-cols-2 gap-4 pl-4 border-l-2 border-gray-200">
                 <FormField label={t('minSelections')}>
                   <NumberInput
                     min={1}
@@ -398,7 +440,7 @@ export default function OptionFormModal({
                     defaultValue={1}
                   />
                 </FormField>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -406,17 +448,19 @@ export default function OptionFormModal({
         <div className="border-t border-gray-200 pt-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('quantitySettings')}</h3>
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label={t('allowQuantity')}>
-              <Toggle
-                id="option-allow-quantity"
-                checked={formData.allowQuantity}
-                onChange={(checked) => setFormData({ ...formData, allowQuantity: checked })}
-              />
-            </FormField>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label={t('allowQuantity')}>
+                <Toggle
+                  id="option-allow-quantity"
+                  checked={formData.allowQuantity}
+                  onChange={(checked) => setFormData({ ...formData, allowQuantity: checked })}
+                />
+              </FormField>
+            </div>
 
             {formData.allowQuantity && (
-              <>
+              <div className="grid grid-cols-2 gap-4 pl-4 border-l-2 border-gray-200">
                 <FormField label={t('minQuantity')}>
                   <NumberInput
                     min={0}
@@ -434,7 +478,7 @@ export default function OptionFormModal({
                     defaultValue={1}
                   />
                 </FormField>
-              </>
+              </div>
             )}
           </div>
         </div>
