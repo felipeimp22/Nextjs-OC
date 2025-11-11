@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Plus, X } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Input, NumberInput } from '@/components/ui';
 import  Select  from '@/components/ui/Select';
 import  Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
@@ -326,12 +326,11 @@ export default function OptionFormModal({
                   </FormField>
 
                   <FormField label={t('basePrice')} required>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <NumberInput
+                      step={0.01}
+                      min={0}
                       value={choice.basePrice}
-                      onChange={(e) => handleChoiceChange(index, 'basePrice', parseFloat(e.target.value) || 0)}
+                      onChange={(value) => handleChoiceChange(index, 'basePrice', value)}
                       placeholder={t('basePricePlaceholder')}
                       required
                     />
@@ -383,20 +382,20 @@ export default function OptionFormModal({
             {formData.multiSelect && (
               <>
                 <FormField label={t('minSelections')}>
-                  <Input
-                    type="number"
-                    min="1"
+                  <NumberInput
+                    min={1}
                     value={formData.minSelections}
-                    onChange={(e) => setFormData({ ...formData, minSelections: parseInt(e.target.value) || 1 })}
+                    onChange={(value) => setFormData({ ...formData, minSelections: value })}
+                    defaultValue={1}
                   />
                 </FormField>
 
                 <FormField label={t('maxSelections')}>
-                  <Input
-                    type="number"
-                    min="1"
+                  <NumberInput
+                    min={1}
                     value={formData.maxSelections}
-                    onChange={(e) => setFormData({ ...formData, maxSelections: parseInt(e.target.value) || 1 })}
+                    onChange={(value) => setFormData({ ...formData, maxSelections: value })}
+                    defaultValue={1}
                   />
                 </FormField>
               </>
@@ -419,20 +418,20 @@ export default function OptionFormModal({
             {formData.allowQuantity && (
               <>
                 <FormField label={t('minQuantity')}>
-                  <Input
-                    type="number"
-                    min="0"
+                  <NumberInput
+                    min={0}
                     value={formData.minQuantity}
-                    onChange={(e) => setFormData({ ...formData, minQuantity: parseInt(e.target.value) || 0 })}
+                    onChange={(value) => setFormData({ ...formData, minQuantity: value })}
+                    defaultValue={0}
                   />
                 </FormField>
 
                 <FormField label={t('maxQuantity')}>
-                  <Input
-                    type="number"
-                    min="1"
+                  <NumberInput
+                    min={1}
                     value={formData.maxQuantity}
-                    onChange={(e) => setFormData({ ...formData, maxQuantity: parseInt(e.target.value) || 1 })}
+                    onChange={(value) => setFormData({ ...formData, maxQuantity: value })}
+                    defaultValue={1}
                   />
                 </FormField>
               </>
