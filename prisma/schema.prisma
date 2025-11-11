@@ -163,6 +163,8 @@ model Option {
   minSelections Int @default(1)
   maxSelections Int @default(1)
 
+  requiresSelection Boolean @default(false)
+
   // Quantity per choice
   allowQuantity Boolean @default(false)
   minQuantity Int @default(0)

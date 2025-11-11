@@ -108,7 +108,7 @@ model Option {
   multiSelect       Boolean  @default(false)
   minSelections     Int      @default(1)
   maxSelections     Int      @default(1)
-  requiresSelection Boolean  @default(false) // NEW: Forces at least one choice to be selected
+  requiresSelection Boolean  @default(false) 
   allowQuantity     Boolean  @default(false)
   minQuantity       Int      @default(0)
   maxQuantity       Int      @default(1)
