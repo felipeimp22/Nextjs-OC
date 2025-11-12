@@ -6,7 +6,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/shared/Pagination';
-import SearchFilter from '@/components/shared/SearchFilter';
+import SearchFilter, { CustomFilter } from '@/components/shared/SearchFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
 import OptionFormModal from './OptionFormModal';
 import { getOptions, deleteOption, getOptionCategories } from '@/lib/serverActions/menu.actions';
@@ -135,10 +135,20 @@ export default function OptionsList({ restaurantId }: OptionsListProps) {
       <div className="mb-6">
         <SearchFilter
           searchPlaceholder={tc('search')}
-          allCategoriesLabel={t('allCategories')}
-          categories={categories}
           onSearchChange={setSearchQuery}
-          onCategoryChange={setFilterCategory}
+          filters={[
+            {
+              id: 'category',
+              label: 'Category',
+              placeholder: t('allCategories'),
+              options: categories.map((cat) => ({
+                value: cat.id,
+                label: cat.name,
+              })),
+              value: filterCategory,
+              onChange: setFilterCategory,
+            },
+          ]}
         />
       </div>
 

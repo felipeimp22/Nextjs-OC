@@ -6,7 +6,7 @@ import { Plus, Pencil, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/shared/Pagination';
-import SearchFilter from '@/components/shared/SearchFilter';
+import SearchFilter, { CustomFilter } from '@/components/shared/SearchFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MenuItemFormModal from './MenuItemFormModal';
 import MenuItemModifiersModal from './MenuItemModifiersModal';
@@ -142,10 +142,20 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
       <div className="mb-6">
         <SearchFilter
           searchPlaceholder={tc('search')}
-          allCategoriesLabel={t('allCategories')}
-          categories={categories}
           onSearchChange={setSearchQuery}
-          onCategoryChange={setFilterCategory}
+          filters={[
+            {
+              id: 'category',
+              label: t('category'),
+              placeholder: t('allCategories'),
+              options: categories.map((cat) => ({
+                value: cat.id,
+                label: cat.name,
+              })),
+              value: filterCategory,
+              onChange: setFilterCategory,
+            },
+          ]}
         />
       </div>
 
