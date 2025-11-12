@@ -9,7 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import SearchFilter, { CustomFilter } from '@/components/shared/SearchFilter';
 import Pagination from '@/components/shared/Pagination';
 import { Input } from '@/components/ui/Input';
-import { formatDistanceToNow } from 'date-fns';
+import { formatRelativeTime } from '@/lib/utils/dateFormatter';
 
 interface Order {
   id: string;
@@ -375,7 +375,7 @@ export default function OrdersPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">{t('created')}</span>
                   <span className="text-sm font-medium text-gray-900">
-                    {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
+                    {formatRelativeTime(order.createdAt)}
                   </span>
                 </div>
               </div>
@@ -438,7 +438,7 @@ export default function OrdersPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-500">
-                      {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
+                      {formatRelativeTime(order.createdAt)}
                     </span>
                   </td>
                 </tr>
