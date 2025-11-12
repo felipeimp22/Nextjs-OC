@@ -467,6 +467,7 @@ export async function createOption(data: {
   multiSelect?: boolean;
   minSelections?: number;
   maxSelections?: number;
+  requiresSelection?: boolean;
   allowQuantity?: boolean;
   minQuantity?: number;
   maxQuantity?: number;
@@ -510,6 +511,7 @@ export async function createOption(data: {
         multiSelect: data.multiSelect ?? false,
         minSelections: data.minSelections ?? 1,
         maxSelections: data.maxSelections ?? 1,
+        requiresSelection: data.requiresSelection ?? false,
         allowQuantity: data.allowQuantity ?? false,
         minQuantity: data.minQuantity ?? 0,
         maxQuantity: data.maxQuantity ?? 1,
@@ -543,6 +545,7 @@ export async function updateOption(id: string, data: {
   multiSelect?: boolean;
   minSelections?: number;
   maxSelections?: number;
+  requiresSelection?: boolean;
   allowQuantity?: boolean;
   minQuantity?: number;
   maxQuantity?: number;
@@ -564,6 +567,7 @@ export async function updateOption(id: string, data: {
     if (data.multiSelect !== undefined) updateData.multiSelect = data.multiSelect;
     if (data.minSelections !== undefined) updateData.minSelections = data.minSelections;
     if (data.maxSelections !== undefined) updateData.maxSelections = data.maxSelections;
+    if (data.requiresSelection !== undefined) updateData.requiresSelection = data.requiresSelection;
     if (data.allowQuantity !== undefined) updateData.allowQuantity = data.allowQuantity;
     if (data.minQuantity !== undefined) updateData.minQuantity = data.minQuantity;
     if (data.maxQuantity !== undefined) updateData.maxQuantity = data.maxQuantity;

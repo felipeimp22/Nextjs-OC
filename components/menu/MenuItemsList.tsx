@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Pencil, Trash2, Search, Settings } from 'lucide-react';
+import { Plus, Pencil, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import  Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/shared/Pagination';
+import SearchFilter from '@/components/shared/SearchFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMenuItems, useMenuCategories, useDeleteMenuItem } from '@/hooks/useMenu';
 import MenuItemFormModal from './MenuItemFormModal';
 import MenuItemModifiersModal from './MenuItemModifiersModal';
-import { getMenuItems, deleteMenuItem, getMenuCategories } from '@/lib/serverActions/menu.actions';
 
 interface MenuItem {
   id: string;
@@ -37,9 +36,6 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const tc = useTranslations('menu.common');
   const { showToast } = useToast();
   const isMobile = useIsMobile();
-  const [items, setItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isModifiersModalOpen, setIsModifiersModalOpen] = useState(false);
@@ -49,29 +45,11 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const loadData = async () => {
-    setLoading(true);
-    const [itemsResult, categoriesResult] = await Promise.all([
-      getMenuItems(restaurantId),
-      getMenuCategories(restaurantId),
-    ]);
+  const { data: items = [], isLoading: loadingItems } = useMenuItems(restaurantId);
+  const { data: categories = [], isLoading: loadingCategories } = useMenuCategories(restaurantId);
+  const deleteItemMutation = useDeleteMenuItem();
 
-    if (itemsResult.success) {
-      setItems(itemsResult.data || []);
-    } else {
-      showToast('error', itemsResult.error || t('failedToLoadItems'));
-    }
-
-    if (categoriesResult.success) {
-      setCategories(categoriesResult.data || []);
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [restaurantId]);
+  const loading = loadingItems || loadingCategories;
 
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
@@ -86,12 +64,11 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const handleDelete = async (item: MenuItem) => {
     if (!confirm(tc('deleteConfirm'))) return;
 
-    const result = await deleteMenuItem(item.id, restaurantId);
-    if (result.success) {
+    try {
+      await deleteItemMutation.mutateAsync({ id: item.id, restaurantId });
       showToast('success', t('itemDeletedSuccessfully'));
-      loadData();
-    } else {
-      showToast('error', result.error || t('failedToDeleteItem'));
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : t('failedToDeleteItem'));
     }
   };
 
@@ -101,7 +78,6 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   };
 
   const handleSaveSuccess = () => {
-    loadData();
     handleCloseModal();
   };
 
@@ -140,28 +116,24 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
         </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={tc('search')}
-            className="pl-10"
-          />
-        </div>
-        <Select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="w-full md:w-64"
-        >
-          <option value="">{t('allCategories')}</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </Select>
+      <div className="mb-6">
+        <SearchFilter
+          searchPlaceholder={tc('search')}
+          onSearchChange={setSearchQuery}
+          filters={[
+            {
+              id: 'category',
+              label: t('category'),
+              placeholder: t('allCategories'),
+              options: categories.map((cat) => ({
+                value: cat.id,
+                label: cat.name,
+              })),
+              value: filterCategory,
+              onChange: setFilterCategory,
+            },
+          ]}
+        />
       </div>
 
       {categories.length === 0 ? (

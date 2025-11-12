@@ -38,6 +38,9 @@ Options are customization categories that can be applied to menu items. Examples
 - Temperature (Hot, Cold, Extra Hot)
 - Cooking Level (Rare, Medium, Well Done)
 
+Each option can be configured with:
+- **Requires Selection**: When enabled, customers must have at least one choice selected (cannot deselect all choices). At least one choice must be marked as default when this is enabled.
+
 ### 2. **Choices**
 
 Each option contains multiple choices that customers can select. For example:
@@ -94,6 +97,25 @@ Final Price: $15.00 (ignores base price)
 ### MenuRules Model
 
 ```typescript
+model Option {
+  id                String   @id
+  restaurantId      String
+  categoryId        String
+  name              String
+  description       String?
+  image             String?
+  choices           Choice[]
+  multiSelect       Boolean  @default(false)
+  minSelections     Int      @default(1)
+  maxSelections     Int      @default(1)
+  requiresSelection Boolean  @default(false) 
+  allowQuantity     Boolean  @default(false)
+  minQuantity       Int      @default(0)
+  maxQuantity       Int      @default(1)
+  isAvailable       Boolean  @default(true)
+  isVisible         Boolean  @default(true)
+}
+
 model MenuRules {
   id            String           @id @default(auto()) @map("_id") @db.ObjectId
   menuItemId    String           @unique @db.ObjectId
@@ -445,6 +467,13 @@ Calculates the complete item price including modifiers.
 - Review sales data to see which combinations customers choose
 - Adjust pricing rules based on actual usage
 - Remove unused or confusing options
+
+### 8. **Use "Requires Selection" Wisely**
+
+- Enable for critical modifiers where a choice is mandatory (e.g., Size, Temperature)
+- When enabled, at least one choice must be set as default
+- Prevents customers from accidentally placing orders without required selections
+- Don't overuse - only for truly mandatory modifiers
 
 ---
 

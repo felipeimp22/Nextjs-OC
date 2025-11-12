@@ -10,7 +10,8 @@ import Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
 import { ImageUpload } from '@/components/shared';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createMenuItem, updateMenuItem, uploadMenuImage } from '@/lib/serverActions/menu.actions';
+import { useCreateMenuItem, useUpdateMenuItem } from '@/hooks/useMenu';
+import { uploadMenuImage } from '@/lib/serverActions/menu.actions';
 
 interface MenuItemFormModalProps {
   isOpen: boolean;
@@ -31,6 +32,8 @@ export default function MenuItemFormModal({
 }: MenuItemFormModalProps) {
   const t = useTranslations('menu.items');
   const { showToast } = useToast();
+  const createItemMutation = useCreateMenuItem();
+  const updateItemMutation = useUpdateMenuItem();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -133,42 +136,30 @@ export default function MenuItemFormModal({
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
 
-      const result = item
-        ? await updateMenuItem(item.id, {
-            restaurantId,
-            name: formData.name,
-            description: formData.description,
-            categoryId: formData.categoryId,
-            image: formData.image,
-            price: formData.price,
-            cost: formData.cost || undefined,
-            isAvailable: formData.isAvailable,
-            isVisible: formData.isVisible,
-            allowSpecialNotes: formData.allowSpecialNotes,
-            tags,
-          })
-        : await createMenuItem({
-            restaurantId,
-            categoryId: formData.categoryId,
-            name: formData.name,
-            description: formData.description,
-            image: formData.image,
-            price: formData.price,
-            cost: formData.cost || undefined,
-            isAvailable: formData.isAvailable,
-            isVisible: formData.isVisible,
-            allowSpecialNotes: formData.allowSpecialNotes,
-            tags,
-          });
+      const payload = {
+        restaurantId,
+        name: formData.name,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        image: formData.image,
+        price: formData.price,
+        cost: formData.cost || undefined,
+        isAvailable: formData.isAvailable,
+        isVisible: formData.isVisible,
+        allowSpecialNotes: formData.allowSpecialNotes,
+        tags,
+      };
 
-      if (result.success) {
-        showToast('success', item ? 'Item updated successfully' : 'Item created successfully');
-        onSuccess();
+      if (item) {
+        await updateItemMutation.mutateAsync({ id: item.id, data: payload });
       } else {
-        showToast('error', result.error || 'Failed to save item');
+        await createItemMutation.mutateAsync(payload);
       }
+
+      showToast('success', item ? 'Item updated successfully' : 'Item created successfully');
+      onSuccess();
     } catch (error) {
-      showToast('error', 'An error occurred');
+      showToast('error', error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
