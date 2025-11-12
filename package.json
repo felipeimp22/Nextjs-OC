@@ -16,7 +16,7 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "seed:essentials": "tsx seeds/seedProfileEssentials.ts",
-    "stripe:webhook":"stripe listen --forward-to http://localhost:3000/api/webhooks/stripe"
+    "stripe:webhook": "stripe listen --forward-to http://localhost:3000/api/webhooks/stripe"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -31,6 +31,7 @@
     "bcryptjs": "^3.0.2",
     "bson": "^6.10.4",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.548.0",
     "mongodb": "^6.20.0",
     "next": "16.0.0",
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/date-fns": "^2.5.3",
     "@types/node": "^20.19.23",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
