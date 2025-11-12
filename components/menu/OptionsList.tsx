@@ -6,10 +6,10 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/shared/Pagination';
-import SearchFilter, { CustomFilter } from '@/components/shared/SearchFilter';
+import SearchFilter from '@/components/shared/SearchFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useOptions, useOptionCategories, useDeleteOption } from '@/hooks/useMenu';
 import OptionFormModal from './OptionFormModal';
-import { getOptions, deleteOption, getOptionCategories } from '@/lib/serverActions/menu.actions';
 
 interface Option {
   id: string;
@@ -36,9 +36,6 @@ export default function OptionsList({ restaurantId }: OptionsListProps) {
   const tc = useTranslations('menu.common');
   const { showToast } = useToast();
   const isMobile = useIsMobile();
-  const [options, setOptions] = useState<Option[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOption, setEditingOption] = useState<Option | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,29 +43,11 @@ export default function OptionsList({ restaurantId }: OptionsListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const loadData = async () => {
-    setLoading(true);
-    const [optionsResult, categoriesResult] = await Promise.all([
-      getOptions(restaurantId),
-      getOptionCategories(restaurantId),
-    ]);
+  const { data: options = [], isLoading: loadingOptions } = useOptions(restaurantId);
+  const { data: categories = [], isLoading: loadingCategories } = useOptionCategories(restaurantId);
+  const deleteOptionMutation = useDeleteOption();
 
-    if (optionsResult.success) {
-      setOptions(optionsResult.data || []);
-    } else {
-      showToast('error', optionsResult.error || 'Failed to load options');
-    }
-
-    if (categoriesResult.success) {
-      setCategories(categoriesResult.data || []);
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [restaurantId]);
+  const loading = loadingOptions || loadingCategories;
 
   const handleEdit = (option: Option) => {
     setEditingOption(option);
@@ -78,12 +57,11 @@ export default function OptionsList({ restaurantId }: OptionsListProps) {
   const handleDelete = async (option: Option) => {
     if (!confirm(tc('deleteConfirm'))) return;
 
-    const result = await deleteOption(option.id, restaurantId);
-    if (result.success) {
+    try {
+      await deleteOptionMutation.mutateAsync({ id: option.id, restaurantId });
       showToast('success', 'Modifier deleted successfully');
-      loadData();
-    } else {
-      showToast('error', result.error || 'Failed to delete modifier');
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : 'Failed to delete modifier');
     }
   };
 
@@ -93,7 +71,6 @@ export default function OptionsList({ restaurantId }: OptionsListProps) {
   };
 
   const handleSaveSuccess = () => {
-    loadData();
     handleCloseModal();
   };
 

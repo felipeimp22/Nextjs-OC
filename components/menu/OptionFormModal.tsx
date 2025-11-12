@@ -11,7 +11,8 @@ import  Toggle  from '@/components/ui/Toggle';
 import FormField from '@/components/shared/FormField';
 import { ImageUpload } from '@/components/shared';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createOption, updateOption, uploadMenuImage } from '@/lib/serverActions/menu.actions';
+import { useCreateOption, useUpdateOption } from '@/hooks/useMenu';
+import { uploadMenuImage } from '@/lib/serverActions/menu.actions';
 
 interface Choice {
   id?: string;
@@ -40,6 +41,8 @@ export default function OptionFormModal({
 }: OptionFormModalProps) {
   const t = useTranslations('menu.modifiers');
   const { showToast } = useToast();
+  const createOptionMutation = useCreateOption();
+  const updateOptionMutation = useUpdateOption();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -247,26 +250,22 @@ export default function OptionFormModal({
     setSaving(true);
 
     try {
-      const result = option
-        ? await updateOption(option.id, {
-            restaurantId,
-            ...formData,
-            choices,
-          })
-        : await createOption({
-            restaurantId,
-            ...formData,
-            choices,
-          });
+      const payload = {
+        restaurantId,
+        ...formData,
+        choices,
+      };
 
-      if (result.success) {
-        showToast('success', option ? 'Modifier updated successfully' : 'Modifier created successfully');
-        onSuccess();
+      if (option) {
+        await updateOptionMutation.mutateAsync({ id: option.id, data: payload });
       } else {
-        showToast('error', result.error || 'Failed to save modifier');
+        await createOptionMutation.mutateAsync(payload);
       }
+
+      showToast('success', option ? 'Modifier updated successfully' : 'Modifier created successfully');
+      onSuccess();
     } catch (error) {
-      showToast('error', 'An error occurred');
+      showToast('error', error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setSaving(false);
     }

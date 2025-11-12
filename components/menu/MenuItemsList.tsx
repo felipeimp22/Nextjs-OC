@@ -6,11 +6,11 @@ import { Plus, Pencil, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/shared/Pagination';
-import SearchFilter, { CustomFilter } from '@/components/shared/SearchFilter';
+import SearchFilter from '@/components/shared/SearchFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMenuItems, useMenuCategories, useDeleteMenuItem } from '@/hooks/useMenu';
 import MenuItemFormModal from './MenuItemFormModal';
 import MenuItemModifiersModal from './MenuItemModifiersModal';
-import { getMenuItems, deleteMenuItem, getMenuCategories } from '@/lib/serverActions/menu.actions';
 
 interface MenuItem {
   id: string;
@@ -36,9 +36,6 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const tc = useTranslations('menu.common');
   const { showToast } = useToast();
   const isMobile = useIsMobile();
-  const [items, setItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isModifiersModalOpen, setIsModifiersModalOpen] = useState(false);
@@ -48,29 +45,11 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const loadData = async () => {
-    setLoading(true);
-    const [itemsResult, categoriesResult] = await Promise.all([
-      getMenuItems(restaurantId),
-      getMenuCategories(restaurantId),
-    ]);
+  const { data: items = [], isLoading: loadingItems } = useMenuItems(restaurantId);
+  const { data: categories = [], isLoading: loadingCategories } = useMenuCategories(restaurantId);
+  const deleteItemMutation = useDeleteMenuItem();
 
-    if (itemsResult.success) {
-      setItems(itemsResult.data || []);
-    } else {
-      showToast('error', itemsResult.error || t('failedToLoadItems'));
-    }
-
-    if (categoriesResult.success) {
-      setCategories(categoriesResult.data || []);
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [restaurantId]);
+  const loading = loadingItems || loadingCategories;
 
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
@@ -85,12 +64,11 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   const handleDelete = async (item: MenuItem) => {
     if (!confirm(tc('deleteConfirm'))) return;
 
-    const result = await deleteMenuItem(item.id, restaurantId);
-    if (result.success) {
+    try {
+      await deleteItemMutation.mutateAsync({ id: item.id, restaurantId });
       showToast('success', t('itemDeletedSuccessfully'));
-      loadData();
-    } else {
-      showToast('error', result.error || t('failedToDeleteItem'));
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : t('failedToDeleteItem'));
     }
   };
 
@@ -100,7 +78,6 @@ export default function MenuItemsList({ restaurantId }: MenuItemsListProps) {
   };
 
   const handleSaveSuccess = () => {
-    loadData();
     handleCloseModal();
   };
 
