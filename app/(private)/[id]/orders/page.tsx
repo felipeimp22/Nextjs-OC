@@ -280,13 +280,6 @@ export default function OrdersPage() {
 
   return (
     <div className="w-full md:max-w-7xl md:mx-auto">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
-          <p className="text-sm text-gray-600 mt-1">{t('description')}</p>
-        </div>
-      </div>
-
       <div className="mb-6 space-y-4">
         <SearchFilter
           searchPlaceholder={t('searchPlaceholder')}
