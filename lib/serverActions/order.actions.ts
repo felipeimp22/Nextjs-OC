@@ -432,3 +432,67 @@ export async function getOrderByPaymentIntent(paymentIntentId: string) {
     return { success: false, error: error.message };
   }
 }
+
+interface GetOrdersFilters {
+  status?: string;
+  orderType?: string;
+  paymentStatus?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export async function getOrders(restaurantId: string, filters?: GetOrdersFilters) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    const where: {
+      restaurantId: string;
+      status?: string;
+      orderType?: string;
+      paymentStatus?: string;
+      createdAt?: {
+        gte?: Date;
+        lte?: Date;
+      };
+    } = {
+      restaurantId,
+    };
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.orderType) {
+      where.orderType = filters.orderType;
+    }
+
+    if (filters?.paymentStatus) {
+      where.paymentStatus = filters.paymentStatus;
+    }
+
+    if (filters?.dateFrom || filters?.dateTo) {
+      where.createdAt = {};
+      if (filters.dateFrom) {
+        where.createdAt.gte = new Date(filters.dateFrom);
+      }
+      if (filters.dateTo) {
+        const endDate = new Date(filters.dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        where.createdAt.lte = endDate;
+      }
+    }
+
+    const orders = await prisma.order.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { success: true, data: orders, error: null };
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    return { success: false, error: 'Failed to fetch orders', data: null };
+  }
+}
