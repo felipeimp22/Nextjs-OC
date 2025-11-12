@@ -7,6 +7,7 @@ import { useOrders } from '@/hooks/useOrders';
 import { useIsMobile } from '@/hooks/use-mobile';
 import SearchFilter, { CustomFilter } from '@/components/shared/SearchFilter';
 import Pagination from '@/components/shared/Pagination';
+import { Input } from '@/components/ui/Input';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Order {
@@ -40,6 +41,8 @@ export default function OrdersPage() {
   const [filterOrderType, setFilterOrderType] = useState<string>('');
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>('');
   const [filterDateRange, setFilterDateRange] = useState<string>('');
+  const [customDateFrom, setCustomDateFrom] = useState<string>('');
+  const [customDateTo, setCustomDateTo] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -47,6 +50,12 @@ export default function OrdersPage() {
   const [dateTo, setDateTo] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    if (customDateFrom || customDateTo) {
+      setDateFrom(customDateFrom || undefined);
+      setDateTo(customDateTo || undefined);
+      return;
+    }
+
     if (filterDateRange) {
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
@@ -84,7 +93,29 @@ export default function OrdersPage() {
       setDateFrom(undefined);
       setDateTo(undefined);
     }
-  }, [filterDateRange]);
+  }, [filterDateRange, customDateFrom, customDateTo]);
+
+  const handleDateRangeChange = (value: string) => {
+    setFilterDateRange(value);
+    if (value) {
+      setCustomDateFrom('');
+      setCustomDateTo('');
+    }
+  };
+
+  const handleCustomDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomDateFrom(e.target.value);
+    if (e.target.value) {
+      setFilterDateRange('');
+    }
+  };
+
+  const handleCustomDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomDateTo(e.target.value);
+    if (e.target.value) {
+      setFilterDateRange('');
+    }
+  };
 
   const { data: orders = [], isLoading } = useOrders(restaurantId, {
     status: filterStatus || undefined,
@@ -117,7 +148,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterStatus, filterOrderType, filterPaymentStatus, filterDateRange]);
+  }, [searchQuery, filterStatus, filterOrderType, filterPaymentStatus, filterDateRange, customDateFrom, customDateTo]);
 
   if (!selectedRestaurantId || selectedRestaurantId !== restaurantId) {
     return (
@@ -194,11 +225,11 @@ export default function OrdersPage() {
     },
     {
       id: 'dateRange',
-      label: 'Date Range',
-      placeholder: 'All Time',
+      label: 'Quick Date Filter',
+      placeholder: 'Select quick filter',
       options: dateRangeOptions,
       value: filterDateRange,
-      onChange: setFilterDateRange,
+      onChange: handleDateRangeChange,
     },
   ];
 
@@ -254,20 +285,65 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
         <SearchFilter
           searchPlaceholder="Search by order number, customer name, email, or phone..."
           onSearchChange={setSearchQuery}
           filters={filters}
           debounceDelay={500}
         />
+
+        <div className="bg-white border border-gray-200 rounded-sm p-4">
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-medium text-gray-700">Custom Date Range</h3>
+            <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-3`}>
+              <div className="flex-1">
+                <label htmlFor="dateFrom" className="block text-xs text-gray-600 mb-1.5">
+                  From Date
+                </label>
+                <Input
+                  id="dateFrom"
+                  type="date"
+                  value={customDateFrom}
+                  onChange={handleCustomDateFromChange}
+                  max={customDateTo || undefined}
+                  placeholder="Select start date"
+                />
+              </div>
+              <div className="flex-1">
+                <label htmlFor="dateTo" className="block text-xs text-gray-600 mb-1.5">
+                  To Date
+                </label>
+                <Input
+                  id="dateTo"
+                  type="date"
+                  value={customDateTo}
+                  onChange={handleCustomDateToChange}
+                  min={customDateFrom || undefined}
+                  placeholder="Select end date"
+                />
+              </div>
+            </div>
+            {(customDateFrom || customDateTo) && (
+              <button
+                onClick={() => {
+                  setCustomDateFrom('');
+                  setCustomDateTo('');
+                }}
+                className="text-xs text-brand-navy hover:text-brand-red transition-colors self-start"
+              >
+                Clear custom dates
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {filteredOrders.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-sm border-2 border-dashed border-gray-300">
           <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
           <p className="text-sm text-gray-600 mt-1">
-            {searchQuery || filterStatus || filterOrderType || filterPaymentStatus || filterDateRange
+            {searchQuery || filterStatus || filterOrderType || filterPaymentStatus || filterDateRange || customDateFrom || customDateTo
               ? 'Try adjusting your search or filters'
               : 'Orders will appear here once customers place them'}
           </p>
