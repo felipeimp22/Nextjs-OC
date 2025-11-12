@@ -442,6 +442,48 @@ interface GetOrdersFilters {
   dateTo?: string;
 }
 
+function getTimezoneOffsetMinutes(timezone: string, date: Date): number {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+  const year = Number(parts.find(p => p.type === 'year')?.value);
+  const month = Number(parts.find(p => p.type === 'month')?.value);
+  const day = Number(parts.find(p => p.type === 'day')?.value);
+  const hour = Number(parts.find(p => p.type === 'hour')?.value);
+  const minute = Number(parts.find(p => p.type === 'minute')?.value);
+  const second = Number(parts.find(p => p.type === 'second')?.value);
+
+  const localTime = new Date(year, month - 1, day, hour, minute, second);
+  const diff = date.getTime() - localTime.getTime();
+
+  return Math.round(diff / 60000);
+}
+
+function convertLocalDateToUTC(dateString: string, timezone: string, isEndOfDay: boolean = false): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+
+  const hours = isEndOfDay ? 23 : 0;
+  const minutes = isEndOfDay ? 59 : 0;
+  const seconds = isEndOfDay ? 59 : 0;
+  const milliseconds = isEndOfDay ? 999 : 0;
+
+  const referenceUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+  const offsetMinutes = getTimezoneOffsetMinutes(timezone, referenceUTC);
+
+  const localDateUTC = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds));
+
+  return new Date(localDateUTC.getTime() + offsetMinutes * 60000);
+}
+
 export async function getOrders(restaurantId: string, filters?: GetOrdersFilters) {
   try {
     const session = await auth();
@@ -475,14 +517,21 @@ export async function getOrders(restaurantId: string, filters?: GetOrdersFilters
     }
 
     if (filters?.dateFrom || filters?.dateTo) {
+      const storeHours = await prisma.storeHours.findUnique({
+        where: { restaurantId },
+        select: { timezone: true },
+      });
+
+      const timezone = storeHours?.timezone || 'America/New_York';
+
       where.createdAt = {};
+
       if (filters.dateFrom) {
-        where.createdAt.gte = new Date(filters.dateFrom);
+        where.createdAt.gte = convertLocalDateToUTC(filters.dateFrom, timezone, false);
       }
+
       if (filters.dateTo) {
-        const endDate = new Date(filters.dateTo);
-        endDate.setHours(23, 59, 59, 999);
-        where.createdAt.lte = endDate;
+        where.createdAt.lte = convertLocalDateToUTC(filters.dateTo, timezone, true);
       }
     }
 
