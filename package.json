@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run schema:combine && next build",
+    "build": "prisma generate && npm run schema:combine && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
