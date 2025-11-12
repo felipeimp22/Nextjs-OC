@@ -76,12 +76,15 @@ export default function PaymentForm({
                 console.log('✅ PaymentElement ready');
                 setIsElementReady(true);
               }}
-              onLoadError={(error) => {
+              onLoadError={(error: any) => {
                 console.error('❌ PaymentElement load error:', error);
                 console.error('❌ Error type:', typeof error);
                 console.error('❌ Error keys:', Object.keys(error || {}));
                 console.error('❌ Error stringified:', JSON.stringify(error, null, 2));
-                setErrorMessage(`Failed to load payment form. ${error?.message || 'Please check your Stripe configuration and try again.'}`);
+
+                // Extract the actual error message from the Stripe error object
+                const errorMessage = error?.error?.message || error?.message || 'Please check your Stripe configuration and try again.';
+                setErrorMessage(`Failed to load payment form. ${errorMessage}`);
               }}
               onChange={(event) => {
                 if (event.complete) {

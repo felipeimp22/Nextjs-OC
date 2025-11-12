@@ -254,7 +254,19 @@ export async function createPaymentIntent(orderId: string) {
 
           // For Express/Standard accounts, we need to use platform's key with the account ID
           // The publishable key is the same as platform, client secret is what's scoped
-          connectedAccountPublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+          // IMPORTANT: Use the same environment variable pattern as PaymentFactory to avoid key mismatch
+          connectedAccountPublicKey = process.env.NODE_ENV === 'production'
+            ? process.env.STRIPE_LIVE_PUBLISHABLE_KEY
+            : process.env.STRIPE_TEST_PUBLISHABLE_KEY;
+
+          if (!connectedAccountPublicKey) {
+            const keyType = process.env.NODE_ENV === 'production' ? 'STRIPE_LIVE_PUBLISHABLE_KEY' : 'STRIPE_TEST_PUBLISHABLE_KEY';
+            console.error(`❌ Missing environment variable: ${keyType}`);
+            return {
+              success: false,
+              error: `Stripe configuration error: Missing ${keyType} environment variable`,
+            };
+          }
 
           if (connectedAccountPublicKey) {
             // Save it for next time
