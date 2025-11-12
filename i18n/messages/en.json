@@ -705,5 +705,68 @@
       "saveChanges": "Save Changes",
       "saving": "Saving..."
     }
+  },
+  "orders": {
+    "title": "Orders",
+    "description": "Manage and track all your orders",
+    "searchPlaceholder": "Search by order number, customer name, email, or phone...",
+    "noOrders": "No orders found",
+    "noOrdersAdjustFilters": "Try adjusting your search or filters",
+    "noOrdersYet": "Orders will appear here once customers place them",
+    "orderNumber": "Order Number",
+    "customer": "Customer",
+    "type": "Type",
+    "status": "Status",
+    "payment": "Payment",
+    "total": "Total",
+    "created": "Created",
+    "orderType": "Order Type",
+    "filters": {
+      "status": "Status",
+      "allStatuses": "All Statuses",
+      "orderType": "Order Type",
+      "allTypes": "All Types",
+      "paymentStatus": "Payment Status",
+      "allPaymentStatuses": "All Payment Statuses",
+      "quickDateFilter": "Quick Date Filter",
+      "selectQuickFilter": "Select quick filter",
+      "allTime": "All Time"
+    },
+    "statusOptions": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "preparing": "Preparing",
+      "ready": "Ready",
+      "outForDelivery": "Out for Delivery",
+      "delivered": "Delivered",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "typeOptions": {
+      "pickup": "Pickup",
+      "delivery": "Delivery",
+      "dineIn": "Dine In"
+    },
+    "paymentStatusOptions": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "partiallyRefunded": "Partially Refunded"
+    },
+    "dateRangeOptions": {
+      "today": "Today",
+      "last7days": "Last 7 Days",
+      "last30days": "Last 30 Days",
+      "thisMonth": "This Month"
+    },
+    "customDateRange": {
+      "title": "Custom Date Range",
+      "fromDate": "From Date",
+      "toDate": "To Date",
+      "selectStartDate": "Select start date",
+      "selectEndDate": "Select end date",
+      "clearDates": "Clear custom dates"
+    }
   }
 }

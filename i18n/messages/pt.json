@@ -695,5 +695,68 @@
       "saveChanges": "Salvar Alterações",
       "saving": "Salvando..."
     }
+  },
+  "orders": {
+    "title": "Pedidos",
+    "description": "Gerencie e acompanhe todos os seus pedidos",
+    "searchPlaceholder": "Buscar por número do pedido, nome do cliente, e-mail ou telefone...",
+    "noOrders": "Nenhum pedido encontrado",
+    "noOrdersAdjustFilters": "Tente ajustar sua busca ou filtros",
+    "noOrdersYet": "Os pedidos aparecerão aqui assim que os clientes os fizerem",
+    "orderNumber": "Número do Pedido",
+    "customer": "Cliente",
+    "type": "Tipo",
+    "status": "Status",
+    "payment": "Pagamento",
+    "total": "Total",
+    "created": "Criado",
+    "orderType": "Tipo de Pedido",
+    "filters": {
+      "status": "Status",
+      "allStatuses": "Todos os Status",
+      "orderType": "Tipo de Pedido",
+      "allTypes": "Todos os Tipos",
+      "paymentStatus": "Status do Pagamento",
+      "allPaymentStatuses": "Todos os Status de Pagamento",
+      "quickDateFilter": "Filtro Rápido de Data",
+      "selectQuickFilter": "Selecionar filtro rápido",
+      "allTime": "Todo o Período"
+    },
+    "statusOptions": {
+      "pending": "Pendente",
+      "confirmed": "Confirmado",
+      "preparing": "Preparando",
+      "ready": "Pronto",
+      "outForDelivery": "Saiu para Entrega",
+      "delivered": "Entregue",
+      "completed": "Concluído",
+      "cancelled": "Cancelado"
+    },
+    "typeOptions": {
+      "pickup": "Retirada",
+      "delivery": "Entrega",
+      "dineIn": "Comer no Local"
+    },
+    "paymentStatusOptions": {
+      "pending": "Pendente",
+      "paid": "Pago",
+      "failed": "Falhou",
+      "refunded": "Reembolsado",
+      "partiallyRefunded": "Parcialmente Reembolsado"
+    },
+    "dateRangeOptions": {
+      "today": "Hoje",
+      "last7days": "Últimos 7 Dias",
+      "last30days": "Últimos 30 Dias",
+      "thisMonth": "Este Mês"
+    },
+    "customDateRange": {
+      "title": "Intervalo de Datas Personalizado",
+      "fromDate": "Data Inicial",
+      "toDate": "Data Final",
+      "selectStartDate": "Selecionar data inicial",
+      "selectEndDate": "Selecionar data final",
+      "clearDates": "Limpar datas personalizadas"
+    }
   }
 }
