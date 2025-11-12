@@ -694,5 +694,68 @@
       "saveChanges": "Guardar Cambios",
       "saving": "Guardando..."
     }
+  },
+  "orders": {
+    "title": "Pedidos",
+    "description": "Gestiona y rastrea todos tus pedidos",
+    "searchPlaceholder": "Buscar por número de pedido, nombre del cliente, correo o teléfono...",
+    "noOrders": "No se encontraron pedidos",
+    "noOrdersAdjustFilters": "Intenta ajustar tu búsqueda o filtros",
+    "noOrdersYet": "Los pedidos aparecerán aquí una vez que los clientes los realicen",
+    "orderNumber": "Número de Pedido",
+    "customer": "Cliente",
+    "type": "Tipo",
+    "status": "Estado",
+    "payment": "Pago",
+    "total": "Total",
+    "created": "Creado",
+    "orderType": "Tipo de Pedido",
+    "filters": {
+      "status": "Estado",
+      "allStatuses": "Todos los Estados",
+      "orderType": "Tipo de Pedido",
+      "allTypes": "Todos los Tipos",
+      "paymentStatus": "Estado del Pago",
+      "allPaymentStatuses": "Todos los Estados de Pago",
+      "quickDateFilter": "Filtro Rápido de Fecha",
+      "selectQuickFilter": "Seleccionar filtro rápido",
+      "allTime": "Todo el Tiempo"
+    },
+    "statusOptions": {
+      "pending": "Pendiente",
+      "confirmed": "Confirmado",
+      "preparing": "Preparando",
+      "ready": "Listo",
+      "outForDelivery": "En Camino",
+      "delivered": "Entregado",
+      "completed": "Completado",
+      "cancelled": "Cancelado"
+    },
+    "typeOptions": {
+      "pickup": "Recoger",
+      "delivery": "Entrega a Domicilio",
+      "dineIn": "Para Comer Aquí"
+    },
+    "paymentStatusOptions": {
+      "pending": "Pendiente",
+      "paid": "Pagado",
+      "failed": "Fallido",
+      "refunded": "Reembolsado",
+      "partiallyRefunded": "Parcialmente Reembolsado"
+    },
+    "dateRangeOptions": {
+      "today": "Hoy",
+      "last7days": "Últimos 7 Días",
+      "last30days": "Últimos 30 Días",
+      "thisMonth": "Este Mes"
+    },
+    "customDateRange": {
+      "title": "Rango de Fechas Personalizado",
+      "fromDate": "Desde",
+      "toDate": "Hasta",
+      "selectStartDate": "Seleccionar fecha de inicio",
+      "selectEndDate": "Seleccionar fecha de fin",
+      "clearDates": "Limpiar fechas personalizadas"
+    }
   }
 }

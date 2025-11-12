@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { useOrders } from '@/hooks/useOrders';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -35,6 +36,7 @@ export default function OrdersPage() {
   const restaurantId = params.id as string;
   const { selectedRestaurantId } = useRestaurantStore();
   const isMobile = useIsMobile();
+  const t = useTranslations('orders');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -167,66 +169,66 @@ export default function OrdersPage() {
   }
 
   const statusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'confirmed', label: 'Confirmed' },
-    { value: 'preparing', label: 'Preparing' },
-    { value: 'ready', label: 'Ready' },
-    { value: 'out_for_delivery', label: 'Out for Delivery' },
-    { value: 'delivered', label: 'Delivered' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'pending', label: t('statusOptions.pending') },
+    { value: 'confirmed', label: t('statusOptions.confirmed') },
+    { value: 'preparing', label: t('statusOptions.preparing') },
+    { value: 'ready', label: t('statusOptions.ready') },
+    { value: 'out_for_delivery', label: t('statusOptions.outForDelivery') },
+    { value: 'delivered', label: t('statusOptions.delivered') },
+    { value: 'completed', label: t('statusOptions.completed') },
+    { value: 'cancelled', label: t('statusOptions.cancelled') },
   ];
 
   const orderTypeOptions = [
-    { value: 'pickup', label: 'Pickup' },
-    { value: 'delivery', label: 'Delivery' },
-    { value: 'dine_in', label: 'Dine In' },
+    { value: 'pickup', label: t('typeOptions.pickup') },
+    { value: 'delivery', label: t('typeOptions.delivery') },
+    { value: 'dine_in', label: t('typeOptions.dineIn') },
   ];
 
   const paymentStatusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'paid', label: 'Paid' },
-    { value: 'failed', label: 'Failed' },
-    { value: 'refunded', label: 'Refunded' },
-    { value: 'partially_refunded', label: 'Partially Refunded' },
+    { value: 'pending', label: t('paymentStatusOptions.pending') },
+    { value: 'paid', label: t('paymentStatusOptions.paid') },
+    { value: 'failed', label: t('paymentStatusOptions.failed') },
+    { value: 'refunded', label: t('paymentStatusOptions.refunded') },
+    { value: 'partially_refunded', label: t('paymentStatusOptions.partiallyRefunded') },
   ];
 
   const dateRangeOptions = [
-    { value: 'today', label: 'Today' },
-    { value: 'last7days', label: 'Last 7 Days' },
-    { value: 'last30days', label: 'Last 30 Days' },
-    { value: 'thisMonth', label: 'This Month' },
+    { value: 'today', label: t('dateRangeOptions.today') },
+    { value: 'last7days', label: t('dateRangeOptions.last7days') },
+    { value: 'last30days', label: t('dateRangeOptions.last30days') },
+    { value: 'thisMonth', label: t('dateRangeOptions.thisMonth') },
   ];
 
   const filters: CustomFilter[] = [
     {
       id: 'status',
-      label: 'Status',
-      placeholder: 'All Statuses',
+      label: t('filters.status'),
+      placeholder: t('filters.allStatuses'),
       options: statusOptions,
       value: filterStatus,
       onChange: setFilterStatus,
     },
     {
       id: 'orderType',
-      label: 'Order Type',
-      placeholder: 'All Types',
+      label: t('filters.orderType'),
+      placeholder: t('filters.allTypes'),
       options: orderTypeOptions,
       value: filterOrderType,
       onChange: setFilterOrderType,
     },
     {
       id: 'paymentStatus',
-      label: 'Payment Status',
-      placeholder: 'All Payment Statuses',
+      label: t('filters.paymentStatus'),
+      placeholder: t('filters.allPaymentStatuses'),
       options: paymentStatusOptions,
       value: filterPaymentStatus,
       onChange: setFilterPaymentStatus,
     },
     {
       id: 'dateRange',
-      label: 'Quick Date Filter',
-      placeholder: 'Select quick filter',
+      label: t('filters.quickDateFilter'),
+      placeholder: t('filters.selectQuickFilter'),
       options: dateRangeOptions,
       value: filterDateRange,
       onChange: handleDateRangeChange,
@@ -280,14 +282,14 @@ export default function OrdersPage() {
     <div className="w-full md:max-w-7xl md:mx-auto">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-semibold text-gray-900">Orders</h2>
-          <p className="text-sm text-gray-600 mt-1">Manage and track all your orders</p>
+          <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
+          <p className="text-sm text-gray-600 mt-1">{t('description')}</p>
         </div>
       </div>
 
       <div className="mb-6 space-y-4">
         <SearchFilter
-          searchPlaceholder="Search by order number, customer name, email, or phone..."
+          searchPlaceholder={t('searchPlaceholder')}
           onSearchChange={setSearchQuery}
           filters={filters}
           debounceDelay={500}
@@ -295,11 +297,11 @@ export default function OrdersPage() {
 
         <div className="bg-white border border-gray-200 rounded-sm p-4">
           <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-medium text-gray-700">Custom Date Range</h3>
+            <h3 className="text-sm font-medium text-gray-700">{t('customDateRange.title')}</h3>
             <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-3`}>
               <div className="flex-1">
                 <label htmlFor="dateFrom" className="block text-xs text-gray-600 mb-1.5">
-                  From Date
+                  {t('customDateRange.fromDate')}
                 </label>
                 <Input
                   id="dateFrom"
@@ -307,12 +309,12 @@ export default function OrdersPage() {
                   value={customDateFrom}
                   onChange={handleCustomDateFromChange}
                   max={customDateTo || undefined}
-                  placeholder="Select start date"
+                  placeholder={t('customDateRange.selectStartDate')}
                 />
               </div>
               <div className="flex-1">
                 <label htmlFor="dateTo" className="block text-xs text-gray-600 mb-1.5">
-                  To Date
+                  {t('customDateRange.toDate')}
                 </label>
                 <Input
                   id="dateTo"
@@ -320,7 +322,7 @@ export default function OrdersPage() {
                   value={customDateTo}
                   onChange={handleCustomDateToChange}
                   min={customDateFrom || undefined}
-                  placeholder="Select end date"
+                  placeholder={t('customDateRange.selectEndDate')}
                 />
               </div>
             </div>
@@ -332,7 +334,7 @@ export default function OrdersPage() {
                 }}
                 className="text-xs text-brand-navy hover:text-brand-red transition-colors self-start"
               >
-                Clear custom dates
+                {t('customDateRange.clearDates')}
               </button>
             )}
           </div>
@@ -341,11 +343,11 @@ export default function OrdersPage() {
 
       {filteredOrders.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-sm border-2 border-dashed border-gray-300">
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">{t('noOrders')}</h3>
           <p className="text-sm text-gray-600 mt-1">
             {searchQuery || filterStatus || filterOrderType || filterPaymentStatus || filterDateRange || customDateFrom || customDateTo
-              ? 'Try adjusting your search or filters'
-              : 'Orders will appear here once customers place them'}
+              ? t('noOrdersAdjustFilters')
+              : t('noOrdersYet')}
           </p>
         </div>
       ) : isMobile ? (
@@ -370,15 +372,15 @@ export default function OrdersPage() {
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Order Type</span>
+                  <span className="text-sm text-gray-600">{t('orderType')}</span>
                   <span className="text-sm font-medium text-gray-900">{formatOrderType(order.orderType)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total</span>
+                  <span className="text-sm text-gray-600">{t('total')}</span>
                   <span className="text-sm font-medium text-gray-900">${order.total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Created</span>
+                  <span className="text-sm text-gray-600">{t('created')}</span>
                   <span className="text-sm font-medium text-gray-900">
                     {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
                   </span>
@@ -393,25 +395,25 @@ export default function OrdersPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order Number
+                  {t('orderNumber')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
+                  {t('customer')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  {t('type')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Payment
+                  {t('payment')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
+                  {t('total')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
+                  {t('created')}
                 </th>
               </tr>
             </thead>
