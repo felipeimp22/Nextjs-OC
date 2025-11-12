@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 
 export const runtime = 'nodejs';
 
@@ -36,11 +35,9 @@ export default auth(async (req) => {
 
   // Check role-based permissions for authenticated users
   if (isAuthenticated && req.auth?.user?.email) {
-    // Extract restaurantId from pathname (e.g., /690d9babcef39cfddf8aba49/dashboard)
     const pathParts = pathname.split('/');
-    const restaurantId = pathParts[1]; // Assuming format: /restaurantId/page
+    const restaurantId = pathParts[1];
     
-    // Find which permission is needed
     let requiredPermission: string | null = null;
     for (const [route, permission] of Object.entries(ROUTE_PERMISSIONS)) {
       if (pathname.includes(route)) {
@@ -49,10 +46,11 @@ export default auth(async (req) => {
       }
     }
 
-    // If this route requires a permission, check it
     if (requiredPermission && restaurantId) {
       try {
-        // Get user's role for this restaurant
+        // LAZY LOAD Prisma only when we need it
+        const { default: prisma } = await import("@/lib/prisma");
+        
         const userRestaurant = await prisma.userRestaurant.findFirst({
           where: {
             restaurantId,
@@ -61,16 +59,13 @@ export default auth(async (req) => {
         });
 
         if (!userRestaurant) {
-          // User doesn't have access to this restaurant
           return NextResponse.redirect(new URL('/dashboard', req.url));
         }
 
-        // Owner has full access
         if (userRestaurant.role === 'owner') {
           return NextResponse.next();
         }
 
-        // Check role permissions
         const rolePermissions = await prisma.rolePermissions.findUnique({
           where: {
             restaurantId_role: {
@@ -81,20 +76,16 @@ export default auth(async (req) => {
         });
 
         if (!rolePermissions) {
-          // No permissions set, deny access
           return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
         }
 
-        // Check if user has permission for this page
         const hasPermission = rolePermissions[requiredPermission as keyof typeof rolePermissions];
 
         if (!hasPermission) {
-          // Redirect to dashboard if no permission
           return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
         }
       } catch (error) {
         console.error('Middleware permission check error:', error);
-        // On error, allow access but log it
       }
     }
   }
