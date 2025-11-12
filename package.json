@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:vercel": "npm run schema:combine && prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "npm run schema:combine && dotenv -e .env.local -- prisma generate",
