@@ -39,7 +39,12 @@ Options are customization categories that can be applied to menu items. Examples
 - Cooking Level (Rare, Medium, Well Done)
 
 Each option can be configured with:
-- **Requires Selection**: When enabled, customers must have at least one choice selected (cannot deselect all choices). At least one choice must be marked as default when this is enabled.
+- **multiSelect**: Allow customers to select multiple choices (e.g., multiple toppings)
+- **minSelections**: Minimum number of choices that must be selected (for multiSelect)
+- **maxSelections**: Maximum number of choices that can be selected (for multiSelect)
+- **requiresSelection**: When enabled, customers must have at least one choice selected (cannot deselect all choices). At least one choice must be marked as default when this is enabled.
+- **allowQuantity**: Allow customers to specify quantity for each choice (e.g., "2x Extra Cheese")
+- **minQuantity** / **maxQuantity**: Min/max quantity allowed per choice
 
 ### 2. **Choices**
 
@@ -303,6 +308,140 @@ const result = calculateItemTotalPrice(
 
 ---
 
+## Validation and Business Rules
+
+### Required Modifier Validation
+
+The system enforces strict validation to ensure orders cannot be placed without required selections.
+
+#### Frontend Validation (ItemModifierSelector)
+
+**Prevention Logic**: Users cannot deselect choices when it would violate minimum requirements.
+
+```typescript
+// In ItemModifierSelector.tsx - handleMultiSelect
+if (isSelected) {
+  const isRequired = appliedOption.required || option.requiresSelection;
+  const wouldViolateMinimum = isRequired && selectedForOption.length <= option.minSelections;
+
+  if (wouldViolateMinimum) {
+    return; // Silently prevent deselection
+  }
+
+  // Allow deselection
+  onOptionsChange(newOptions);
+}
+```
+
+**Behavior**:
+- **Single-select required**: Cannot uncheck the selected choice (at least one must remain selected)
+- **Multi-select with minSelections**: Cannot deselect when it would go below minimum
+- **Visual feedback**: Required options show red asterisk (*), optional show "(Optional)"
+
+#### Backend Validation (Order Creation/Editing)
+
+**Submit Validation**: Before creating or updating an order, the system validates all modifiers.
+
+```typescript
+// In OrderModal.tsx and OrderInHouseModal.tsx
+for (const item of validItems) {
+  const itemRules = menuRules.find(rule => rule.menuItemId === item.menuItemId);
+
+  if (itemRules?.appliedOptions) {
+    for (const appliedOption of itemRules.appliedOptions) {
+      const option = options.find(opt => opt.id === appliedOption.optionId);
+      const isRequired = appliedOption.required || option.requiresSelection;
+
+      if (isRequired) {
+        const minRequired = option.multiSelect ? option.minSelections : 1;
+        const selectedCount = item.selectedModifiers.filter(
+          sm => sm.optionId === option.id
+        ).length;
+
+        if (selectedCount < minRequired) {
+          // Show error with item name and option name
+          showToast('error', `${itemName}: Please select at least ${minRequired} option(s) for "${option.name}"`);
+          return; // Prevent submission
+        }
+      }
+    }
+  }
+}
+```
+
+**Error Messages**:
+- Single-select: `"Burger: Please select an option for 'Size'"`
+- Multi-select: `"Pizza: Please select at least 2 options for 'Toppings'"`
+
+### Multi-Select Behavior
+
+When `multiSelect` is enabled, options behave differently:
+
+**Configuration**:
+- `minSelections`: Minimum choices required (e.g., "Select at least 2 toppings")
+- `maxSelections`: Maximum choices allowed (e.g., "Select up to 4 toppings")
+- `requiresSelection`: If true, minimum is enforced; if false, all selections are optional
+
+**Examples**:
+
+1. **Optional Multi-Select**:
+   ```
+   Option: Extra Toppings
+   multiSelect: true
+   minSelections: 0
+   maxSelections: 5
+   requiresSelection: false
+   ```
+   - Customer can select 0 to 5 toppings
+   - All selections are optional
+
+2. **Required Multi-Select**:
+   ```
+   Option: Pizza Toppings
+   multiSelect: true
+   minSelections: 2
+   maxSelections: 4
+   requiresSelection: true
+   ```
+   - Customer MUST select at least 2 toppings
+   - Can select up to 4 toppings
+   - Cannot proceed without meeting minimum
+
+3. **Fixed Multi-Select**:
+   ```
+   Option: Build Your Bowl (Choose 3)
+   multiSelect: true
+   minSelections: 3
+   maxSelections: 3
+   requiresSelection: true
+   ```
+   - Customer must select exactly 3 items
+   - Cannot select fewer or more
+
+**UI Indicators**:
+- Shows "Min X, Max Y" next to option name
+- Displays warning text when below minimum: "Please select at least X options"
+- Prevents selection when maximum reached
+- Red asterisk (*) for required options
+
+### Applied Option Configuration
+
+When attaching an option to a menu item via MenuRules, you can set:
+
+**required** (boolean):
+- Independent of `requiresSelection` on the Option
+- Applied at the menu item level
+- Example: Size might not be globally required, but required for Pizza
+- When `true`, acts as if `requiresSelection` is enabled for this specific item
+
+**Validation Priority**:
+```typescript
+const isRequired = appliedOption.required || option.requiresSelection;
+```
+Either field being `true` makes the modifier required.
+
+---
+
 ## UI Components
 
 ### Component Hierarchy
@@ -314,7 +453,140 @@ MenuItemsList
       └─ ModifierConfiguration (Step 2: Configure)
           └─ ChoiceAdjustmentEditor (For each modifier)
               └─ PriceAdjustmentRuleEditor (Cross-modifier rules)
+
+KitchenPage / OrdersPage
+  └─ OrderModal (Create/Edit orders)
+      └─ ItemModifierSelector (For each item)
+          └─ Choice selection UI with validation
+
 ```
+
+### ItemModifierSelector Component
+
+**Purpose**: Displays and handles modifier selection during order creation/editing.
+
+**Features**:
+- Visual distinction between required (*) and optional modifiers
+- Real-time validation feedback
+- Prevents invalid deselections
+- Shows min/max selection requirements
+- Supports quantity adjustment for choices
+- Displays price adjustments dynamically
+
+**Props**:
+```typescript
+interface ItemModifierSelectorProps {
+  itemRules: {
+    appliedOptions: AppliedOption[];
+  };
+  options: Option[];
+  selectedOptions: SelectedChoice[];
+  onOptionsChange: (options: SelectedChoice[]) => void;
+  currencySymbol: string;
+}
+```
+
+**Selection Flow**:
+1. **Single-select options**:
+   - Radio button behavior
+   - Clicking another choice switches selection
+   - Cannot deselect if required
+
+2. **Multi-select options**:
+   - Checkbox behavior
+   - Can select multiple up to `maxSelections`
+   - Cannot deselect below `minSelections` if required
+   - Shows count: "Selected X of Y"
+
+**Visual States**:
+- **Selected**: Blue background, checkmark icon
+- **Disabled**: Grayed out when max reached or unavailable
+- **Required**: Red asterisk next to option name
+- **Optional**: "(Optional)" text next to option name
+
+### OrderModal Component
+
+**Purpose**: Universal modal for creating and editing in-house orders.
+
+**Features**:
+- Create mode: Empty form
+- Edit mode: Pre-filled with existing order data
+- Validates all modifiers before submission
+- Reconstructs modifier selections from saved orders
+- Supports multiple items per order
+- Real-time total calculation with tax preview
+
+**Key Functions**:
+
+1. **Pre-filling for Edit**:
+```typescript
+useEffect(() => {
+  if (existingOrder && options.length > 0) {
+    // Match saved options back to current menu options by name
+    const selectedModifiers = (item.options || []).map(orderOption => {
+      const matchingOption = options.find(opt => opt.name === orderOption.name);
+      const matchingChoice = matchingOption?.choices.find(
+        choice => choice.name === orderOption.choice
+      );
+
+      return {
+        optionId: matchingOption?.id || '',
+        optionName: orderOption.name,
+        choiceId: matchingChoice?.id || '',
+        choiceName: orderOption.choice,
+        quantity: 1,
+        priceAdjustment: orderOption.priceAdjustment,
+      };
+    });
+    // Set items with reconstructed modifiers
+  }
+}, [existingOrder, isOpen, options]);
+```
+
+2. **Validation Before Submit**:
+```typescript
+// For each item and each applied option
+const isRequired = appliedOption.required || option.requiresSelection;
+const minRequired = option.multiSelect ? option.minSelections : 1;
+
+if (isRequired && selectedCount < minRequired) {
+  showToast('error', `${itemName}: Please select...`);
+  return; // Prevent submission
+}
+```
+
+3. **Price Calculation**:
+```typescript
+// Uses the pricing calculator for accurate cross-modifier pricing
+const calculateItemTotal = (item: OrderItemInput) => {
+  const itemRules = menuRules.find(rule => rule.menuItemId === item.menuItemId);
+
+  const selectedChoices = item.selectedModifiers.map(modifier => ({
+    optionId: modifier.optionId,
+    choiceId: modifier.choiceId,
+    quantity: modifier.quantity,
+  }));
+
+  const result = calculateItemTotalPrice(
+    item.price,
+    itemRules ? { appliedOptions: itemRules.appliedOptions } : null,
+    selectedChoices,
+    item.quantity
+  );
+
+  return result.total;
+};
+```
+
+**Important**: The component uses `calculateItemTotalPrice` from `modifierPricingCalculator.ts` to ensure cross-modifier pricing rules are applied correctly. This means:
+- Size-based topping pricing works automatically
+- Multiplier, addition, and fixed adjustments are all applied
+- The displayed total reflects all pricing rules in real-time
+
+**Usage**:
+- Kitchen page: Create in-house orders
+- Orders page: Edit existing orders
+- Shared component ensures consistent behavior
 
 ### Usage Flow
 
@@ -475,6 +747,156 @@ Calculates the complete item price including modifiers.
 - Prevents customers from accidentally placing orders without required selections
 - Don't overuse - only for truly mandatory modifiers
 
+### 9. **Multi-Select Configuration**
+
+- Set appropriate `minSelections` and `maxSelections` based on business needs
+- `minSelections = 0` with `requiresSelection = false` makes all choices optional
+- `minSelections > 0` with `requiresSelection = true` enforces minimum selection
+- Use equal min/max values for "choose exactly X" scenarios (e.g., "Choose 3 proteins")
+
+### 10. **Validation is Two-Layered**
+
+- **UI Prevention**: ItemModifierSelector prevents invalid interactions
+- **Backend Validation**: Server actions validate before saving to database
+- Never rely solely on UI validation - always validate server-side
+- Both layers use the same logic: `isRequired = appliedOption.required || option.requiresSelection`
+
+---
+
+## Implementation Examples
+
+### Example 1: Required Size Selection
+
+**Scenario**: Every pizza must have a size selected.
+
+**Setup**:
+```typescript
+// Option configuration
+{
+  name: "Size",
+  multiSelect: false,
+  minSelections: 1,
+  maxSelections: 1,
+  requiresSelection: true,  // Required globally
+  choices: [
+    { name: "Small", basePrice: 0, isDefault: true },  // Default choice
+    { name: "Medium", basePrice: 5 },
+    { name: "Large", basePrice: 10 }
+  ]
+}
+
+// Applied to menu item
+{
+  optionId: "size-option-id",
+  required: true,  // Also marked required at item level
+  order: 0,
+  choiceAdjustments: [...]
+}
+```
+
+**Behavior**:
+- UI shows red asterisk next to "Size"
+- One choice (Small) is pre-selected by default
+- User cannot uncheck the selected size
+- Attempting to save without a size shows: "Pizza: Please select an option for 'Size'"
+
+### Example 2: Multi-Select Toppings
+
+**Scenario**: Customer must choose at least 2 toppings, up to 4.
+
+**Setup**:
+```typescript
+// Option configuration
+{
+  name: "Toppings",
+  multiSelect: true,
+  minSelections: 2,
+  maxSelections: 4,
+  requiresSelection: true,
+  choices: [
+    { name: "Cheese", basePrice: 2, isDefault: true },
+    { name: "Pepperoni", basePrice: 3, isDefault: true },
+    { name: "Mushrooms", basePrice: 2 },
+    { name: "Olives", basePrice: 2 },
+    { name: "Peppers", basePrice: 2 }
+  ]
+}
+```
+
+**Behavior**:
+- UI shows "Min 2, Max 4" next to "Toppings"
+- Two choices are pre-selected by default
+- User can select up to 4 total
+- Cannot deselect when only 2 are selected (would violate minimum)
+- Attempting to save with only 1 shows: "Pizza: Please select at least 2 options for 'Toppings'"
+- Cannot select a 5th topping (max reached)
+
+### Example 3: Optional Add-ons
+
+**Scenario**: Customer can optionally add extras, but none are required.
+
+**Setup**:
+```typescript
+// Option configuration
+{
+  name: "Extra Add-ons",
+  multiSelect: true,
+  minSelections: 0,
+  maxSelections: 3,
+  requiresSelection: false,  // Not required
+  choices: [
+    { name: "Extra Cheese", basePrice: 2 },
+    { name: "Garlic Bread", basePrice: 3 },
+    { name: "Dipping Sauce", basePrice: 1 }
+  ]
+}
+
+// Applied to menu item
+{
+  optionId: "extras-option-id",
+  required: false,  // Optional at item level too
+  order: 2,
+  choiceAdjustments: [...]
+}
+```
+
+**Behavior**:
+- UI shows "(Optional)" next to "Extra Add-ons"
+- No choices are pre-selected
+- User can select 0 to 3 extras
+- Can freely check/uncheck any choice
+- No validation error if none selected
+
+### Example 4: Fixed Choice Selection
+
+**Scenario**: Build-your-own bowl - must choose exactly 3 proteins.
+
+**Setup**:
+```typescript
+// Option configuration
+{
+  name: "Choose Your Proteins (Select 3)",
+  multiSelect: true,
+  minSelections: 3,
+  maxSelections: 3,
+  requiresSelection: true,
+  choices: [
+    { name: "Chicken", basePrice: 0 },
+    { name: "Beef", basePrice: 0 },
+    { name: "Shrimp", basePrice: 2 },
+    { name: "Tofu", basePrice: 0 },
+    { name: "Salmon", basePrice: 3 }
+  ]
+}
+```
+
+**Behavior**:
+- UI shows "Min 3, Max 3" (exactly 3 required)
+- User must select exactly 3 proteins
+- After selecting 3, cannot select a 4th
+- Cannot deselect when exactly 3 are selected
+- Warning shows: "Please select at least 3 options" until requirement met
+
 ---
 
 ## Common Patterns
@@ -578,6 +1000,39 @@ Small size includes everything for free.
 - Only one rule per trigger applies (last one wins)
 - Check adjustment type (fixed vs. addition vs. multiplier)
 - Review calculation breakdown in the utility function
+
+### Issue: Can't Deselect a Choice
+
+**Cause**: The option is required and deselecting would violate minimum selections
+
+**Solution**:
+- This is intentional validation behavior
+- For single-select required options, at least one must stay selected
+- For multi-select, must maintain minimum selection count
+- To make deselection possible, either:
+  - Set `requiresSelection = false` on the Option
+  - Set `required = false` on the AppliedOption
+  - Increase minimum selections threshold
+
+### Issue: Order Won't Save
+
+**Cause**: Required modifiers aren't selected
+
+**Solution**:
+- Check error message - it will specify which item and which option
+- Ensure all required modifiers have minimum selections met
+- For multi-select, verify `minSelections` count is reached
+- Check that all items in the order have their requirements satisfied
+
+### Issue: Modifiers Not Showing When Editing
+
+**Cause**: Saved modifiers don't match current menu options
+
+**Solution**:
+- System matches saved modifiers by name (not ID)
+- If an option or choice was renamed/deleted, it won't match
+- Saved data shows original names but may not have valid IDs
+- User can manually reselect the correct updated options
 
 ### Issue: Can't Save Rules
 

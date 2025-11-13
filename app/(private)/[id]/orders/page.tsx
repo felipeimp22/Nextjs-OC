@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { useOrders } from '@/hooks/useOrders';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -10,6 +11,9 @@ import SearchFilter, { CustomFilter } from '@/components/shared/SearchFilter';
 import Pagination from '@/components/shared/Pagination';
 import { Input } from '@/components/ui/Input';
 import { formatRelativeTime } from '@/lib/utils/dateFormatter';
+import { Pencil } from 'lucide-react';
+import OrderModal from '@/components/shared/OrderModal';
+import { getRestaurantMenuData } from '@/lib/serverActions/menu.actions';
 
 interface Order {
   id: string;
@@ -28,6 +32,15 @@ interface Order {
   total: number;
   createdAt: Date;
   updatedAt: Date;
+  items: Array<{
+    menuItemId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    options?: Array<{ name: string; choice: string; priceAdjustment: number }>;
+    specialInstructions?: string;
+  }>;
+  specialInstructions?: string;
 }
 
 export default function OrdersPage() {
@@ -37,6 +50,7 @@ export default function OrdersPage() {
   const { selectedRestaurantId } = useRestaurantStore();
   const isMobile = useIsMobile();
   const t = useTranslations('orders');
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -47,6 +61,8 @@ export default function OrdersPage() {
   const [customDateTo, setCustomDateTo] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
   const [dateFrom, setDateFrom] = useState<string | undefined>(undefined);
   const [dateTo, setDateTo] = useState<string | undefined>(undefined);
@@ -127,6 +143,16 @@ export default function OrdersPage() {
     dateTo,
   });
 
+  const { data: menuData, isLoading: menuLoading } = useQuery({
+    queryKey: ['restaurantMenuData', restaurantId],
+    queryFn: async () => {
+      const result = await getRestaurantMenuData(restaurantId);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+    enabled: !!selectedRestaurantId && selectedRestaurantId === restaurantId,
+  });
+
   useEffect(() => {
     if (!selectedRestaurantId) {
       router.push('/setup');
@@ -151,6 +177,20 @@ export default function OrdersPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterStatus, filterOrderType, filterPaymentStatus, filterDateRange, customDateFrom, customDateTo]);
+
+  const handleEdit = (order: Order) => {
+    setEditingOrder(order);
+    setIsOrderModalOpen(true);
+  };
+
+  const handleOrderSaved = () => {
+    queryClient.invalidateQueries({ queryKey: ['orders', restaurantId] });
+  };
+
+  const handleCloseModal = () => {
+    setIsOrderModalOpen(false);
+    setEditingOrder(null);
+  };
 
   if (!selectedRestaurantId || selectedRestaurantId !== restaurantId) {
     return (
@@ -379,6 +419,16 @@ export default function OrdersPage() {
                   </span>
                 </div>
               </div>
+
+              <div className="flex gap-2 pt-3 mt-3 border-t border-gray-200">
+                <button
+                  onClick={() => handleEdit(order)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-brand-navy bg-brand-navy/10 hover:bg-brand-navy/20 rounded-sm transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                  {t('edit')}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -407,6 +457,9 @@ export default function OrdersPage() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {t('created')}
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {t('actions')}
                 </th>
               </tr>
             </thead>
@@ -441,6 +494,15 @@ export default function OrdersPage() {
                       {formatRelativeTime(order.createdAt)}
                     </span>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <button
+                      onClick={() => handleEdit(order)}
+                      className="p-2 text-gray-600 hover:text-brand-navy hover:bg-gray-100 rounded-sm transition-colors"
+                      title={t('edit')}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -454,6 +516,30 @@ export default function OrdersPage() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           className="mt-6"
+        />
+      )}
+
+      {menuData && (
+        <OrderModal
+          isOpen={isOrderModalOpen}
+          onClose={handleCloseModal}
+          restaurantId={restaurantId}
+          menuItems={menuData.menuItems || []}
+          options={menuData.options || []}
+          menuRules={menuData.menuRules || []}
+          currencySymbol={menuData.currencySymbol || '$'}
+          onOrderSaved={handleOrderSaved}
+          existingOrder={editingOrder ? {
+            id: editingOrder.id,
+            customerName: editingOrder.customerName,
+            customerPhone: editingOrder.customerPhone,
+            customerEmail: editingOrder.customerEmail,
+            orderType: editingOrder.orderType as 'pickup' | 'delivery' | 'dine_in',
+            paymentStatus: editingOrder.paymentStatus as 'pending' | 'paid',
+            paymentMethod: editingOrder.paymentMethod as 'card' | 'cash' | 'other',
+            specialInstructions: editingOrder.specialInstructions,
+            items: editingOrder.items,
+          } : undefined}
         />
       )}
     </div>
