@@ -1,0 +1,19 @@
+model KitchenStage {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("KitchenStages", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  status String
+  displayName String
+  color String @default("#3B82F6")
+  order Int @default(0)
+  isEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, status])
+  @@index([restaurantId])
+  @@map("kitchen_stages")
+}
