@@ -16,18 +16,42 @@ interface MenuItem {
   price: number;
 }
 
+interface Choice {
+  id: string;
+  name: string;
+  basePrice: number;
+  isAvailable: boolean;
+}
+
 interface Option {
   id: string;
   name: string;
-  choices: Array<{ id: string; name: string; basePrice: number }>;
+  description?: string;
+  choices: Choice[];
+  multiSelect: boolean;
+  minSelections: number;
+  maxSelections: number;
+  requiresSelection: boolean;
+  allowQuantity: boolean;
+  minQuantity: number;
+  maxQuantity: number;
+}
+
+interface AppliedOption {
+  optionId: string;
+  required: boolean;
+  order: number;
+  choiceAdjustments: Array<{
+    choiceId: string;
+    priceAdjustment: number;
+    isAvailable: boolean;
+    isDefault: boolean;
+  }>;
 }
 
 interface MenuRule {
   menuItemId: string;
-  appliedOptions: Array<{
-    optionId: string;
-    required: boolean;
-  }>;
+  appliedOptions: AppliedOption[];
 }
 
 interface OrderInHouseModalProps {
@@ -134,6 +158,46 @@ export default function OrderInHouseModal({
     if (validItems.length === 0) {
       showToast('error', 'Please add at least one item');
       return;
+    }
+
+    for (let i = 0; i < validItems.length; i++) {
+      const item = validItems[i];
+      const itemRules = menuRules.find(rule => rule.menuItemId === item.menuItemId);
+
+      if (itemRules && itemRules.appliedOptions) {
+        for (const appliedOption of itemRules.appliedOptions) {
+          const option = options.find(opt => opt.id === appliedOption.optionId);
+
+          if (!option) continue;
+
+          const isRequired = appliedOption.required || option.requiresSelection;
+          const selectedForOption = item.selectedModifiers.filter(
+            sm => sm.optionId === option.id
+          );
+
+          if (isRequired) {
+            const minRequired = option.multiSelect ? option.minSelections : 1;
+
+            if (selectedForOption.length < minRequired) {
+              const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
+              const itemName = menuItem?.name || 'Item';
+
+              if (option.multiSelect && option.minSelections > 0) {
+                showToast(
+                  'error',
+                  `${itemName}: Please select at least ${option.minSelections} option${option.minSelections > 1 ? 's' : ''} for "${option.name}"`
+                );
+              } else {
+                showToast(
+                  'error',
+                  `${itemName}: Please select an option for "${option.name}"`
+                );
+              }
+              return;
+            }
+          }
+        }
+      }
     }
 
     setIsSubmitting(true);

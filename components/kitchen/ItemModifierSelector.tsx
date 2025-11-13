@@ -121,6 +121,13 @@ export default function ItemModifierSelector({
     const selectedForOption = getSelectedChoicesForOption(option.id);
 
     if (isSelected) {
+      const isRequired = appliedOption.required || option.requiresSelection;
+      const wouldViolateMinimum = isRequired && selectedForOption.length <= option.minSelections;
+
+      if (wouldViolateMinimum) {
+        return;
+      }
+
       const newOptions = selectedOptions.filter(
         sc => !(sc.optionId === option.id && sc.choiceId === choice.id)
       );

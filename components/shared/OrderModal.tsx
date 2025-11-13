@@ -253,6 +253,46 @@ export default function OrderModal({
       return;
     }
 
+    for (let i = 0; i < validItems.length; i++) {
+      const item = validItems[i];
+      const itemRules = menuRules.find(rule => rule.menuItemId === item.menuItemId);
+
+      if (itemRules && itemRules.appliedOptions) {
+        for (const appliedOption of itemRules.appliedOptions) {
+          const option = options.find(opt => opt.id === appliedOption.optionId);
+
+          if (!option) continue;
+
+          const isRequired = appliedOption.required || option.requiresSelection;
+          const selectedForOption = item.selectedModifiers.filter(
+            sm => sm.optionId === option.id
+          );
+
+          if (isRequired) {
+            const minRequired = option.multiSelect ? option.minSelections : 1;
+
+            if (selectedForOption.length < minRequired) {
+              const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
+              const itemName = menuItem?.name || 'Item';
+
+              if (option.multiSelect && option.minSelections > 0) {
+                showToast(
+                  'error',
+                  `${itemName}: Please select at least ${option.minSelections} option${option.minSelections > 1 ? 's' : ''} for "${option.name}"`
+                );
+              } else {
+                showToast(
+                  'error',
+                  `${itemName}: Please select an option for "${option.name}"`
+                );
+              }
+              return;
+            }
+          }
+        }
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
