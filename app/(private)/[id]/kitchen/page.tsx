@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/ToastContainer';
 import KDSBoard from '@/components/kitchen/KDSBoard';
 import OrderInHouseModal from '@/components/kitchen/OrderInHouseModal';
 import { getKitchenOrders, getKitchenStages } from '@/lib/serverActions/kitchen.actions';
+import { getRestaurantMenuData } from '@/lib/serverActions/menu.actions';
 import { Maximize2, Minimize2, Plus, RefreshCw, Settings } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Toggle from '@/components/ui/Toggle';
@@ -95,9 +96,10 @@ export default function KitchenPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [ordersResult, stagesResult] = await Promise.all([
+      const [ordersResult, stagesResult, menuDataResult] = await Promise.all([
         getKitchenOrders(restaurantId),
         getKitchenStages(restaurantId),
+        getRestaurantMenuData(restaurantId),
       ]);
 
       if (ordersResult.success && ordersResult.data) {
@@ -113,13 +115,11 @@ export default function KitchenPage() {
         setStageSettings(settings);
       }
 
-      const restaurantResponse = await fetch(`/api/restaurants/${restaurantId}/menu`);
-      if (restaurantResponse.ok) {
-        const restaurantData = await restaurantResponse.json();
-        setMenuItems(restaurantData.menuItems || []);
-        setOptions(restaurantData.options || []);
-        setMenuRules(restaurantData.menuRules || []);
-        setCurrencySymbol(restaurantData.currencySymbol || '$');
+      if (menuDataResult.success && menuDataResult.data) {
+        setMenuItems(menuDataResult.data.menuItems || []);
+        setOptions(menuDataResult.data.options || []);
+        setMenuRules(menuDataResult.data.menuRules || []);
+        setCurrencySymbol(menuDataResult.data.currencySymbol || '$');
       }
     } catch (error) {
       console.error('Error loading kitchen data:', error);
