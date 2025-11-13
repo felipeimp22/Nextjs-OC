@@ -410,7 +410,7 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">{t('total')}</span>
-                  <span className="text-sm font-medium text-gray-900">${order.total.toFixed(2)}</span>
+                  <span className="text-sm font-medium text-gray-900">{menuData?.currencySymbol || '$'}{order.total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">{t('created')}</span>
@@ -487,7 +487,7 @@ export default function OrdersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">${order.total.toFixed(2)}</span>
+                    <span className="text-sm font-medium text-gray-900">{menuData?.currencySymbol || '$'}{order.total.toFixed(2)}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-500">
