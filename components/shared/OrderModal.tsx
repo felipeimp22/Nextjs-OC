@@ -153,6 +153,7 @@ export default function OrderModal({
       setSpecialInstructions(existingOrder.specialInstructions || '');
 
       const formattedItems: OrderItemInput[] = existingOrder.items.map(item => {
+        const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
         const selectedModifiers = (item.options || []).map(orderOption => {
           const matchingOption = options.find(opt => opt.name === orderOption.name);
 
@@ -184,7 +185,7 @@ export default function OrderModal({
         return {
           menuItemId: item.menuItemId,
           quantity: item.quantity,
-          price: item.price,
+          price: menuItem ? menuItem.price : item.price,
           selectedModifiers,
           specialInstructions: item.specialInstructions || '',
         };
@@ -203,7 +204,7 @@ export default function OrderModal({
       setSpecialInstructions('');
       setItems([{ menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
     }
-  }, [existingOrder, isOpen, options]);
+  }, [existingOrder, isOpen, options, menuItems]);
 
   const handleAddItem = () => {
     setItems([...items, { menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
