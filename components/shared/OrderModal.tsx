@@ -130,7 +130,11 @@ export default function OrderModal({
   const { showToast } = useToast();
 
   useEffect(() => {
-    if (existingOrder && isOpen) {
+    if (!isOpen) {
+      return;
+    }
+
+    if (existingOrder && options.length > 0) {
       setCustomerName(existingOrder.customerName);
       setCustomerPhone(existingOrder.customerPhone);
       setCustomerEmail(existingOrder.customerEmail);
@@ -140,14 +144,33 @@ export default function OrderModal({
       setSpecialInstructions(existingOrder.specialInstructions || '');
 
       const formattedItems: OrderItemInput[] = existingOrder.items.map(item => {
-        const selectedModifiers = (item.options || []).map(option => ({
-          optionId: '',
-          optionName: option.name,
-          choiceId: '',
-          choiceName: option.choice,
-          quantity: 1,
-          priceAdjustment: option.priceAdjustment,
-        }));
+        const selectedModifiers = (item.options || []).map(orderOption => {
+          const matchingOption = options.find(opt => opt.name === orderOption.name);
+
+          if (!matchingOption) {
+            return {
+              optionId: '',
+              optionName: orderOption.name,
+              choiceId: '',
+              choiceName: orderOption.choice,
+              quantity: 1,
+              priceAdjustment: orderOption.priceAdjustment,
+            };
+          }
+
+          const matchingChoice = matchingOption.choices.find(
+            choice => choice.name === orderOption.choice
+          );
+
+          return {
+            optionId: matchingOption.id,
+            optionName: matchingOption.name,
+            choiceId: matchingChoice?.id || '',
+            choiceName: orderOption.choice,
+            quantity: 1,
+            priceAdjustment: orderOption.priceAdjustment,
+          };
+        });
 
         return {
           menuItemId: item.menuItemId,
@@ -161,8 +184,17 @@ export default function OrderModal({
       setItems(formattedItems.length > 0 ? formattedItems : [
         { menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' },
       ]);
+    } else if (!existingOrder) {
+      setCustomerName('');
+      setCustomerPhone('');
+      setCustomerEmail('');
+      setOrderType('dine_in');
+      setPaymentStatus('pending');
+      setPaymentMethod('cash');
+      setSpecialInstructions('');
+      setItems([{ menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
     }
-  }, [existingOrder, isOpen]);
+  }, [existingOrder, isOpen, options]);
 
   const handleAddItem = () => {
     setItems([...items, { menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
@@ -266,15 +298,17 @@ export default function OrderModal({
   };
 
   const handleClose = () => {
-    setCustomerName('');
-    setCustomerPhone('');
-    setCustomerEmail('');
-    setOrderType('dine_in');
-    setPaymentStatus('pending');
-    setPaymentMethod('cash');
-    setSpecialInstructions('');
-    setItems([{ menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
-    onClose();
+    if (!isSubmitting) {
+      setCustomerName('');
+      setCustomerPhone('');
+      setCustomerEmail('');
+      setOrderType('dine_in');
+      setPaymentStatus('pending');
+      setPaymentMethod('cash');
+      setSpecialInstructions('');
+      setItems([{ menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
+      onClose();
+    }
   };
 
   const isEditMode = !!existingOrder;
