@@ -9,6 +9,7 @@ import Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastContainer';
 import { createInHouseOrder, updateInHouseOrder } from '@/lib/serverActions/kitchen.actions';
 import ItemModifierSelector from '@/components/kitchen/ItemModifierSelector';
+import { calculateItemTotalPrice } from '@/lib/utils/modifierPricingCalculator';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MenuItem {
@@ -38,6 +39,13 @@ interface Option {
   maxQuantity: number;
 }
 
+interface PriceAdjustment {
+  targetOptionId: string;
+  targetChoiceId?: string;
+  adjustmentType: 'multiplier' | 'addition' | 'fixed';
+  value: number;
+}
+
 interface AppliedOption {
   optionId: string;
   required: boolean;
@@ -47,6 +55,7 @@ interface AppliedOption {
     priceAdjustment: number;
     isAvailable: boolean;
     isDefault: boolean;
+    adjustments: PriceAdjustment[];
   }>;
 }
 
@@ -227,11 +236,26 @@ export default function OrderModal({
   };
 
   const calculateItemTotal = (item: OrderItemInput) => {
-    let itemPrice = item.price;
-    item.selectedModifiers.forEach(modifier => {
-      itemPrice += modifier.priceAdjustment * modifier.quantity;
-    });
-    return itemPrice * item.quantity;
+    if (!item.menuItemId) {
+      return 0;
+    }
+
+    const itemRules = menuRules.find(rule => rule.menuItemId === item.menuItemId);
+
+    const selectedChoices = item.selectedModifiers.map(modifier => ({
+      optionId: modifier.optionId,
+      choiceId: modifier.choiceId,
+      quantity: modifier.quantity,
+    }));
+
+    const result = calculateItemTotalPrice(
+      item.price,
+      itemRules ? { appliedOptions: itemRules.appliedOptions } : null,
+      selectedChoices,
+      item.quantity
+    );
+
+    return result.total;
   };
 
   const calculateTotal = () => {

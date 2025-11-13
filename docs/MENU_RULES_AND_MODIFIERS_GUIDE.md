@@ -555,6 +555,34 @@ if (isRequired && selectedCount < minRequired) {
 }
 ```
 
+3. **Price Calculation**:
+```typescript
+// Uses the pricing calculator for accurate cross-modifier pricing
+const calculateItemTotal = (item: OrderItemInput) => {
+  const itemRules = menuRules.find(rule => rule.menuItemId === item.menuItemId);
+
+  const selectedChoices = item.selectedModifiers.map(modifier => ({
+    optionId: modifier.optionId,
+    choiceId: modifier.choiceId,
+    quantity: modifier.quantity,
+  }));
+
+  const result = calculateItemTotalPrice(
+    item.price,
+    itemRules ? { appliedOptions: itemRules.appliedOptions } : null,
+    selectedChoices,
+    item.quantity
+  );
+
+  return result.total;
+};
+```
+
+**Important**: The component uses `calculateItemTotalPrice` from `modifierPricingCalculator.ts` to ensure cross-modifier pricing rules are applied correctly. This means:
+- Size-based topping pricing works automatically
+- Multiplier, addition, and fixed adjustments are all applied
+- The displayed total reflects all pricing rules in real-time
+
 **Usage**:
 - Kitchen page: Create in-house orders
 - Orders page: Edit existing orders
