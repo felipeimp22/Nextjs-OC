@@ -228,6 +228,19 @@ export default function OrderModal({
           selectedModifiers: [],
         };
       }
+    } else if (field === 'selectedModifiers') {
+      const currentItem = newItems[index];
+      const menuItem = menuItems.find(mi => mi.id === currentItem.menuItemId);
+
+      if (menuItem) {
+        newItems[index] = {
+          ...currentItem,
+          selectedModifiers: value,
+          price: menuItem.price,
+        };
+      } else {
+        newItems[index] = { ...newItems[index], [field]: value };
+      }
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
     }
