@@ -124,6 +124,7 @@ export default function OrderModal({
   const t = useTranslations('orders.modal');
   const tTypes = useTranslations('orders.typeOptions');
   const tPaymentStatus = useTranslations('orders.paymentStatusOptions');
+  const tPaymentMethods = useTranslations('paymentMethods');
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -493,9 +494,9 @@ export default function OrderModal({
               {t('paymentMethod')} {t('required')}
             </label>
             <Select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)}>
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="other">Other</option>
+              <option value="cash">{tPaymentMethods('cash')}</option>
+              <option value="card">{tPaymentMethods('card')}</option>
+              <option value="other">{tPaymentMethods('other')}</option>
             </Select>
           </div>
         </div>

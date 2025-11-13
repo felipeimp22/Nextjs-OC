@@ -696,6 +696,33 @@
       "saving": "Salvando..."
     }
   },
+  "validation": {
+    "emailValid": "O formato do e-mail é válido",
+    "emailInvalid": "Formato de e-mail inválido",
+    "phoneValid": "O formato do telefone é válido",
+    "phoneInvalid": "Formato de telefone inválido"
+  },
+  "kitchen": {
+    "title": "Cozinha",
+    "description": "Sistema de Exibição da Cozinha",
+    "ordersRefreshed": "Pedidos atualizados",
+    "stageSettingsUpdated": "Configurações de etapas atualizadas",
+    "failedToUpdateStageSettings": "Falha ao atualizar configurações de etapas",
+    "refresh": "Atualizar",
+    "stages": "Etapas",
+    "orderInHouse": "Pedido Interno",
+    "exitFullscreen": "Sair da tela cheia",
+    "enterFullscreen": "Entrar em tela cheia",
+    "stageSettings": "Configurações de Etapas da Cozinha",
+    "cancel": "Cancelar",
+    "saveSettings": "Salvar Configurações",
+    "stageSettingsDescription": "Habilite ou desabilite etapas para personalizar a exibição da sua cozinha. As etapas desabilitadas não serão mostradas no painel."
+  },
+  "paymentMethods": {
+    "cash": "Dinheiro",
+    "card": "Cartão",
+    "other": "Outro"
+  },
   "orders": {
     "title": "Pedidos",
     "description": "Gerencie e acompanhe todos os seus pedidos",
@@ -757,6 +784,47 @@
       "selectStartDate": "Selecionar data inicial",
       "selectEndDate": "Selecionar data final",
       "clearDates": "Limpar datas personalizadas"
-    }
+    },
+    "modal": {
+      "createTitle": "Criar Pedido Interno",
+      "editTitle": "Editar Pedido",
+      "customerName": "Nome do Cliente",
+      "customerNamePlaceholder": "João Silva",
+      "customerPhone": "Telefone do Cliente",
+      "customerPhonePlaceholder": "+55 (11) 91234-5678",
+      "customerEmail": "E-mail do Cliente (Opcional)",
+      "customerEmailPlaceholder": "joao@exemplo.com",
+      "orderType": "Tipo de Pedido",
+      "paymentStatus": "Status do Pagamento",
+      "paymentMethod": "Método de Pagamento",
+      "specialInstructions": "Instruções Especiais do Pedido (Opcional)",
+      "specialInstructionsPlaceholder": "Quaisquer instruções especiais para todo o pedido...",
+      "orderItems": "Itens do Pedido",
+      "addItem": "Adicionar Item",
+      "menuItem": "Item do Cardápio",
+      "selectItem": "Selecionar item...",
+      "price": "Preço",
+      "pricePlaceholder": "0.00",
+      "quantity": "Quantidade",
+      "itemTotal": "Total do Item",
+      "itemSpecialInstructions": "Instruções Especiais (Opcional)",
+      "itemSpecialInstructionsPlaceholder": "Sem cebola, queijo extra...",
+      "estimatedTotal": "Total Estimado:",
+      "finalTotalNote": "O total final incluirá impostos conforme configurado nas configurações do restaurante",
+      "cancel": "Cancelar",
+      "createOrder": "Criar Pedido",
+      "updateOrder": "Atualizar Pedido",
+      "creating": "Criando...",
+      "updating": "Atualizando...",
+      "fillCustomerInfo": "Por favor, preencha o nome e telefone do cliente",
+      "addAtLeastOneItem": "Por favor, adicione pelo menos um item",
+      "orderCreatedSuccess": "Pedido criado com sucesso",
+      "orderUpdatedSuccess": "Pedido atualizado com sucesso",
+      "orderCreatedFailed": "Falha ao criar pedido",
+      "orderUpdatedFailed": "Falha ao atualizar pedido",
+      "required": "*"
+    },
+    "edit": "Editar",
+    "actions": "Ações"
   }
 }

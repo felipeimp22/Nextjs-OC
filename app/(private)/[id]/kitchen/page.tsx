@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -74,6 +75,7 @@ export default function KitchenPage() {
   const isMobile = useIsMobile();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const t = useTranslations('kitchen');
 
   const [isMaximized, setIsMaximized] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -135,7 +137,7 @@ export default function KitchenPage() {
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
     queryClient.invalidateQueries({ queryKey: ['kitchenStages', restaurantId] });
-    showToast('success', 'Orders refreshed');
+    showToast('success', t('ordersRefreshed'));
   };
 
   const toggleMaximize = () => {
@@ -158,11 +160,11 @@ export default function KitchenPage() {
     const result = await updateKitchenStages(restaurantId, updates);
 
     if (result.success) {
-      showToast('success', 'Stage settings updated');
+      showToast('success', t('stageSettingsUpdated'));
       setIsSettingsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['kitchenStages', restaurantId] });
     } else {
-      showToast('error', 'Failed to update stage settings');
+      showToast('error', t('failedToUpdateStageSettings'));
     }
   };
 
@@ -191,20 +193,20 @@ export default function KitchenPage() {
       <div className="flex items-center justify-end gap-3 p-4 flex-shrink-0">
         <Button size="sm" variant="secondary" onClick={handleRefresh}>
           <RefreshCw className="w-4 h-4 mr-1" />
-          Refresh
+          {t('refresh')}
         </Button>
         <Button size="sm" variant="secondary" onClick={() => setIsSettingsModalOpen(true)}>
           <Settings className="w-4 h-4 mr-1" />
-          Stages
+          {t('stages')}
         </Button>
         <Button size="sm" onClick={() => setIsOrderModalOpen(true)}>
           <Plus className="w-4 h-4 mr-1" />
-          Order In House
+          {t('orderInHouse')}
         </Button>
         <button
           onClick={toggleMaximize}
           className="p-2 hover:bg-gray-100 rounded transition-colors"
-          title={isMaximized ? 'Exit fullscreen' : 'Enter fullscreen'}
+          title={isMaximized ? t('exitFullscreen') : t('enterFullscreen')}
         >
           {isMaximized ? (
             <Minimize2 className="w-5 h-5 text-gray-700" />
@@ -250,22 +252,22 @@ export default function KitchenPage() {
       <Modal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
-        title="Kitchen Stage Settings"
+        title={t('stageSettings')}
         size="md"
         footer={
           <>
             <Button variant="secondary" onClick={() => setIsSettingsModalOpen(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button onClick={handleSaveStageSettings}>
-              Save Settings
+              {t('saveSettings')}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Enable or disable stages to customize your kitchen display. Disabled stages will not be shown on the board.
+            {t('stageSettingsDescription')}
           </p>
           <div className="space-y-3">
             {stages.map(stage => (

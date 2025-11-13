@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/Input';
 import { isValidEmailFormat, isValidPhoneFormat } from '@/lib/utils/validation';
 
@@ -25,6 +26,7 @@ export function ValidationInput({
   disabled = false,
   className,
 }: ValidationInputProps) {
+  const t = useTranslations('validation');
   const [validationStatus, setValidationStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
   const [validationMessage, setValidationMessage] = useState<string>('');
   const debounceRef = useRef<NodeJS.Timeout>();
@@ -43,11 +45,11 @@ export function ValidationInput({
 
     if (isValidFormat) {
       setValidationStatus('valid');
-      setValidationMessage(type === 'email' ? 'Email format is valid' : 'Phone format is valid');
+      setValidationMessage(type === 'email' ? t('emailValid') : t('phoneValid'));
       onChange(inputValue, true);
     } else {
       setValidationStatus('invalid');
-      setValidationMessage(type === 'email' ? 'Invalid email format' : 'Invalid phone format');
+      setValidationMessage(type === 'email' ? t('emailInvalid') : t('phoneInvalid'));
       onChange(inputValue, false);
     }
   };
