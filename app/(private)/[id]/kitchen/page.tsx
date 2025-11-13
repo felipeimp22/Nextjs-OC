@@ -188,33 +188,30 @@ export default function KitchenPage() {
 
   const KitchenContent = () => (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Kitchen Display System</h1>
-        <div className="flex items-center gap-3">
-          <Button size="sm" variant="secondary" onClick={handleRefresh}>
-            <RefreshCw className="w-4 h-4 mr-1" />
-            Refresh
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => setIsSettingsModalOpen(true)}>
-            <Settings className="w-4 h-4 mr-1" />
-            Stages
-          </Button>
-          <Button size="sm" onClick={() => setIsOrderModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-1" />
-            Order In House
-          </Button>
-          <button
-            onClick={toggleMaximize}
-            className="p-2 hover:bg-gray-100 rounded transition-colors"
-            title={isMaximized ? 'Exit fullscreen' : 'Enter fullscreen'}
-          >
-            {isMaximized ? (
-              <Minimize2 className="w-5 h-5 text-gray-700" />
-            ) : (
-              <Maximize2 className="w-5 h-5 text-gray-700" />
-            )}
-          </button>
-        </div>
+      <div className="flex items-center justify-end gap-3 p-4 flex-shrink-0">
+        <Button size="sm" variant="secondary" onClick={handleRefresh}>
+          <RefreshCw className="w-4 h-4 mr-1" />
+          Refresh
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => setIsSettingsModalOpen(true)}>
+          <Settings className="w-4 h-4 mr-1" />
+          Stages
+        </Button>
+        <Button size="sm" onClick={() => setIsOrderModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-1" />
+          Order In House
+        </Button>
+        <button
+          onClick={toggleMaximize}
+          className="p-2 hover:bg-gray-100 rounded transition-colors"
+          title={isMaximized ? 'Exit fullscreen' : 'Enter fullscreen'}
+        >
+          {isMaximized ? (
+            <Minimize2 className="w-5 h-5 text-gray-700" />
+          ) : (
+            <Maximize2 className="w-5 h-5 text-gray-700" />
+          )}
+        </button>
       </div>
 
       <div className="flex-1 overflow-hidden p-4 min-h-0">

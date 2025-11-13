@@ -38,6 +38,12 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
 
   // Determine page title and subtitle based on pathname (if not provided as props)
   const getPageInfo = () => {
+    if (pathname?.includes('/kitchen')) {
+      return {
+        title: 'Kitchen Display System',
+        subtitle: undefined,
+      };
+    }
     if (pathname?.includes('/menu')) {
       return {
         title: tMenu('title'),
