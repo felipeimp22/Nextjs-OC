@@ -356,6 +356,7 @@ export default function OrderModal({
       const formattedItems = validItems.map(item => ({
         menuItemId: item.menuItemId,
         quantity: item.quantity,
+        price: item.price,
         options: item.selectedModifiers.map(mod => ({
           name: mod.optionName,
           choice: mod.choiceName,

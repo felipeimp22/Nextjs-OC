@@ -178,6 +178,7 @@ interface CreateInHouseOrderInput {
   items: Array<{
     menuItemId: string;
     quantity: number;
+    price?: number;
     options?: Array<{ name: string; choice: string; priceAdjustment: number }>;
     specialInstructions?: string;
   }>;
@@ -219,11 +220,16 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         throw new Error(`Menu item ${item.menuItemId} not found`);
       }
 
-      let itemPrice = Number(menuItem.price);
-      if (item.options) {
-        item.options.forEach(option => {
-          itemPrice += option.priceAdjustment;
-        });
+      let itemPrice: number;
+      if (item.price !== undefined && item.price !== null) {
+        itemPrice = item.price;
+      } else {
+        itemPrice = Number(menuItem.price);
+        if (item.options) {
+          item.options.forEach(option => {
+            itemPrice += option.priceAdjustment;
+          });
+        }
       }
 
       const finalPrice = itemPrice * item.quantity;
@@ -350,11 +356,16 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         throw new Error(`Menu item ${item.menuItemId} not found`);
       }
 
-      let itemPrice = Number(menuItem.price);
-      if (item.options) {
-        item.options.forEach(option => {
-          itemPrice += option.priceAdjustment;
-        });
+      let itemPrice: number;
+      if (item.price !== undefined && item.price !== null) {
+        itemPrice = item.price;
+      } else {
+        itemPrice = Number(menuItem.price);
+        if (item.options) {
+          item.options.forEach(option => {
+            itemPrice += option.priceAdjustment;
+          });
+        }
       }
 
       const finalPrice = itemPrice * item.quantity;
