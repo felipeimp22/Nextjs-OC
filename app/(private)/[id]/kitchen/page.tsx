@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/Button';
@@ -72,18 +73,46 @@ export default function KitchenPage() {
   const { selectedRestaurantId } = useRestaurantStore();
   const isMobile = useIsMobile();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [stages, setStages] = useState<KitchenStage[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [options, setOptions] = useState<Option[]>([]);
-  const [menuRules, setMenuRules] = useState<MenuRule[]>([]);
-  const [currencySymbol, setCurrencySymbol] = useState('$');
-  const [isLoading, setIsLoading] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [stageSettings, setStageSettings] = useState<Record<string, boolean>>({});
+
+  const { data: orders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ['kitchenOrders', restaurantId],
+    queryFn: async () => {
+      const result = await getKitchenOrders(restaurantId);
+      if (!result.success) throw new Error(result.error);
+      return result.data || [];
+    },
+    refetchInterval: 2 * 60 * 1000,
+    enabled: !!selectedRestaurantId && selectedRestaurantId === restaurantId,
+  });
+
+  const { data: stages = [], isLoading: stagesLoading } = useQuery({
+    queryKey: ['kitchenStages', restaurantId],
+    queryFn: async () => {
+      const result = await getKitchenStages(restaurantId);
+      if (!result.success) throw new Error(result.error);
+      return result.data || [];
+    },
+    refetchInterval: 2 * 60 * 1000,
+    enabled: !!selectedRestaurantId && selectedRestaurantId === restaurantId,
+  });
+
+  const { data: menuData, isLoading: menuLoading } = useQuery({
+    queryKey: ['restaurantMenuData', restaurantId],
+    queryFn: async () => {
+      const result = await getRestaurantMenuData(restaurantId);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+    enabled: !!selectedRestaurantId && selectedRestaurantId === restaurantId,
+  });
+
+  const isLoading = ordersLoading || stagesLoading || menuLoading;
 
   useEffect(() => {
     if (!selectedRestaurantId) {
@@ -93,60 +122,19 @@ export default function KitchenPage() {
     }
   }, [selectedRestaurantId, restaurantId, router]);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [ordersResult, stagesResult, menuDataResult] = await Promise.all([
-        getKitchenOrders(restaurantId),
-        getKitchenStages(restaurantId),
-        getRestaurantMenuData(restaurantId),
-      ]);
-
-      if (ordersResult.success && ordersResult.data) {
-        setOrders(ordersResult.data);
-      }
-
-      if (stagesResult.success && stagesResult.data) {
-        setStages(stagesResult.data);
-        const settings: Record<string, boolean> = {};
-        stagesResult.data.forEach(stage => {
-          settings[stage.status] = stage.isEnabled;
-        });
-        setStageSettings(settings);
-      }
-
-      if (menuDataResult.success && menuDataResult.data) {
-        setMenuItems(menuDataResult.data.menuItems || []);
-        setOptions(menuDataResult.data.options || []);
-        setMenuRules(menuDataResult.data.menuRules || []);
-        setCurrencySymbol(menuDataResult.data.currencySymbol || '$');
-      }
-    } catch (error) {
-      console.error('Error loading kitchen data:', error);
-      showToast('error', 'Failed to load kitchen data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (selectedRestaurantId === restaurantId) {
-      loadData();
+    if (stages.length > 0) {
+      const settings: Record<string, boolean> = {};
+      stages.forEach(stage => {
+        settings[stage.status] = stage.isEnabled;
+      });
+      setStageSettings(settings);
     }
-  }, [selectedRestaurantId, restaurantId]);
-
-  useEffect(() => {
-    if (!isMaximized) return;
-
-    const interval = setInterval(() => {
-      loadData();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [isMaximized, restaurantId]);
+  }, [stages]);
 
   const handleRefresh = () => {
-    loadData();
+    queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
+    queryClient.invalidateQueries({ queryKey: ['kitchenStages', restaurantId] });
     showToast('success', 'Orders refreshed');
   };
 
@@ -172,10 +160,14 @@ export default function KitchenPage() {
     if (result.success) {
       showToast('success', 'Stage settings updated');
       setIsSettingsModalOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['kitchenStages', restaurantId] });
     } else {
       showToast('error', 'Failed to update stage settings');
     }
+  };
+
+  const handleOrderCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
   };
 
   if (!selectedRestaurantId || selectedRestaurantId !== restaurantId) {
@@ -196,7 +188,7 @@ export default function KitchenPage() {
 
   const KitchenContent = () => (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 flex-shrink-0">
         <h1 className="text-2xl font-bold text-gray-900">Kitchen Display System</h1>
         <div className="flex items-center gap-3">
           <Button size="sm" variant="secondary" onClick={handleRefresh}>
@@ -225,11 +217,11 @@ export default function KitchenPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden p-4">
+      <div className="flex-1 overflow-hidden p-4 min-h-0">
         <KDSBoard
           initialOrders={orders}
           stages={stages}
-          currencySymbol={currencySymbol}
+          currencySymbol={menuData?.currencySymbol || '$'}
         />
       </div>
     </div>
@@ -238,11 +230,11 @@ export default function KitchenPage() {
   return (
     <>
       {isMaximized ? (
-        <div className="fixed inset-0 z-50 bg-white">
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
           <KitchenContent />
         </div>
       ) : (
-        <div className="w-full h-[calc(100vh-200px)]">
+        <div className="flex flex-col h-[calc(100vh-80px)]">
           <KitchenContent />
         </div>
       )}
@@ -251,11 +243,11 @@ export default function KitchenPage() {
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         restaurantId={restaurantId}
-        menuItems={menuItems}
-        options={options}
-        menuRules={menuRules}
-        currencySymbol={currencySymbol}
-        onOrderCreated={loadData}
+        menuItems={menuData?.menuItems || []}
+        options={menuData?.options || []}
+        menuRules={menuData?.menuRules || []}
+        currencySymbol={menuData?.currencySymbol || '$'}
+        onOrderCreated={handleOrderCreated}
       />
 
       <Modal
