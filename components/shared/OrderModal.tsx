@@ -182,10 +182,30 @@ export default function OrderModal({
           };
         });
 
+        let calculatedPrice = item.price;
+        if (menuItem && selectedModifiers.length > 0) {
+          const itemRules = menuRules.find(rule => rule.menuItemId === item.menuItemId);
+          const selectedChoices = selectedModifiers.map(modifier => ({
+            optionId: modifier.optionId,
+            choiceId: modifier.choiceId,
+            quantity: modifier.quantity,
+          }));
+
+          const result = calculateItemTotalPrice(
+            menuItem.price,
+            itemRules ? { appliedOptions: itemRules.appliedOptions } : null,
+            selectedChoices,
+            1
+          );
+          calculatedPrice = result.itemTotal;
+        } else if (menuItem) {
+          calculatedPrice = menuItem.price;
+        }
+
         return {
           menuItemId: item.menuItemId,
           quantity: item.quantity,
-          price: menuItem ? menuItem.price : item.price,
+          price: calculatedPrice,
           selectedModifiers,
           specialInstructions: item.specialInstructions || '',
         };
@@ -204,7 +224,7 @@ export default function OrderModal({
       setSpecialInstructions('');
       setItems([{ menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
     }
-  }, [existingOrder, isOpen, options, menuItems]);
+  }, [existingOrder, isOpen, options, menuItems, menuRules]);
 
   const handleAddItem = () => {
     setItems([...items, { menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
@@ -234,10 +254,24 @@ export default function OrderModal({
       const menuItem = menuItems.find(mi => mi.id === currentItem.menuItemId);
 
       if (menuItem) {
+        const itemRules = menuRules.find(rule => rule.menuItemId === currentItem.menuItemId);
+        const selectedChoices = value.map((modifier: any) => ({
+          optionId: modifier.optionId,
+          choiceId: modifier.choiceId,
+          quantity: modifier.quantity,
+        }));
+
+        const result = calculateItemTotalPrice(
+          menuItem.price,
+          itemRules ? { appliedOptions: itemRules.appliedOptions } : null,
+          selectedChoices,
+          1
+        );
+
         newItems[index] = {
           ...currentItem,
           selectedModifiers: value,
-          price: menuItem.price,
+          price: result.itemTotal,
         };
       } else {
         newItems[index] = { ...newItems[index], [field]: value };
@@ -254,22 +288,7 @@ export default function OrderModal({
       return 0;
     }
 
-    const itemRules = menuRules.find(rule => rule.menuItemId === item.menuItemId);
-
-    const selectedChoices = item.selectedModifiers.map(modifier => ({
-      optionId: modifier.optionId,
-      choiceId: modifier.choiceId,
-      quantity: modifier.quantity,
-    }));
-
-    const result = calculateItemTotalPrice(
-      item.price,
-      itemRules ? { appliedOptions: itemRules.appliedOptions } : null,
-      selectedChoices,
-      item.quantity
-    );
-
-    return result.total;
+    return item.price * item.quantity;
   };
 
   const calculateTotal = () => {
