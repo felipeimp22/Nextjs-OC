@@ -210,7 +210,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
       },
     });
 
-    const menuItemsMap = new Map(menuItems.map(item => [item.id, item]));
+    const menuItemsMap = new Map<string, typeof menuItems[0]>(menuItems.map(item => [item.id, item]));
 
     let subtotal = 0;
     const orderItems = input.items.map(item => {
@@ -219,7 +219,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         throw new Error(`Menu item ${item.menuItemId} not found`);
       }
 
-      let itemPrice = menuItem.price;
+      let itemPrice = Number(menuItem.price);
       if (item.options) {
         item.options.forEach(option => {
           itemPrice += option.priceAdjustment;
@@ -231,7 +231,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
 
       return {
         menuItemId: item.menuItemId,
-        name: menuItem.name,
+        name: String(menuItem.name),
         price: itemPrice,
         quantity: item.quantity,
         options: item.options || [],
@@ -298,9 +298,119 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
     });
 
     revalidatePath(`/${input.restaurantId}/kitchen`);
+    revalidatePath(`/${input.restaurantId}/orders`);
     return { success: true, data: order };
   } catch (error: any) {
     console.error('Error creating in-house order:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+interface UpdateInHouseOrderInput extends CreateInHouseOrderInput {
+  orderId: string;
+}
+
+export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: input.orderId },
+    });
+
+    if (!existingOrder) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: input.restaurantId },
+      include: { financialSettings: true },
+    });
+
+    if (!restaurant) {
+      return { success: false, error: 'Restaurant not found' };
+    }
+
+    const menuItems = await prisma.menuItem.findMany({
+      where: {
+        id: { in: input.items.map(item => item.menuItemId) },
+        restaurantId: input.restaurantId,
+      },
+    });
+
+    const menuItemsMap = new Map<string, typeof menuItems[0]>(menuItems.map(item => [item.id, item]));
+
+    let subtotal = 0;
+    const orderItems = input.items.map(item => {
+      const menuItem = menuItemsMap.get(item.menuItemId);
+      if (!menuItem) {
+        throw new Error(`Menu item ${item.menuItemId} not found`);
+      }
+
+      let itemPrice = Number(menuItem.price);
+      if (item.options) {
+        item.options.forEach(option => {
+          itemPrice += option.priceAdjustment;
+        });
+      }
+
+      const finalPrice = itemPrice * item.quantity;
+      subtotal += finalPrice;
+
+      return {
+        menuItemId: item.menuItemId,
+        name: String(menuItem.name),
+        price: itemPrice,
+        quantity: item.quantity,
+        options: item.options || [],
+        specialInstructions: item.specialInstructions,
+      };
+    });
+
+    const taxes = (restaurant.financialSettings?.taxes as any[]) || [];
+    let tax = 0;
+    const taxBreakdown: any[] = [];
+
+    taxes.forEach((taxSetting: any) => {
+      if (taxSetting.enabled) {
+        const taxAmount = (subtotal * taxSetting.rate) / 100;
+        tax += taxAmount;
+        taxBreakdown.push({
+          name: taxSetting.name,
+          rate: taxSetting.rate,
+          amount: taxAmount,
+        });
+      }
+    });
+
+    const total = subtotal + tax;
+
+    const order = await prisma.order.update({
+      where: { id: input.orderId },
+      data: {
+        customerName: input.customerName,
+        customerEmail: input.customerEmail,
+        customerPhone: input.customerPhone,
+        items: orderItems,
+        orderType: input.orderType,
+        paymentStatus: input.paymentStatus,
+        paymentMethod: input.paymentMethod,
+        subtotal,
+        tax,
+        taxBreakdown,
+        total,
+        specialInstructions: input.specialInstructions,
+      },
+    });
+
+    revalidatePath(`/${input.restaurantId}/kitchen`);
+    revalidatePath(`/${input.restaurantId}/orders`);
+    return { success: true, data: order };
+  } catch (error: any) {
+    console.error('Error updating in-house order:', error);
     return { success: false, error: error.message };
   }
 }

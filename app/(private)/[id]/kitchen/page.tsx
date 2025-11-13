@@ -8,7 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/ToastContainer';
 import KDSBoard from '@/components/kitchen/KDSBoard';
-import OrderInHouseModal from '@/components/kitchen/OrderInHouseModal';
+import OrderModal from '@/components/shared/OrderModal';
 import { getKitchenOrders, getKitchenStages } from '@/lib/serverActions/kitchen.actions';
 import { getRestaurantMenuData } from '@/lib/serverActions/menu.actions';
 import { Maximize2, Minimize2, Plus, RefreshCw, Settings } from 'lucide-react';
@@ -236,7 +236,7 @@ export default function KitchenPage() {
         </div>
       )}
 
-      <OrderInHouseModal
+      <OrderModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         restaurantId={restaurantId}
@@ -244,7 +244,7 @@ export default function KitchenPage() {
         options={menuData?.options || []}
         menuRules={menuData?.menuRules || []}
         currencySymbol={menuData?.currencySymbol || '$'}
-        onOrderCreated={handleOrderCreated}
+        onOrderSaved={handleOrderCreated}
       />
 
       <Modal
