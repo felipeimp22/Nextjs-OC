@@ -45,7 +45,14 @@ interface OrderItemInput {
   menuItemId: string;
   quantity: number;
   price: number;
-  options: Array<{ name: string; choice: string; priceAdjustment: number }>;
+  selectedModifiers: Array<{
+    optionId: string;
+    optionName: string;
+    choiceId: string;
+    choiceName: string;
+    quantity: number;
+    priceAdjustment: number;
+  }>;
   specialInstructions: string;
 }
 
@@ -67,13 +74,13 @@ export default function OrderInHouseModal({
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'other'>('cash');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [items, setItems] = useState<OrderItemInput[]>([
-    { menuItemId: '', quantity: 1, price: 0, options: [], specialInstructions: '' },
+    { menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
 
   const handleAddItem = () => {
-    setItems([...items, { menuItemId: '', quantity: 1, price: 0, options: [], specialInstructions: '' }]);
+    setItems([...items, { menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -92,7 +99,7 @@ export default function OrderInHouseModal({
           ...newItems[index],
           menuItemId: value,
           price: menuItem.price,
-          options: [],
+          selectedModifiers: [],
         };
       }
     } else {
@@ -104,8 +111,8 @@ export default function OrderInHouseModal({
 
   const calculateItemTotal = (item: OrderItemInput) => {
     let itemPrice = item.price;
-    item.options.forEach(option => {
-      itemPrice += option.priceAdjustment;
+    item.selectedModifiers.forEach(modifier => {
+      itemPrice += modifier.priceAdjustment * modifier.quantity;
     });
     return itemPrice * item.quantity;
   };
@@ -132,12 +139,23 @@ export default function OrderInHouseModal({
     setIsSubmitting(true);
 
     try {
+      const formattedItems = validItems.map(item => ({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        options: item.selectedModifiers.map(mod => ({
+          name: mod.optionName,
+          choice: mod.choiceName,
+          priceAdjustment: mod.priceAdjustment * mod.quantity,
+        })),
+        specialInstructions: item.specialInstructions,
+      }));
+
       const result = await createInHouseOrder({
         restaurantId,
         customerName,
         customerPhone,
         customerEmail: customerEmail || `${customerPhone}@inhouse.local`,
-        items: validItems,
+        items: formattedItems,
         orderType,
         paymentStatus,
         paymentMethod,
@@ -166,7 +184,7 @@ export default function OrderInHouseModal({
     setPaymentStatus('pending');
     setPaymentMethod('cash');
     setSpecialInstructions('');
-    setItems([{ menuItemId: '', quantity: 1, price: 0, options: [], specialInstructions: '' }]);
+    setItems([{ menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
     onClose();
   };
 
@@ -334,18 +352,9 @@ export default function OrderInHouseModal({
                         <ItemModifierSelector
                           itemRules={itemRules}
                           options={options}
-                          selectedOptions={item.options.map(opt => ({
-                            optionId: opt.name,
-                            choiceId: opt.choice,
-                            priceAdjustment: opt.priceAdjustment,
-                          }))}
+                          selectedOptions={item.selectedModifiers}
                           onOptionsChange={(newOptions) => {
-                            const formattedOptions = newOptions.map(opt => ({
-                              name: opt.optionName,
-                              choice: opt.choiceName,
-                              priceAdjustment: opt.priceAdjustment,
-                            }));
-                            handleItemChange(index, 'options', formattedOptions);
+                            handleItemChange(index, 'selectedModifiers', newOptions);
                           }}
                           currencySymbol={currencySymbol}
                         />
