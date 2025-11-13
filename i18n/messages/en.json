@@ -706,6 +706,33 @@
       "saving": "Saving..."
     }
   },
+  "validation": {
+    "emailValid": "Email format is valid",
+    "emailInvalid": "Invalid email format",
+    "phoneValid": "Phone format is valid",
+    "phoneInvalid": "Invalid phone format"
+  },
+  "kitchen": {
+    "title": "Kitchen",
+    "description": "Kitchen Display System",
+    "ordersRefreshed": "Orders refreshed",
+    "stageSettingsUpdated": "Stage settings updated",
+    "failedToUpdateStageSettings": "Failed to update stage settings",
+    "refresh": "Refresh",
+    "stages": "Stages",
+    "orderInHouse": "Order In House",
+    "exitFullscreen": "Exit fullscreen",
+    "enterFullscreen": "Enter fullscreen",
+    "stageSettings": "Kitchen Stage Settings",
+    "cancel": "Cancel",
+    "saveSettings": "Save Settings",
+    "stageSettingsDescription": "Enable or disable stages to customize your kitchen display. Disabled stages will not be shown on the board."
+  },
+  "paymentMethods": {
+    "cash": "Cash",
+    "card": "Card",
+    "other": "Other"
+  },
   "orders": {
     "title": "Orders",
     "description": "Manage and track all your orders",
