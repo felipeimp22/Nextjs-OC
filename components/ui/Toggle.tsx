@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 interface ToggleProps {
-  id: string;
+  id?: string;
   checked?: boolean;
   onChange?: (checked: boolean) => void;
   disabled?: boolean;
@@ -58,23 +58,25 @@ export default function Toggle({
     lg: 'translate-x-7',
   };
 
+  const toggleId = id || `toggle-${Math.random().toString(36).substring(7)}`;
+
   return (
     <div className={`relative inline-block ${sizeClasses[size]} align-middle select-none`}>
-      <input 
-        type="checkbox" 
-        id={id}
+      <input
+        type="checkbox"
+        id={toggleId}
         checked={isChecked}
         onChange={handleChange}
         disabled={disabled}
         className="sr-only"
       />
-      <label 
-        htmlFor={id} 
+      <label
+        htmlFor={toggleId}
         className={`block overflow-hidden rounded-full cursor-pointer transition-colors ${
           isChecked ? 'bg-green-500' : 'bg-gray-600'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${sizeClasses[size]}`}
       >
-        <span 
+        <span
           className={`block rounded-full bg-white shadow transform transition-transform ${thumbSizeClasses[size]} ${
             isChecked ? translateClasses[size] : 'translate-x-0'
           }`}

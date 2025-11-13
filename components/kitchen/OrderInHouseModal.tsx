@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastContainer';
 import { createInHouseOrder } from '@/lib/serverActions/kitchen.actions';
+import ItemModifierSelector from './ItemModifierSelector';
 import { Plus, Trash2, X } from 'lucide-react';
 
 interface MenuItem {
@@ -43,6 +44,7 @@ interface OrderInHouseModalProps {
 interface OrderItemInput {
   menuItemId: string;
   quantity: number;
+  price: number;
   options: Array<{ name: string; choice: string; priceAdjustment: number }>;
   specialInstructions: string;
 }
@@ -65,13 +67,13 @@ export default function OrderInHouseModal({
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'other'>('cash');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [items, setItems] = useState<OrderItemInput[]>([
-    { menuItemId: '', quantity: 1, options: [], specialInstructions: '' },
+    { menuItemId: '', quantity: 1, price: 0, options: [], specialInstructions: '' },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
 
   const handleAddItem = () => {
-    setItems([...items, { menuItemId: '', quantity: 1, options: [], specialInstructions: '' }]);
+    setItems([...items, { menuItemId: '', quantity: 1, price: 0, options: [], specialInstructions: '' }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -82,22 +84,36 @@ export default function OrderInHouseModal({
 
   const handleItemChange = (index: number, field: keyof OrderItemInput, value: any) => {
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
+
+    if (field === 'menuItemId' && value) {
+      const menuItem = menuItems.find(mi => mi.id === value);
+      if (menuItem) {
+        newItems[index] = {
+          ...newItems[index],
+          menuItemId: value,
+          price: menuItem.price,
+          options: [],
+        };
+      }
+    } else {
+      newItems[index] = { ...newItems[index], [field]: value };
+    }
+
     setItems(newItems);
+  };
+
+  const calculateItemTotal = (item: OrderItemInput) => {
+    let itemPrice = item.price;
+    item.options.forEach(option => {
+      itemPrice += option.priceAdjustment;
+    });
+    return itemPrice * item.quantity;
   };
 
   const calculateTotal = () => {
     return items.reduce((total, item) => {
       if (!item.menuItemId) return total;
-      const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
-      if (!menuItem) return total;
-
-      let itemPrice = menuItem.price;
-      item.options.forEach(option => {
-        itemPrice += option.priceAdjustment;
-      });
-
-      return total + itemPrice * item.quantity;
+      return total + calculateItemTotal(item);
     }, 0);
   };
 
@@ -150,7 +166,7 @@ export default function OrderInHouseModal({
     setPaymentStatus('pending');
     setPaymentMethod('cash');
     setSpecialInstructions('');
-    setItems([{ menuItemId: '', quantity: 1, options: [], specialInstructions: '' }]);
+    setItems([{ menuItemId: '', quantity: 1, price: 0, options: [], specialInstructions: '' }]);
     onClose();
   };
 
@@ -250,62 +266,115 @@ export default function OrderInHouseModal({
           </div>
 
           <div className="space-y-4">
-            {items.map((item, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <div className="flex items-start gap-4">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Menu Item
-                      </label>
-                      <Select
-                        value={item.menuItemId}
-                        onChange={e => handleItemChange(index, 'menuItemId', e.target.value)}
+            {items.map((item, index) => {
+              const selectedMenuItem = menuItems.find(mi => mi.id === item.menuItemId);
+              const itemRules = selectedMenuItem
+                ? menuRules.find(rule => rule.menuItemId === selectedMenuItem.id)
+                : null;
+
+              return (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Menu Item *
+                          </label>
+                          <Select
+                            value={item.menuItemId}
+                            onChange={e => handleItemChange(index, 'menuItemId', e.target.value)}
+                          >
+                            <option value="">Select item...</option>
+                            {menuItems.map(mi => (
+                              <option key={mi.id} value={mi.id}>
+                                {mi.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Price ({currencySymbol}) *
+                          </label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.price}
+                            onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Quantity *
+                          </label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={e => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Item Total
+                          </label>
+                          <div className="px-4 py-2.5 bg-gray-100 rounded-lg text-gray-900 font-semibold">
+                            {currencySymbol}{calculateItemTotal(item).toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {itemRules && itemRules.appliedOptions && itemRules.appliedOptions.length > 0 && (
+                        <ItemModifierSelector
+                          itemRules={itemRules}
+                          options={options}
+                          selectedOptions={item.options.map(opt => ({
+                            optionId: opt.name,
+                            choiceId: opt.choice,
+                            priceAdjustment: opt.priceAdjustment,
+                          }))}
+                          onOptionsChange={(newOptions) => {
+                            const formattedOptions = newOptions.map(opt => ({
+                              name: opt.optionName,
+                              choice: opt.choiceName,
+                              priceAdjustment: opt.priceAdjustment,
+                            }));
+                            handleItemChange(index, 'options', formattedOptions);
+                          }}
+                          currencySymbol={currencySymbol}
+                        />
+                      )}
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Special Instructions (Optional)
+                        </label>
+                        <Input
+                          value={item.specialInstructions}
+                          onChange={e => handleItemChange(index, 'specialInstructions', e.target.value)}
+                          placeholder="No onions, extra cheese..."
+                        />
+                      </div>
+                    </div>
+
+                    {items.length > 1 && (
+                      <button
+                        onClick={() => handleRemoveItem(index)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors flex-shrink-0"
                       >
-                        <option value="">Select item...</option>
-                        {menuItems.map(mi => (
-                          <option key={mi.id} value={mi.id}>
-                            {mi.name} - {currencySymbol}{mi.price.toFixed(2)}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Quantity
-                      </label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={e => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
-                      />
-                    </div>
-
-                    <div className="md:col-span-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Special Instructions (Optional)
-                      </label>
-                      <Input
-                        value={item.specialInstructions}
-                        onChange={e => handleItemChange(index, 'specialInstructions', e.target.value)}
-                        placeholder="No onions, extra cheese..."
-                      />
-                    </div>
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
-
-                  {items.length > 1 && (
-                    <button
-                      onClick={() => handleRemoveItem(index)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
