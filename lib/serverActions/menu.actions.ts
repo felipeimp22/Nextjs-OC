@@ -817,3 +817,51 @@ export async function deleteMenuRules(menuItemId: string, restaurantId: string) 
     return { success: false, error: 'Failed to delete menu rules', data: null };
   }
 }
+
+export async function getRestaurantMenuData(restaurantId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized", data: null };
+    }
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      include: {
+        menuItems: {
+          where: {
+            isAvailable: true,
+            isVisible: true,
+          },
+          orderBy: { name: 'asc' },
+        },
+        options: {
+          where: {
+            isAvailable: true,
+            isVisible: true,
+          },
+        },
+        menuRules: true,
+        financialSettings: true,
+      },
+    });
+
+    if (!restaurant) {
+      return { success: false, error: 'Restaurant not found', data: null };
+    }
+
+    return {
+      success: true,
+      data: {
+        menuItems: restaurant.menuItems,
+        options: restaurant.options,
+        menuRules: restaurant.menuRules,
+        currencySymbol: restaurant.financialSettings?.currencySymbol || '$',
+      },
+      error: null,
+    };
+  } catch (error: any) {
+    console.error('Error fetching restaurant menu data:', error);
+    return { success: false, error: error.message, data: null };
+  }
+}

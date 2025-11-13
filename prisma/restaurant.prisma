@@ -38,6 +38,7 @@ model Restaurant {
   deliverySettings  DeliverySettings?
   storeHours        StoreHours?
   rolePermissions   RolePermissions[]
+  kitchenStages     KitchenStage[] @relation("KitchenStages")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
