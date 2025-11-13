@@ -3,15 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useKitchenOrders, useKitchenStages, useRestaurantMenuData } from '@/hooks/useKitchen';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/ToastContainer';
 import KDSBoard from '@/components/kitchen/KDSBoard';
 import OrderModal from '@/components/shared/OrderModal';
-import { getKitchenOrders, getKitchenStages } from '@/lib/serverActions/kitchen.actions';
-import { getRestaurantMenuData } from '@/lib/serverActions/menu.actions';
 import { Maximize2, Minimize2, Plus, RefreshCw, Settings } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Toggle from '@/components/ui/Toggle';
@@ -82,37 +81,9 @@ export default function KitchenPage() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [stageSettings, setStageSettings] = useState<Record<string, boolean>>({});
 
-  const { data: orders = [], isLoading: ordersLoading } = useQuery({
-    queryKey: ['kitchenOrders', restaurantId],
-    queryFn: async () => {
-      const result = await getKitchenOrders(restaurantId);
-      if (!result.success) throw new Error(result.error);
-      return result.data || [];
-    },
-    refetchInterval: 2 * 60 * 1000,
-    enabled: !!selectedRestaurantId && selectedRestaurantId === restaurantId,
-  });
-
-  const { data: stages = [], isLoading: stagesLoading } = useQuery({
-    queryKey: ['kitchenStages', restaurantId],
-    queryFn: async () => {
-      const result = await getKitchenStages(restaurantId);
-      if (!result.success) throw new Error(result.error);
-      return result.data || [];
-    },
-    refetchInterval: 2 * 60 * 1000,
-    enabled: !!selectedRestaurantId && selectedRestaurantId === restaurantId,
-  });
-
-  const { data: menuData, isLoading: menuLoading } = useQuery({
-    queryKey: ['restaurantMenuData', restaurantId],
-    queryFn: async () => {
-      const result = await getRestaurantMenuData(restaurantId);
-      if (!result.success) throw new Error(result.error);
-      return result.data;
-    },
-    enabled: !!selectedRestaurantId && selectedRestaurantId === restaurantId,
-  });
+  const { data: orders = [], isLoading: ordersLoading } = useKitchenOrders(restaurantId);
+  const { data: stages = [], isLoading: stagesLoading } = useKitchenStages(restaurantId);
+  const { data: menuData, isLoading: menuLoading } = useRestaurantMenuData(restaurantId);
 
   const isLoading = ordersLoading || stagesLoading || menuLoading;
 
