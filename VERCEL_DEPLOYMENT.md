@@ -118,20 +118,43 @@ After deployment:
 2. Add IP address: `0.0.0.0/0` (allows all IPs)
 3. Wait a few minutes for changes to propagate
 
-### Issue: Prisma client not found
+### Issue: Prisma Query Engine not found (rhel-openssl-3.0.x)
 
-**Cause**: Prisma client not generated during build
+**Error**: `Prisma Client could not locate the Query Engine for runtime "rhel-openssl-3.0.x"`
 
-**Solution**:
-The build script already includes `prisma generate`:
-```json
-"build": "prisma generate && npm run schema:combine && next build"
-```
+**Cause**: One of these issues:
+1. Prisma client not generated during build
+2. The `postinstall` script was using `dotenv -e .env.local` which doesn't work on Vercel
+3. Incorrect custom output path in Prisma schema
 
-If issues persist, add this to `package.json`:
-```json
-"postinstall": "prisma generate"
-```
+**Solution** (already fixed in this codebase):
+
+1. The `postinstall` script now runs without requiring `.env.local`:
+   ```json
+   "postinstall": "npm run schema:combine && prisma generate"
+   ```
+
+2. The build scripts are properly configured:
+   ```json
+   "build": "npm run schema:combine && prisma generate && next build",
+   "vercel-build": "npm run schema:combine && prisma generate && next build"
+   ```
+
+3. The Prisma schema uses the default output path (no custom `output` field)
+
+4. Binary targets include Vercel's runtime:
+   ```prisma
+   generator client {
+     provider = "prisma-client-js"
+     binaryTargets = ["native", "rhel-openssl-3.0.x"]
+   }
+   ```
+
+**If you're still seeing this error**:
+1. Make sure you've pulled the latest changes
+2. Trigger a fresh deployment on Vercel
+3. Check build logs to ensure `prisma generate` runs successfully
+4. Verify that `DATABASE_URL` is set in Vercel environment variables
 
 ### Issue: OAuth providers not working
 
