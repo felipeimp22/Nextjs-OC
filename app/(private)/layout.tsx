@@ -1,7 +1,11 @@
+'use client';
+
+import { ToastProvider } from '@/components/ui';
+
 export default function PrivateRoutesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <ToastProvider>{children}</ToastProvider>;
 }
