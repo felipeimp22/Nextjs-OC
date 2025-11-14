@@ -9,7 +9,7 @@ import { Button } from '@/components/ui';
 import { LocationAutocomplete } from '@/components/shared';
 import type { AddressComponents } from '@/lib/utils/mapbox';
 import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/ToastContainer';
 
 interface FormData {
   name: string;
@@ -39,6 +39,7 @@ export default function RestaurantForm() {
   const router = useRouter();
   const createRestaurantMutation = useCreateRestaurant();
   const { setSelectedRestaurant } = useRestaurantStore();
+  const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState('');

@@ -9,7 +9,7 @@ import RestaurantForm from '@/components/setup/RestaurantForm';
 import RestaurantSearch from '@/components/setup/RestaurantSearch';
 import { Button } from '@/components/ui';
 import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/ToastContainer';
 
 type Mode = 'list' | 'create' | 'search';
 
@@ -20,6 +20,7 @@ export default function SetupPage() {
   const { data: restaurants = [], isLoading } = useUserRestaurants();
   const { setSelectedRestaurant } = useRestaurantStore();
   const [mode, setMode] = useState<Mode>('list');
+  const { toast } = useToast();
 
   const handleSelectRestaurant = async (id: string, name: string) => {
     setSelectedRestaurant(id, name);

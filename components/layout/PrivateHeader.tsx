@@ -9,7 +9,7 @@ import { useUserRestaurants } from '@/hooks/useRestaurants';
 import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMenuSeparator } from '@/components/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/ToastContainer';
 
 interface PrivateHeaderProps {
   title?: string;
@@ -28,6 +28,7 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
   const { data: user } = useCurrentUser();
   const { data: restaurants = [] } = useUserRestaurants();
   const signOutMutation = useSignOut();
+  const { toast } = useToast();
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [restaurantMenuOpen, setRestaurantMenuOpen] = useState(false);
