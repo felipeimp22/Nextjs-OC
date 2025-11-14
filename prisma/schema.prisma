@@ -1,9 +1,6 @@
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
-  // Note: If issues persist, you can try engineType = "library" (Prisma 6+)
-  // which doesn't require binary files, but requires driver adapters
-  // engineType = "library"
 }
 
 datasource db {
