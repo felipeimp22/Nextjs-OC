@@ -19,6 +19,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
+import { useUserPermissions } from '@/hooks/usePermissions';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { Toggle } from '@/components/ui';
 
@@ -33,20 +34,21 @@ export default function PrivateSidebar({ isCollapsed, setIsCollapsed }: PrivateS
   const params = useParams();
   const restaurantId = params.id as string;
   const { data: user } = useCurrentUser();
+  const { data: userPermissions } = useUserPermissions();
   const { selectedRestaurantName } = useRestaurantStore();
   const signOutMutation = useSignOut();
 
   const [isPauseOrderingActive, setIsPauseOrderingActive] = useState(false);
 
   const menuItems = [
-    { icon: Home, label: t('dashboard'), path: `/${restaurantId}/dashboard`, roles: ['owner', 'manager', 'kitchen', 'staff'] },
-    { icon: Utensils, label: t('menuManagement'), path: `/${restaurantId}/menu`, roles: ['owner', 'manager'] },
-    { icon: ShoppingCart, label: t('orders'), path: `/${restaurantId}/orders`, roles: ['owner', 'manager', 'kitchen', 'staff'] },
-    { icon: ChefHat, label: t('kitchen'), path: `/${restaurantId}/kitchen`, roles: ['owner', 'manager', 'kitchen'] },
-    { icon: Users, label: t('customers'), path: `/${restaurantId}/customers`, roles: ['owner', 'manager', 'staff'] },
-    { icon: Megaphone, label: t('marketing'), path: `/${restaurantId}/marketing`, roles: ['owner', 'manager'] },
-    { icon: BarChart3, label: t('analytics'), path: `/${restaurantId}/analytics`, roles: ['owner', 'manager'] },
-    { icon: Settings, label: t('settings'), path: `/${restaurantId}/settings`, roles: ['owner', 'manager'] },
+    { icon: Home, label: t('dashboard'), path: `/${restaurantId}/dashboard`, permission: 'dashboard' },
+    { icon: Utensils, label: t('menuManagement'), path: `/${restaurantId}/menu`, permission: 'menuManagement' },
+    { icon: ShoppingCart, label: t('orders'), path: `/${restaurantId}/orders`, permission: 'orders' },
+    { icon: ChefHat, label: t('kitchen'), path: `/${restaurantId}/kitchen`, permission: 'kitchen' },
+    { icon: Users, label: t('customers'), path: `/${restaurantId}/customers`, permission: 'customers' },
+    { icon: Megaphone, label: t('marketing'), path: `/${restaurantId}/marketing`, permission: 'marketing' },
+    { icon: BarChart3, label: t('analytics'), path: `/${restaurantId}/analytics`, permission: 'analytics' },
+    { icon: Settings, label: t('settings'), path: `/${restaurantId}/settings`, permission: 'settings' },
   ];
 
   const toggleSidebar = () => {
@@ -59,7 +61,11 @@ export default function PrivateSidebar({ isCollapsed, setIsCollapsed }: PrivateS
     signOutMutation.mutate();
   };
 
-  const filteredMenuItems = menuItems;
+  // Filter menu items based on user permissions
+  const filteredMenuItems = menuItems.filter((item) => {
+    if (!userPermissions?.permissions) return true; // Show all if permissions not loaded yet
+    return userPermissions.permissions[item.permission as keyof typeof userPermissions.permissions];
+  });
 
   return (
     <aside
