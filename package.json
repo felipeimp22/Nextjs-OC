@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run schema:combine && set \"DATABASE_URL=mongodb+srv://mongoAdmin:OC2025@mongodb.7eemfhh.mongodb.net/orderchop?retryWrites=true^&w=majority\" && prisma generate && set NEXT_PRIVATE_DISABLE_TURBOPACK=1 && next build",
+    "build": "npm run schema:combine  && next build",
     "vercel-build": "npm run schema:combine && prisma generate && NEXT_PRIVATE_DISABLE_TURBOPACK=1 next build",
     "start": "next start",
     "lint": "eslint",
