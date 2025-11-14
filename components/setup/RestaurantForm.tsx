@@ -8,6 +8,8 @@ import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import { Button } from '@/components/ui';
 import { LocationAutocomplete } from '@/components/shared';
 import type { AddressComponents } from '@/lib/utils/mapbox';
+import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
+import { useToast } from '@/components/ui/ToastContainer';
 
 interface FormData {
   name: string;
@@ -37,6 +39,7 @@ export default function RestaurantForm() {
   const router = useRouter();
   const createRestaurantMutation = useCreateRestaurant();
   const { setSelectedRestaurant } = useRestaurantStore();
+  const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState('');
@@ -121,7 +124,16 @@ export default function RestaurantForm() {
       const restaurant = await createRestaurantMutation.mutateAsync(formData);
       if (restaurant) {
         setSelectedRestaurant(restaurant.id, restaurant.name);
-        router.push(`/${restaurant.id}/dashboard`);
+
+        // Get the first accessible page for this user
+        const result = await getFirstAccessiblePage(restaurant.id);
+
+        if (result.success && result.data) {
+          router.push(result.data);
+        } else {
+          toast.error('No permissions assigned. Please contact the restaurant owner.');
+          router.push('/setup');
+        }
       }
     } catch (error) {
       console.error('Error creating restaurant:', error);

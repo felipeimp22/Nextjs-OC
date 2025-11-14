@@ -16,99 +16,186 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
   '/settings': 'settings',
 };
 
+// Default permissions based on role
+function getDefaultPermissions(role: string) {
+  const defaults: Record<string, any> = {
+    manager: {
+      dashboard: true,
+      menuManagement: true,
+      orders: true,
+      kitchen: true,
+      customers: true,
+      marketing: true,
+      analytics: true,
+      settings: true,
+    },
+    kitchen: {
+      dashboard: true,
+      menuManagement: false,
+      orders: true,
+      kitchen: true,
+      customers: false,
+      marketing: false,
+      analytics: false,
+      settings: false,
+    },
+    staff: {
+      dashboard: true,
+      menuManagement: false,
+      orders: true,
+      kitchen: false,
+      customers: true,
+      marketing: false,
+      analytics: false,
+      settings: false,
+    }
+  };
+
+  return defaults[role] || {
+    dashboard: true,
+    menuManagement: false,
+    orders: false,
+    kitchen: false,
+    customers: false,
+    marketing: false,
+    analytics: false,
+    settings: false,
+  };
+}
+
+// Find the first accessible page for a user based on their permissions
+function getFirstAccessiblePage(permissions: Record<string, boolean>, restaurantId: string): string | null {
+  // Priority order: dashboard, orders, kitchen, customers, menu, marketing, analytics, settings
+  const pageOrder = [
+    { path: '/dashboard', permission: 'dashboard' },
+    { path: '/orders', permission: 'orders' },
+    { path: '/kitchen', permission: 'kitchen' },
+    { path: '/customers', permission: 'customers' },
+    { path: '/menu', permission: 'menuManagement' },
+    { path: '/marketing', permission: 'marketing' },
+    { path: '/analytics', permission: 'analytics' },
+    { path: '/settings', permission: 'settings' },
+  ];
+
+  for (const page of pageOrder) {
+    if (permissions[page.permission]) {
+      return `/${restaurantId}${page.path}`;
+    }
+  }
+
+  return null; // No accessible pages
+}
+
 export default auth(async (req) => {
-  // const { pathname } = req.nextUrl;
-  // const isAuthenticated = !!req.auth;
+  const { pathname } = req.nextUrl;
+  const isAuthenticated = !!req.auth;
 
-  // const publicRoutes = ['/', '/auth', '/book-demo', '/pricing'];
-  // const protectedRoutes = ['/setup', '/dashboard', '/menu', '/orders', '/kitchen', '/customers', '/marketing', '/analytics', '/settings'];
+  const publicRoutes = ['/', '/auth', '/book-demo', '/pricing'];
+  const protectedRoutes = ['/setup', '/dashboard', '/menu', '/orders', '/kitchen', '/customers', '/marketing', '/analytics', '/settings'];
 
-  // // Allow all /api/auth routes to pass through
-  // if (pathname.startsWith('/api/auth') || pathname === '/auth') {
-  //   return NextResponse.next();
-  // }
+  // Allow all /api/auth routes to pass through
+  if (pathname.startsWith('/api/auth') || pathname === '/auth') {
+    return NextResponse.next();
+  }
 
-  // // Allow /auth page for unauthenticated users
-  // if (pathname === '/auth' && !isAuthenticated) {
-  //   return NextResponse.next();
-  // }
+  // Allow /auth page for unauthenticated users
+  if (pathname === '/auth' && !isAuthenticated) {
+    return NextResponse.next();
+  }
 
-  // const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
-  // // Redirect unauthenticated users
-  // if (!isAuthenticated && isProtectedRoute) {
-  //   return NextResponse.redirect(new URL('/auth', req.url));
-  // }
+  // Redirect unauthenticated users
+  if (!isAuthenticated && isProtectedRoute) {
+    return NextResponse.redirect(new URL('/auth', req.url));
+  }
 
-  // // Redirect authenticated users away from auth page
-  // if (isAuthenticated && pathname === '/auth') {
-  //   return NextResponse.redirect(new URL('/setup', req.url));
-  // }
+  // Redirect authenticated users away from auth page
+  if (isAuthenticated && pathname === '/auth') {
+    return NextResponse.redirect(new URL('/setup', req.url));
+  }
 
-  // // Check role-based permissions for authenticated users
-  // if (isAuthenticated && req.auth?.user?.email) {
-  //   // Extract restaurantId from pathname (e.g., /690d9babcef39cfddf8aba49/dashboard)
-  //   const pathParts = pathname.split('/');
-  //   const restaurantId = pathParts[1]; // Assuming format: /restaurantId/page
-    
-  //   // Find which permission is needed
-  //   let requiredPermission: string | null = null;
-  //   for (const [route, permission] of Object.entries(ROUTE_PERMISSIONS)) {
-  //     if (pathname.includes(route)) {
-  //       requiredPermission = permission;
-  //       break;
-  //     }
-  //   }
+  // Check role-based permissions for authenticated users
+  if (isAuthenticated && req.auth?.user?.email) {
+    // Extract restaurantId from pathname (e.g., /690d9babcef39cfddf8aba49/dashboard)
+    const pathParts = pathname.split('/');
+    const restaurantId = pathParts[1]; // Assuming format: /restaurantId/page
 
-  //   // If this route requires a permission, check it
-  //   if (requiredPermission && restaurantId) {
-  //     try {
-  //       // Get user's role for this restaurant
-  //       const userRestaurant = await prisma.userRestaurant.findFirst({
-  //         where: {
-  //           restaurantId,
-  //           user: { email: req.auth.user.email }
-  //         },
-  //       });
+    // Find which permission is needed
+    let requiredPermission: string | null = null;
+    for (const [route, permission] of Object.entries(ROUTE_PERMISSIONS)) {
+      if (pathname.includes(route)) {
+        requiredPermission = permission;
+        break;
+      }
+    }
 
-  //       if (!userRestaurant) {
-  //         // User doesn't have access to this restaurant
-  //         return NextResponse.redirect(new URL('/dashboard', req.url));
-  //       }
+    // If this route requires a permission, check it
+    if (requiredPermission && restaurantId) {
+      try {
+        // Get user's role for this restaurant
+        const userRestaurant = await prisma.userRestaurant.findFirst({
+          where: {
+            restaurantId,
+            user: { email: req.auth.user.email }
+          },
+        });
 
-  //       // Owner has full access
-  //       if (userRestaurant.role === 'owner') {
-  //         return NextResponse.next();
-  //       }
+        if (!userRestaurant) {
+          // User doesn't have access to this restaurant
+          return NextResponse.redirect(new URL('/setup', req.url));
+        }
 
-  //       // Check role permissions
-  //       const rolePermissions = await prisma.rolePermissions.findUnique({
-  //         where: {
-  //           restaurantId_role: {
-  //             restaurantId,
-  //             role: userRestaurant.role,
-  //           },
-  //         },
-  //       });
+        // Owner has full access
+        if (userRestaurant.role === 'owner') {
+          return NextResponse.next();
+        }
 
-  //       if (!rolePermissions) {
-  //         // No permissions set, deny access
-  //         return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
-  //       }
+        // Check role permissions
+        const rolePermissions = await prisma.rolePermissions.findUnique({
+          where: {
+            restaurantId_role: {
+              restaurantId,
+              role: userRestaurant.role,
+            },
+          },
+        });
 
-  //       // Check if user has permission for this page
-  //       const hasPermission = rolePermissions[requiredPermission as keyof typeof rolePermissions];
+        // Get permissions (either from DB or defaults)
+        const permissions = rolePermissions
+          ? {
+              dashboard: rolePermissions.dashboard,
+              menuManagement: rolePermissions.menuManagement,
+              orders: rolePermissions.orders,
+              kitchen: rolePermissions.kitchen,
+              customers: rolePermissions.customers,
+              marketing: rolePermissions.marketing,
+              analytics: rolePermissions.analytics,
+              settings: rolePermissions.settings,
+            }
+          : getDefaultPermissions(userRestaurant.role);
 
-  //       if (!hasPermission) {
-  //         // Redirect to dashboard if no permission
-  //         return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
-  //       }
-  //     } catch (error) {
-  //       console.error('Middleware permission check error:', error);
-  //       // On error, allow access but log it
-  //     }
-  //   }
-  // }
+        // Check if user has permission for this page
+        const hasPermission = permissions[requiredPermission as keyof typeof permissions];
+
+        if (!hasPermission) {
+          // Find the first page the user has access to
+          const firstAccessiblePage = getFirstAccessiblePage(permissions, restaurantId);
+
+          if (!firstAccessiblePage) {
+            // User has no permissions at all - redirect to setup with error
+            return NextResponse.redirect(new URL('/setup?error=no_permissions', req.url));
+          }
+
+          // Redirect to the first accessible page
+          return NextResponse.redirect(new URL(firstAccessiblePage, req.url));
+        }
+      } catch (error) {
+        console.error('Middleware permission check error:', error);
+        // On error, allow access but log it
+      }
+    }
+  }
 
   return NextResponse.next();
 });

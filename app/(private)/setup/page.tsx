@@ -8,6 +8,8 @@ import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import RestaurantForm from '@/components/setup/RestaurantForm';
 import RestaurantSearch from '@/components/setup/RestaurantSearch';
 import { Button } from '@/components/ui';
+import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
+import { useToast } from '@/components/ui/ToastContainer';
 
 type Mode = 'list' | 'create' | 'search';
 
@@ -18,10 +20,20 @@ export default function SetupPage() {
   const { data: restaurants = [], isLoading } = useUserRestaurants();
   const { setSelectedRestaurant } = useRestaurantStore();
   const [mode, setMode] = useState<Mode>('list');
+  const { toast } = useToast();
 
-  const handleSelectRestaurant = (id: string, name: string) => {
+  const handleSelectRestaurant = async (id: string, name: string) => {
     setSelectedRestaurant(id, name);
-    router.push(`/${id}/dashboard`);
+
+    // Get the first accessible page for this user
+    const result = await getFirstAccessiblePage(id);
+
+    if (result.success && result.data) {
+      router.push(result.data);
+    } else {
+      toast.error('No permissions assigned. Please contact the restaurant owner.');
+      router.push('/setup');
+    }
   };
 
   if (isLoading) {
@@ -32,21 +44,18 @@ export default function SetupPage() {
     );
   }
 
-  if (restaurants.length === 0 && mode === 'list') {
-    setMode('create');
-  }
-
   return (
     <div className="min-h-screen bg-brand-lightGray flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-6xl">
-        {mode === 'list' && restaurants.length > 0 && (
+        {mode === 'list' && (
           <div>
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('title')}</h1>
               <p className="text-gray-600">{t('subtitle')}</p>
             </div>
 
-            <div className="space-y-4 mb-6">
+            {restaurants.length > 0 && (
+              <div className="space-y-4 mb-6">
               {restaurants.map((restaurant) => (
                 <div
                   key={restaurant.id}
@@ -91,7 +100,8 @@ export default function SetupPage() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-xl shadow-md p-6 border-2 border-dashed border-gray-300">
               <div className="text-center">

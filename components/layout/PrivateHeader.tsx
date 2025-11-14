@@ -8,6 +8,9 @@ import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
 import { useUserRestaurants } from '@/hooks/useRestaurants';
 import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMenuSeparator } from '@/components/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
+import { useToast } from '@/components/ui/ToastContainer';
+import { useRestaurantStore } from '@/stores/useRestaurantStore';
 
 interface PrivateHeaderProps {
   title?: string;
@@ -26,6 +29,8 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
   const { data: user } = useCurrentUser();
   const { data: restaurants = [] } = useUserRestaurants();
   const signOutMutation = useSignOut();
+  const { toast } = useToast();
+  const { selectedRestaurantName, setSelectedRestaurant } = useRestaurantStore();
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [restaurantMenuOpen, setRestaurantMenuOpen] = useState(false);
@@ -103,7 +108,7 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
               onClick={() => setRestaurantMenuOpen(!restaurantMenuOpen)}
             >
               <span className="text-sm font-medium max-w-[150px] truncate">
-                {restaurants[0]?.name || t('selectRestaurant')}
+                {selectedRestaurantName || restaurants[0]?.name || t('selectRestaurant')}
               </span>
               <ChevronDown className="h-4 w-4 text-gray-500" />
             </button>
@@ -117,9 +122,21 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
                 {restaurants.map((restaurant: any) => (
                   <DropdownMenuItem
                     key={restaurant.id}
-                    onClick={() => {
+                    onClick={async () => {
                       setRestaurantMenuOpen(false);
-                      router.push(`/${restaurant.id}/dashboard`);
+
+                      // Update selected restaurant in store
+                      setSelectedRestaurant(restaurant.id, restaurant.name);
+
+                      // Get the first accessible page for this user
+                      const result = await getFirstAccessiblePage(restaurant.id);
+
+                      if (result.success && result.data) {
+                        router.push(result.data);
+                      } else {
+                        toast.error('No permissions assigned. Please contact the restaurant owner.');
+                        router.push('/setup');
+                      }
                     }}
                   >
                     <div className="flex flex-col items-start">

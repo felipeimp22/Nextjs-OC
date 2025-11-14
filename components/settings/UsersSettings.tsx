@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button, useToast } from '@/components/ui';
 import { PermissionsManagementSection } from '@/components/settings/users';
+import { TeamManagementSection } from '@/components/settings/users/TeamManagementSection';
+import { InvitationsSection } from '@/components/settings/users/InvitationsSection';
+import { AccessRequestsSection } from '@/components/settings/users/AccessRequestsSection';
 import { getRestaurantUsers, updateRolePermissions } from '@/lib/serverActions/settings.actions';
 
 interface RolePermissions {
@@ -126,6 +129,12 @@ export function UsersSettings({ restaurantId }: UsersSettingsProps) {
 
   return (
     <div className="w-full md:max-w-6xl md:mx-auto p-3 md:p-6 space-y-6 md:space-y-8">
+      <TeamManagementSection restaurantId={restaurantId} />
+
+      <InvitationsSection restaurantId={restaurantId} />
+
+      <AccessRequestsSection restaurantId={restaurantId} />
+
       <PermissionsManagementSection
         t={t}
         pages={PAGES}

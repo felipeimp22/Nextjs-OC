@@ -90,8 +90,8 @@ export function useRequestRestaurantAccess() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (restaurantId: string) => {
-      const result = await requestRestaurantAccess(restaurantId);
+    mutationFn: async ({ restaurantId, message }: { restaurantId: string; message?: string }) => {
+      const result = await requestRestaurantAccess(restaurantId, message);
       if (!result.success) {
         throw new Error(result.error || 'Failed to request access');
       }
