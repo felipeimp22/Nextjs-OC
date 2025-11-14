@@ -44,21 +44,18 @@ export default function SetupPage() {
     );
   }
 
-  if (restaurants.length === 0 && mode === 'list') {
-    setMode('create');
-  }
-
   return (
     <div className="min-h-screen bg-brand-lightGray flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-6xl">
-        {mode === 'list' && restaurants.length > 0 && (
+        {mode === 'list' && (
           <div>
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('title')}</h1>
               <p className="text-gray-600">{t('subtitle')}</p>
             </div>
 
-            <div className="space-y-4 mb-6">
+            {restaurants.length > 0 && (
+              <div className="space-y-4 mb-6">
               {restaurants.map((restaurant) => (
                 <div
                   key={restaurant.id}
@@ -103,7 +100,8 @@ export default function SetupPage() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-xl shadow-md p-6 border-2 border-dashed border-gray-300">
               <div className="text-center">

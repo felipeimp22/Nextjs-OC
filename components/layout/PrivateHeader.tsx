@@ -10,6 +10,7 @@ import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMen
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
 import { useToast } from '@/components/ui/ToastContainer';
+import { useRestaurantStore } from '@/stores/useRestaurantStore';
 
 interface PrivateHeaderProps {
   title?: string;
@@ -29,6 +30,7 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
   const { data: restaurants = [] } = useUserRestaurants();
   const signOutMutation = useSignOut();
   const { toast } = useToast();
+  const { setSelectedRestaurant } = useRestaurantStore();
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [restaurantMenuOpen, setRestaurantMenuOpen] = useState(false);
@@ -122,6 +124,9 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
                     key={restaurant.id}
                     onClick={async () => {
                       setRestaurantMenuOpen(false);
+
+                      // Update selected restaurant in store
+                      setSelectedRestaurant(restaurant.id, restaurant.name);
 
                       // Get the first accessible page for this user
                       const result = await getFirstAccessiblePage(restaurant.id);
