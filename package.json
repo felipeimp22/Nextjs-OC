@@ -8,7 +8,7 @@
     "vercel-build": "npm run schema:combine && prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "npm run schema:combine && prisma generate",
+    "postinstall": "npm run db:generate",
     "db:generate": "npm run schema:combine && dotenv -e .env.local -- prisma generate",
     "schema:combine": "node scripts/schemaCombine.js",
     "db:push": "dotenv -e .env.local -- prisma db push",

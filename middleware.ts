@@ -17,98 +17,98 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
 };
 
 export default auth(async (req) => {
-  const { pathname } = req.nextUrl;
-  const isAuthenticated = !!req.auth;
+  // const { pathname } = req.nextUrl;
+  // const isAuthenticated = !!req.auth;
 
-  const publicRoutes = ['/', '/auth', '/book-demo', '/pricing'];
-  const protectedRoutes = ['/setup', '/dashboard', '/menu', '/orders', '/kitchen', '/customers', '/marketing', '/analytics', '/settings'];
+  // const publicRoutes = ['/', '/auth', '/book-demo', '/pricing'];
+  // const protectedRoutes = ['/setup', '/dashboard', '/menu', '/orders', '/kitchen', '/customers', '/marketing', '/analytics', '/settings'];
 
-  // Allow all /api/auth routes to pass through
-  if (pathname.startsWith('/api/auth') || pathname === '/auth') {
-    return NextResponse.next();
-  }
+  // // Allow all /api/auth routes to pass through
+  // if (pathname.startsWith('/api/auth') || pathname === '/auth') {
+  //   return NextResponse.next();
+  // }
 
-  // Allow /auth page for unauthenticated users
-  if (pathname === '/auth' && !isAuthenticated) {
-    return NextResponse.next();
-  }
+  // // Allow /auth page for unauthenticated users
+  // if (pathname === '/auth' && !isAuthenticated) {
+  //   return NextResponse.next();
+  // }
 
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  // const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
-  // Redirect unauthenticated users
-  if (!isAuthenticated && isProtectedRoute) {
-    return NextResponse.redirect(new URL('/auth', req.url));
-  }
+  // // Redirect unauthenticated users
+  // if (!isAuthenticated && isProtectedRoute) {
+  //   return NextResponse.redirect(new URL('/auth', req.url));
+  // }
 
-  // Redirect authenticated users away from auth page
-  if (isAuthenticated && pathname === '/auth') {
-    return NextResponse.redirect(new URL('/setup', req.url));
-  }
+  // // Redirect authenticated users away from auth page
+  // if (isAuthenticated && pathname === '/auth') {
+  //   return NextResponse.redirect(new URL('/setup', req.url));
+  // }
 
-  // Check role-based permissions for authenticated users
-  if (isAuthenticated && req.auth?.user?.email) {
-    // Extract restaurantId from pathname (e.g., /690d9babcef39cfddf8aba49/dashboard)
-    const pathParts = pathname.split('/');
-    const restaurantId = pathParts[1]; // Assuming format: /restaurantId/page
+  // // Check role-based permissions for authenticated users
+  // if (isAuthenticated && req.auth?.user?.email) {
+  //   // Extract restaurantId from pathname (e.g., /690d9babcef39cfddf8aba49/dashboard)
+  //   const pathParts = pathname.split('/');
+  //   const restaurantId = pathParts[1]; // Assuming format: /restaurantId/page
     
-    // Find which permission is needed
-    let requiredPermission: string | null = null;
-    for (const [route, permission] of Object.entries(ROUTE_PERMISSIONS)) {
-      if (pathname.includes(route)) {
-        requiredPermission = permission;
-        break;
-      }
-    }
+  //   // Find which permission is needed
+  //   let requiredPermission: string | null = null;
+  //   for (const [route, permission] of Object.entries(ROUTE_PERMISSIONS)) {
+  //     if (pathname.includes(route)) {
+  //       requiredPermission = permission;
+  //       break;
+  //     }
+  //   }
 
-    // If this route requires a permission, check it
-    if (requiredPermission && restaurantId) {
-      try {
-        // Get user's role for this restaurant
-        const userRestaurant = await prisma.userRestaurant.findFirst({
-          where: {
-            restaurantId,
-            user: { email: req.auth.user.email }
-          },
-        });
+  //   // If this route requires a permission, check it
+  //   if (requiredPermission && restaurantId) {
+  //     try {
+  //       // Get user's role for this restaurant
+  //       const userRestaurant = await prisma.userRestaurant.findFirst({
+  //         where: {
+  //           restaurantId,
+  //           user: { email: req.auth.user.email }
+  //         },
+  //       });
 
-        if (!userRestaurant) {
-          // User doesn't have access to this restaurant
-          return NextResponse.redirect(new URL('/dashboard', req.url));
-        }
+  //       if (!userRestaurant) {
+  //         // User doesn't have access to this restaurant
+  //         return NextResponse.redirect(new URL('/dashboard', req.url));
+  //       }
 
-        // Owner has full access
-        if (userRestaurant.role === 'owner') {
-          return NextResponse.next();
-        }
+  //       // Owner has full access
+  //       if (userRestaurant.role === 'owner') {
+  //         return NextResponse.next();
+  //       }
 
-        // Check role permissions
-        const rolePermissions = await prisma.rolePermissions.findUnique({
-          where: {
-            restaurantId_role: {
-              restaurantId,
-              role: userRestaurant.role,
-            },
-          },
-        });
+  //       // Check role permissions
+  //       const rolePermissions = await prisma.rolePermissions.findUnique({
+  //         where: {
+  //           restaurantId_role: {
+  //             restaurantId,
+  //             role: userRestaurant.role,
+  //           },
+  //         },
+  //       });
 
-        if (!rolePermissions) {
-          // No permissions set, deny access
-          return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
-        }
+  //       if (!rolePermissions) {
+  //         // No permissions set, deny access
+  //         return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
+  //       }
 
-        // Check if user has permission for this page
-        const hasPermission = rolePermissions[requiredPermission as keyof typeof rolePermissions];
+  //       // Check if user has permission for this page
+  //       const hasPermission = rolePermissions[requiredPermission as keyof typeof rolePermissions];
 
-        if (!hasPermission) {
-          // Redirect to dashboard if no permission
-          return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
-        }
-      } catch (error) {
-        console.error('Middleware permission check error:', error);
-        // On error, allow access but log it
-      }
-    }
-  }
+  //       if (!hasPermission) {
+  //         // Redirect to dashboard if no permission
+  //         return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
+  //       }
+  //     } catch (error) {
+  //       console.error('Middleware permission check error:', error);
+  //       // On error, allow access but log it
+  //     }
+  //   }
+  // }
 
   return NextResponse.next();
 });
