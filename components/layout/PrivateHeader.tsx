@@ -30,7 +30,7 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
   const { data: restaurants = [] } = useUserRestaurants();
   const signOutMutation = useSignOut();
   const { toast } = useToast();
-  const { setSelectedRestaurant } = useRestaurantStore();
+  const { selectedRestaurantName, setSelectedRestaurant } = useRestaurantStore();
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [restaurantMenuOpen, setRestaurantMenuOpen] = useState(false);
@@ -108,7 +108,7 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
               onClick={() => setRestaurantMenuOpen(!restaurantMenuOpen)}
             >
               <span className="text-sm font-medium max-w-[150px] truncate">
-                {restaurants[0]?.name || t('selectRestaurant')}
+                {selectedRestaurantName || restaurants[0]?.name || t('selectRestaurant')}
               </span>
               <ChevronDown className="h-4 w-4 text-gray-500" />
             </button>
