@@ -127,22 +127,38 @@ After deployment:
 2. The `postinstall` script was using `dotenv -e .env.local` which doesn't work on Vercel
 3. Incorrect custom output path in Prisma schema
 
-**Solution** (already fixed in this codebase):
+**Solution** (FIXED in this codebase - December 2024):
 
-1. The `postinstall` script now runs without requiring `.env.local`:
-   ```json
-   "postinstall": "npm run schema:combine && prisma generate"
+This is a **known issue with Prisma 6+ on Vercel** where the bundler doesn't properly include the Query Engine binary in serverless functions.
+
+**The fix uses the official Prisma plugin for Next.js:**
+
+1. **Installed @prisma/nextjs-monorepo-workaround-plugin**:
+   ```bash
+   npm install --save-dev @prisma/nextjs-monorepo-workaround-plugin
    ```
 
-2. The build scripts are properly configured:
-   ```json
-   "build": "npm run schema:combine && prisma generate && next build",
-   "vercel-build": "npm run schema:combine && prisma generate && next build"
+2. **Updated next.config.ts** to include the Prisma webpack plugin:
+   ```typescript
+   import { PrismaPlugin } from '@prisma/nextjs-monorepo-workaround-plugin';
+
+   const nextConfig = {
+     webpack: (config, { isServer }) => {
+       if (isServer) {
+         config.plugins = [...config.plugins, new PrismaPlugin()];
+       }
+       return config;
+     },
+   };
    ```
 
-3. The Prisma schema uses the default output path (no custom `output` field)
+3. **Build scripts configured properly**:
+   ```json
+   "postinstall": "npm run schema:combine && prisma generate",
+   "build": "npm run schema:combine && prisma generate && next build"
+   ```
 
-4. Binary targets include Vercel's runtime:
+4. **Binary targets include Vercel's runtime**:
    ```prisma
    generator client {
      provider = "prisma-client-js"
@@ -150,11 +166,13 @@ After deployment:
    }
    ```
 
-**If you're still seeing this error**:
-1. Make sure you've pulled the latest changes
-2. Trigger a fresh deployment on Vercel
-3. Check build logs to ensure `prisma generate` runs successfully
-4. Verify that `DATABASE_URL` is set in Vercel environment variables
+**How it works**: The PrismaPlugin ensures that the Query Engine binary (`libquery_engine-rhel-openssl-3.0.x.so.node`) is correctly copied to the serverless function bundle during Vercel's build process.
+
+**If you're still seeing this error after pulling latest changes**:
+1. Clear Vercel's build cache: Settings → General → "Clear Build Cache & Redeploy"
+2. Verify `DATABASE_URL` is set in Vercel environment variables
+3. Check build logs to confirm `prisma generate` runs successfully
+4. Look for webpack output confirming PrismaPlugin loaded
 
 ### Issue: OAuth providers not working
 
