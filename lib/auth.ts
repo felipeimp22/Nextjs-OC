@@ -16,14 +16,14 @@ function validateEnvVars() {
     throw new Error("AUTH_SECRET or NEXTAUTH_SECRET environment variable is required");
   }
 
-  if (!process.env.DATABASE_URL) {
+  if (!process.env.NEXT_DATABASE_URL) {
     console.error("❌ CRITICAL: DATABASE_URL is not set!");
     throw new Error("DATABASE_URL environment variable is required");
   }
 
   console.log("✅ Environment variables validated successfully");
   console.log("Using AUTH_SECRET:", authSecret.substring(0, 10) + "...");
-  console.log("DATABASE_URL configured:", process.env.DATABASE_URL ? "Yes" : "No");
+  console.log("DATABASE_URL configured:", process.env.NEXT_DATABASE_URL ? "Yes" : "No");
 }
 
 // Validate on module load
