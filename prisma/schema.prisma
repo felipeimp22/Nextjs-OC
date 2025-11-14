@@ -410,17 +410,21 @@ model Restaurant {
   optionCategories OptionCategory[] @relation("OptionCategories")
   options          Option[] @relation("Options")
   menuRules        MenuRules[] @relation("MenuRules")
-  
+
   // Order relations
   orders    Order[] @relation("Orders")
   customers Customer[] @relation("Customers")
-  
+
   // Settings relations
   financialSettings FinancialSettings?
   deliverySettings  DeliverySettings?
   storeHours        StoreHours?
   rolePermissions   RolePermissions[]
   kitchenStages     KitchenStage[] @relation("KitchenStages")
+
+  // Invitation relations
+  invitations    UserInvitation[] @relation("Invitations")
+  accessRequests AccessRequest[] @relation("AccessRequests")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -693,13 +697,14 @@ model User {
   password  String?   // Optional for social login
   image     String    @default("")
   status    String    @default("pending") // active, pending, inactive
-  
+
   // User restaurants and roles
   restaurants UserRestaurant[]
-  
+  accessRequests AccessRequest[] @relation("AccessRequests")
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  
+
   @@map("users")
 }
 
@@ -720,5 +725,58 @@ model UserRestaurant {
   @@map("user_restaurants")
 }
 
+// ========================================
+// invitation.prisma
+// ========================================
+
+model UserInvitation {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("Invitations", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  invitedEmail String
+  role String
+
+  token String @unique
+  tokenExpiresAt DateTime
+
+  status String @default("pending")
+
+  invitedBy String @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@index([invitedEmail])
+  @@index([token])
+  @@map("user_invitations")
+}
+
+model AccessRequest {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user User @relation("AccessRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("AccessRequests", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  requestedRole String @default("staff")
+  message String?
+
+  status String @default("pending")
+  reviewedBy String? @db.ObjectId
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, restaurantId])
+  @@index([restaurantId])
+  @@index([status])
+  @@map("access_requests")
+}
 
 

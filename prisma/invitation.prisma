@@ -1,0 +1,53 @@
+// ========================================
+// INVITATION & ACCESS MANAGEMENT
+// ========================================
+
+model UserInvitation {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("Invitations", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  invitedEmail String
+  role String
+
+  token String @unique
+  tokenExpiresAt DateTime
+
+  status String @default("pending")
+
+  invitedBy String @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@index([invitedEmail])
+  @@index([token])
+  @@map("user_invitations")
+}
+
+model AccessRequest {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user User @relation("AccessRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation("AccessRequests", fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  requestedRole String @default("staff")
+  message String?
+
+  status String @default("pending")
+  reviewedBy String? @db.ObjectId
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, restaurantId])
+  @@index([restaurantId])
+  @@index([status])
+  @@map("access_requests")
+}

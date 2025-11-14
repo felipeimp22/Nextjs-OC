@@ -2,31 +2,43 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { useSearchRestaurants, useRequestRestaurantAccess } from '@/hooks/useRestaurants';
-import { useRestaurantStore } from '@/stores/useRestaurantStore';
-import { Button } from '@/components/ui';
+import { Button, useToast } from '@/components/ui';
+import Modal from '@/components/ui/Modal';
 
 export default function RestaurantSearch() {
   const t = useTranslations('gettingStarted');
-  const router = useRouter();
+  const { showToast } = useToast();
   const [query, setQuery] = useState('');
   const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
+  const [selectedRestaurant, setSelectedRestaurantState] = useState<{ id: string; name: string } | null>(null);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [requestMessage, setRequestMessage] = useState('');
 
   const { data: restaurants = [], isLoading } = useSearchRestaurants(query);
   const requestAccessMutation = useRequestRestaurantAccess();
-  const { setSelectedRestaurant } = useRestaurantStore();
 
-  const handleRequestAccess = async (restaurantId: string, restaurantName: string) => {
+  const handleRequestClick = (restaurantId: string, restaurantName: string) => {
+    setSelectedRestaurantState({ id: restaurantId, name: restaurantName });
+    setShowMessageModal(true);
+  };
+
+  const handleRequestAccess = async () => {
+    if (!selectedRestaurant) return;
+
     try {
-      await requestAccessMutation.mutateAsync(restaurantId);
-      setRequestedIds(prev => new Set(prev).add(restaurantId));
-      setSelectedRestaurant(restaurantId, restaurantName);
-      setTimeout(() => {
-        router.push(`/${restaurantId}/dashboard`);
-      }, 1000);
+      await requestAccessMutation.mutateAsync({
+        restaurantId: selectedRestaurant.id,
+        message: requestMessage.trim() || undefined,
+      });
+      setRequestedIds(prev => new Set(prev).add(selectedRestaurant.id));
+      setShowMessageModal(false);
+      setRequestMessage('');
+      setSelectedRestaurantState(null);
+      showToast('success', 'Access request sent successfully. Waiting for approval.');
     } catch (error) {
       console.error('Error requesting access:', error);
+      showToast('error', 'Failed to send access request');
     }
   };
 
@@ -83,7 +95,7 @@ export default function RestaurantSearch() {
                   </div>
 
                   <Button
-                    onClick={() => handleRequestAccess(restaurant.id, restaurant.name)}
+                    onClick={() => handleRequestClick(restaurant.id, restaurant.name)}
                     disabled={hasRequested || requestAccessMutation.isPending}
                     className={
                       hasRequested
@@ -99,6 +111,66 @@ export default function RestaurantSearch() {
           })}
         </div>
       )}
+
+      <Modal
+        isOpen={showMessageModal}
+        onClose={() => {
+          setShowMessageModal(false);
+          setRequestMessage('');
+          setSelectedRestaurantState(null);
+        }}
+        title="Request Access to Restaurant"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-gray-700 mb-4">
+              You are requesting access to <strong>{selectedRestaurant?.name}</strong>
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Message (Optional)
+            </label>
+            <textarea
+              value={requestMessage}
+              onChange={(e) => setRequestMessage(e.target.value)}
+              placeholder="Tell the restaurant owner why you'd like to join their team..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-2 focus:ring-brand-navy focus:border-transparent resize-none"
+              rows={4}
+              maxLength={500}
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              {requestMessage.length}/500 characters
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-sm p-4">
+            <p className="text-sm text-blue-800">
+              Your request will be sent to the restaurant owner/manager for approval. You'll receive an email when your request is reviewed.
+            </p>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowMessageModal(false);
+                setRequestMessage('');
+                setSelectedRestaurantState(null);
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRequestAccess}
+              disabled={requestAccessMutation.isPending}
+              className="flex-1 bg-brand-red hover:bg-brand-red/90 text-white"
+            >
+              {requestAccessMutation.isPending ? 'Sending...' : 'Send Request'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -316,50 +316,13 @@ export async function searchRestaurants(query: string) {
   }
 }
 
-export async function requestRestaurantAccess(restaurantId: string) {
+export async function requestRestaurantAccess(restaurantId: string, message?: string) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.email) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (!user) {
-      return { success: false, error: "User not found" };
-    }
-
-    const existingAccess = await prisma.userRestaurant.findUnique({
-      where: {
-        userId_restaurantId: {
-          userId: user.id,
-          restaurantId: restaurantId,
-        },
-      },
-    });
-
-    if (existingAccess) {
-      return { success: false, error: "You already have access to this restaurant" };
-    }
-
-    await prisma.userRestaurant.create({
-      data: {
-        userId: user.id,
-        restaurantId: restaurantId,
-        role: 'staff',
-      },
-    });
-
-    revalidatePath(`/${restaurantId}/dashboard`);
-    revalidatePath('/setup');
-
-    return { success: true, error: null };
+    const { requestRestaurantAccess: requestAccess } = await import('@/lib/serverActions/access.actions');
+    return await requestAccess({ restaurantId, message });
   } catch (error) {
     console.error('Error requesting access:', error);
-    return { success: false, error: 'Failed to request access' };
+    return { success: false, error: 'Failed to request access', data: null };
   }
 }
 
