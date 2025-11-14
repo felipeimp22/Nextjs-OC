@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "npm run db:generate",
-    "db:generate": "npm run schema:combine && dotenv -e .env.local -- prisma generate",
+    "db:generate": "npm run schema:combine && prisma generate",
     "schema:combine": "node scripts/schemaCombine.js",
     "db:push": "dotenv -e .env.local -- prisma db push",
     "db:studio": "dotenv -e .env.local -- prisma studio",
