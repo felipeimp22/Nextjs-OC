@@ -40,6 +40,10 @@ model Restaurant {
   rolePermissions   RolePermissions[]
   kitchenStages     KitchenStage[] @relation("KitchenStages")
 
+  // Invitation relations
+  invitations    UserInvitation[] @relation("Invitations")
+  accessRequests AccessRequest[] @relation("AccessRequests")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

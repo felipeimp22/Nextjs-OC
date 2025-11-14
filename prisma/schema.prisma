@@ -480,6 +480,10 @@ model Restaurant {
   rolePermissions   RolePermissions[]
   kitchenStages     KitchenStage[] @relation("KitchenStages")
 
+  // Invitation relations
+  invitations    UserInvitation[] @relation("Invitations")
+  accessRequests AccessRequest[] @relation("AccessRequests")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -751,13 +755,14 @@ model User {
   password  String?   // Optional for social login
   image     String    @default("")
   status    String    @default("pending") // active, pending, inactive
-  
+
   // User restaurants and roles
   restaurants UserRestaurant[]
-  
+  accessRequests AccessRequest[] @relation("AccessRequests")
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  
+
   @@map("users")
 }
 
