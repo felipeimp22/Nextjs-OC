@@ -5,6 +5,34 @@ import Facebook from "next-auth/providers/facebook"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 
+// Validate required environment variables
+function validateEnvVars() {
+  const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+
+  if (!authSecret) {
+    console.error("❌ CRITICAL: AUTH_SECRET or NEXTAUTH_SECRET is not set!");
+    console.error("For NextAuth v5, you need to set AUTH_SECRET in your environment variables.");
+    console.error("Generate one with: openssl rand -base64 32");
+    throw new Error("AUTH_SECRET or NEXTAUTH_SECRET environment variable is required");
+  }
+
+  if (!process.env.DATABASE_URL) {
+    console.error("❌ CRITICAL: DATABASE_URL is not set!");
+    throw new Error("DATABASE_URL environment variable is required");
+  }
+
+  console.log("✅ Environment variables validated successfully");
+  console.log("Using AUTH_SECRET:", authSecret.substring(0, 10) + "...");
+  console.log("DATABASE_URL configured:", process.env.DATABASE_URL ? "Yes" : "No");
+}
+
+// Validate on module load
+try {
+  validateEnvVars();
+} catch (error) {
+  console.error("Environment validation failed:", error);
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
   providers: [

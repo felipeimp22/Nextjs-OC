@@ -1,15 +1,28 @@
-    // lib/prisma.ts
-    import { PrismaClient } from '@prisma/client';
+// lib/prisma.ts
+import { PrismaClient } from '@prisma/client';
 
-    let prisma: PrismaClient;
+// Prisma Client configuration for serverless environments
+const prismaClientSingleton = () => {
+  return new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  });
+};
 
-    if (process.env.NODE_ENV === 'production') {
-      prisma = new PrismaClient();
-    } else {
-      if (!(global as any).prisma) {
-        (global as any).prisma = new PrismaClient();
-      }
-      prisma = (global as any).prisma;
-    }
+declare global {
+  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>;
+}
 
-    export default prisma;
+const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.prismaGlobal = prisma;
+}
+
+// Graceful shutdown for serverless
+if (process.env.NODE_ENV === 'production') {
+  process.on('beforeExit', async () => {
+    await prisma.$disconnect();
+  });
+}
+
+export default prisma;

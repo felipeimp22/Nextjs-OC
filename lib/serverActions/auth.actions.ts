@@ -12,16 +12,22 @@ export async function signUp(data: {
   name: string;
 }) {
   try {
+    console.log("🚀 Starting signup process for:", data.email);
+
+    // Check for existing user
     const existing = await prisma.user.findUnique({
       where: { email: data.email }
     });
 
     if (existing) {
+      console.log("❌ Email already exists:", data.email);
       return { success: false, error: "Email already exists" };
     }
 
+    console.log("✅ Email is available, hashing password...");
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    
+
+    console.log("📝 Creating user in database...");
     const user = await prisma.user.create({
       data: {
         email: data.email,
@@ -31,26 +37,37 @@ export async function signUp(data: {
       }
     });
 
+    console.log("✅ User created successfully:", user.id);
+
     // Auto sign in after signup
-    await nextAuthSignIn("credentials", {
+    console.log("🔐 Auto-signing in user...");
+    const signInResult = await nextAuthSignIn("credentials", {
       email: data.email,
       password: data.password,
       redirect: false,
     });
 
+    console.log("✅ Sign in result:", signInResult);
+
     revalidatePath("/");
-    return { 
-      success: true, 
-      user: { 
-        id: user.id, 
-        email: user.email, 
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
         name: user.name,
-        status: user.status 
-      } 
+        status: user.status
+      }
     };
   } catch (error: Error | unknown) {
-    console.error("Sign up error:", error);
-    return { success: false, error: "Failed to sign up" };
+    console.error("❌ Sign up error details:", error);
+    console.error("Error type:", error instanceof Error ? error.constructor.name : typeof error);
+    console.error("Error message:", error instanceof Error ? error.message : String(error));
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+
+    // Return more specific error message if available
+    const errorMessage = error instanceof Error ? error.message : "Failed to sign up";
+    return { success: false, error: errorMessage };
   }
 }
 
