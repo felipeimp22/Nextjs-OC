@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Mail, X, UserPlus } from 'lucide-react';
 import { Button, useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
-import Input from '@/components/ui/Input';
+import {Input} from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import {
   sendRestaurantInvitation,
