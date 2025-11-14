@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { EmailFactory } from '@/lib/email';
+import { AccessRequestTemplate, AccessApprovedTemplate } from '@/lib/email/templates';
 
 export async function requestRestaurantAccess(data: {
   restaurantId: string;
@@ -86,44 +87,22 @@ export async function requestRestaurantAccess(data: {
 
     if (restaurant.users.length > 0) {
       const emailProvider = await EmailFactory.getProvider();
+      const dashboardLink = `${process.env.AUTH_URL}/${data.restaurantId}/settings`;
+
+      const emailHtml = AccessRequestTemplate({
+        restaurantName: restaurant.name,
+        userName: user.name || 'User',
+        userEmail: user.email,
+        requestedRole: 'staff',
+        message: data.message,
+        dashboardLink,
+      });
 
       for (const ur of restaurant.users) {
         await emailProvider.sendEmail({
           to: ur.user.email,
           subject: `New access request for ${restaurant.name}`,
-          html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #282e59; color: white; padding: 20px; text-align: center; }
-                .content { padding: 20px; background-color: #f9f9f9; }
-                .button { display: inline-block; padding: 12px 24px; background-color: #f03e42; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
-                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>🙋 New Access Request</h1>
-                </div>
-                <div class="content">
-                  <h2>Access Request for ${restaurant.name}</h2>
-                  <p><strong>${user.name}</strong> (${user.email}) has requested access to your restaurant.</p>
-                  ${data.message ? `<p><strong>Message:</strong><br>${data.message}</p>` : ''}
-                  <div style="text-align: center;">
-                    <a href="${process.env.AUTH_URL}/${data.restaurantId}/settings/team" class="button">Review Request</a>
-                  </div>
-                </div>
-                <div class="footer">
-                  <p>OrderChop - Restaurant Management Platform</p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `,
+          html: emailHtml,
         });
       }
     }
@@ -239,42 +218,18 @@ export async function approveAccessRequest(requestId: string) {
     });
 
     const emailProvider = await EmailFactory.getProvider();
+    const dashboardLink = `${process.env.AUTH_URL}/${request.restaurantId}/dashboard`;
+
+    const emailHtml = AccessApprovedTemplate({
+      restaurantName: request.restaurant.name,
+      requestedRole: request.requestedRole,
+      dashboardLink,
+    });
+
     await emailProvider.sendEmail({
       to: request.user.email,
       subject: `Access approved for ${request.restaurant.name}`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #282e59; color: white; padding: 20px; text-align: center; }
-            .content { padding: 20px; background-color: #f9f9f9; }
-            .button { display: inline-block; padding: 12px 24px; background-color: #f03e42; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>✅ Access Approved</h1>
-            </div>
-            <div class="content">
-              <h2>Welcome to ${request.restaurant.name}!</h2>
-              <p>Your request to join <strong>${request.restaurant.name}</strong> has been approved.</p>
-              <p>You can now access the restaurant dashboard with the role: <strong>${request.requestedRole}</strong></p>
-              <div style="text-align: center;">
-                <a href="${process.env.AUTH_URL}/${request.restaurantId}/dashboard" class="button">Go to Dashboard</a>
-              </div>
-            </div>
-            <div class="footer">
-              <p>OrderChop - Restaurant Management Platform</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      html: emailHtml,
     });
 
     revalidatePath(`/${request.restaurantId}/settings`);

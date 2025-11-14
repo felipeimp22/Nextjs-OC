@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { EmailFactory } from '@/lib/email';
+import { InvitationTemplate } from '@/lib/email/templates';
 import crypto from 'crypto';
 
 export async function sendRestaurantInvitation(data: {
@@ -74,45 +75,16 @@ export async function sendRestaurantInvitation(data: {
     const emailProvider = await EmailFactory.getProvider();
     const inviteLink = `${process.env.AUTH_URL}/invitations/${token}`;
 
+    const emailHtml = InvitationTemplate({
+      restaurantName: restaurant.name,
+      role: data.role,
+      inviteLink,
+    });
+
     await emailProvider.sendEmail({
       to: data.email,
       subject: `You're invited to join ${restaurant.name} on OrderChop`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #282e59; color: white; padding: 20px; text-align: center; }
-            .content { padding: 20px; background-color: #f9f9f9; }
-            .button { display: inline-block; padding: 12px 24px; background-color: #f03e42; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎉 You're Invited!</h1>
-            </div>
-            <div class="content">
-              <h2>Join ${restaurant.name} on OrderChop</h2>
-              <p>Hello!</p>
-              <p><strong>${restaurant.name}</strong> has invited you to join their team as a <strong>${data.role}</strong>.</p>
-              <p>Click the button below to accept this invitation:</p>
-              <div style="text-align: center;">
-                <a href="${inviteLink}" class="button">Accept Invitation</a>
-              </div>
-              <p style="color: #666; font-size: 14px;">This invitation will expire in 7 days.</p>
-              <p style="color: #666; font-size: 14px;">If the button doesn't work, copy and paste this link into your browser:<br>${inviteLink}</p>
-            </div>
-            <div class="footer">
-              <p>OrderChop - Restaurant Management Platform</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      html: emailHtml,
     });
 
     revalidatePath(`/${data.restaurantId}/settings`);
