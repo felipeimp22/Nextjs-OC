@@ -22,6 +22,17 @@ export default auth(async (req) => {
 
   const publicRoutes = ['/', '/auth', '/book-demo', '/pricing'];
   const protectedRoutes = ['/setup', '/dashboard', '/menu', '/orders', '/kitchen', '/customers', '/marketing', '/analytics', '/settings'];
+
+  // Allow all /api/auth routes to pass through
+  if (pathname.startsWith('/api/auth') || pathname === '/auth') {
+    return NextResponse.next();
+  }
+
+  // Allow /auth page for unauthenticated users
+  if (pathname === '/auth' && !isAuthenticated) {
+    return NextResponse.next();
+  }
+
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   // Redirect unauthenticated users
@@ -103,5 +114,15 @@ export default auth(async (req) => {
 });
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|images).*)'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - images (public images)
+     */
+    '/((?!api/|_next/static|_next/image|favicon.ico|images/).*)',
+  ],
 };
