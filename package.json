@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run schema:combine && prisma generate && next build",
-    "vercel-build": "npm run schema:combine && prisma generate && next build",
+    "build": "npm run schema:combine && prisma generate && NEXT_PRIVATE_DISABLE_TURBOPACK=1 next build",
+    "vercel-build": "npm run schema:combine && prisma generate && NEXT_PRIVATE_DISABLE_TURBOPACK=1 next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "npm run db:generate",
