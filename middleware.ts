@@ -63,6 +63,29 @@ function getDefaultPermissions(role: string) {
   };
 }
 
+// Find the first accessible page for a user based on their permissions
+function getFirstAccessiblePage(permissions: Record<string, boolean>, restaurantId: string): string | null {
+  // Priority order: dashboard, orders, kitchen, customers, menu, marketing, analytics, settings
+  const pageOrder = [
+    { path: '/dashboard', permission: 'dashboard' },
+    { path: '/orders', permission: 'orders' },
+    { path: '/kitchen', permission: 'kitchen' },
+    { path: '/customers', permission: 'customers' },
+    { path: '/menu', permission: 'menuManagement' },
+    { path: '/marketing', permission: 'marketing' },
+    { path: '/analytics', permission: 'analytics' },
+    { path: '/settings', permission: 'settings' },
+  ];
+
+  for (const page of pageOrder) {
+    if (permissions[page.permission]) {
+      return `/${restaurantId}${page.path}`;
+    }
+  }
+
+  return null; // No accessible pages
+}
+
 export default auth(async (req) => {
   const { pathname } = req.nextUrl;
   const isAuthenticated = !!req.auth;
@@ -156,8 +179,16 @@ export default auth(async (req) => {
         const hasPermission = permissions[requiredPermission as keyof typeof permissions];
 
         if (!hasPermission) {
-          // Redirect to dashboard if no permission
-          return NextResponse.redirect(new URL(`/${restaurantId}/dashboard`, req.url));
+          // Find the first page the user has access to
+          const firstAccessiblePage = getFirstAccessiblePage(permissions, restaurantId);
+
+          if (!firstAccessiblePage) {
+            // User has no permissions at all - redirect to setup with error
+            return NextResponse.redirect(new URL('/setup?error=no_permissions', req.url));
+          }
+
+          // Redirect to the first accessible page
+          return NextResponse.redirect(new URL(firstAccessiblePage, req.url));
         }
       } catch (error) {
         console.error('Middleware permission check error:', error);

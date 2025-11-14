@@ -8,6 +8,8 @@ import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
 import { useUserRestaurants } from '@/hooks/useRestaurants';
 import { Avatar, DropdownMenu, DropdownMenuItem, DropdownMenuHeader, DropdownMenuSeparator } from '@/components/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
+import { toast } from 'sonner';
 
 interface PrivateHeaderProps {
   title?: string;
@@ -117,9 +119,18 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
                 {restaurants.map((restaurant: any) => (
                   <DropdownMenuItem
                     key={restaurant.id}
-                    onClick={() => {
+                    onClick={async () => {
                       setRestaurantMenuOpen(false);
-                      router.push(`/${restaurant.id}/dashboard`);
+
+                      // Get the first accessible page for this user
+                      const result = await getFirstAccessiblePage(restaurant.id);
+
+                      if (result.success && result.data) {
+                        router.push(result.data);
+                      } else {
+                        toast.error('No permissions assigned. Please contact the restaurant owner.');
+                        router.push('/setup');
+                      }
                     }}
                   >
                     <div className="flex flex-col items-start">

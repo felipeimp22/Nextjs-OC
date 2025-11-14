@@ -8,6 +8,8 @@ import { useRestaurantStore } from '@/stores/useRestaurantStore';
 import RestaurantForm from '@/components/setup/RestaurantForm';
 import RestaurantSearch from '@/components/setup/RestaurantSearch';
 import { Button } from '@/components/ui';
+import { getFirstAccessiblePage } from '@/lib/serverActions/permissions.actions';
+import { toast } from 'sonner';
 
 type Mode = 'list' | 'create' | 'search';
 
@@ -19,9 +21,18 @@ export default function SetupPage() {
   const { setSelectedRestaurant } = useRestaurantStore();
   const [mode, setMode] = useState<Mode>('list');
 
-  const handleSelectRestaurant = (id: string, name: string) => {
+  const handleSelectRestaurant = async (id: string, name: string) => {
     setSelectedRestaurant(id, name);
-    router.push(`/${id}/dashboard`);
+
+    // Get the first accessible page for this user
+    const result = await getFirstAccessiblePage(id);
+
+    if (result.success && result.data) {
+      router.push(result.data);
+    } else {
+      toast.error('No permissions assigned. Please contact the restaurant owner.');
+      router.push('/setup');
+    }
   };
 
   if (isLoading) {
