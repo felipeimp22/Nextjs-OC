@@ -42,7 +42,6 @@ model UserInvitation {
 
   @@index([restaurantId])
   @@index([invitedEmail])
-  @@index([token])
   @@map("user_invitations")
 }
 
