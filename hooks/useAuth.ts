@@ -57,9 +57,16 @@ export function useSignIn() {
     onSuccess: () => {
       // Invalidate and refetch user data
       queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
-      
-      // Redirect to dashboard
-      window.location.href = '/setup';
+
+      // Check for pending invitation
+      const pendingInvitation = localStorage.getItem('pendingInvitation');
+      if (pendingInvitation) {
+        localStorage.removeItem('pendingInvitation');
+        window.location.href = `/invitations/${pendingInvitation}`;
+      } else {
+        // Redirect to setup
+        window.location.href = '/setup';
+      }
     },
   });
 }
@@ -86,9 +93,16 @@ export function useSignUp() {
     onSuccess: () => {
       // Invalidate and refetch user data
       queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
-      
-      // Redirect to dashboard
-      window.location.href = '/setup';
+
+      // Check for pending invitation
+      const pendingInvitation = localStorage.getItem('pendingInvitation');
+      if (pendingInvitation) {
+        localStorage.removeItem('pendingInvitation');
+        window.location.href = `/invitations/${pendingInvitation}`;
+      } else {
+        // Redirect to setup
+        window.location.href = '/setup';
+      }
     },
   });
 }

@@ -123,6 +123,40 @@ export async function sendRestaurantInvitation(data: {
   }
 }
 
+export async function getInvitationDetails(token: string) {
+  try {
+    const invitation = await prisma.userInvitation.findUnique({
+      where: { token },
+      include: { restaurant: true }
+    });
+
+    if (!invitation) {
+      return { success: false, error: 'Invitation not found', data: null };
+    }
+
+    if (new Date() > invitation.tokenExpiresAt) {
+      return { success: false, error: 'Invitation has expired', data: null };
+    }
+
+    if (invitation.status !== 'pending') {
+      return { success: false, error: 'Invitation already processed', data: null };
+    }
+
+    return {
+      success: true,
+      data: {
+        restaurantName: invitation.restaurant.name,
+        role: invitation.role,
+        invitedEmail: invitation.invitedEmail,
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Error getting invitation details:', error);
+    return { success: false, error: 'Failed to get invitation details', data: null };
+  }
+}
+
 export async function acceptInvitation(token: string) {
   try {
     const session = await auth();
