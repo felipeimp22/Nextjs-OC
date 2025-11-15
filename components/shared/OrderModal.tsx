@@ -98,6 +98,22 @@ interface ExistingOrder {
   }>;
 }
 
+interface TaxSetting {
+  id?: string;
+  name: string;
+  rate: number;
+  enabled: boolean;
+  type: 'percentage' | 'fixed';
+  applyTo: 'entire_order' | 'per_item';
+}
+
+interface GlobalFee {
+  enabled: boolean;
+  threshold: number;
+  belowPercent: number;
+  aboveFlat: number;
+}
+
 interface OrderModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -106,6 +122,8 @@ interface OrderModalProps {
   options: Option[];
   menuRules: MenuRule[];
   currencySymbol: string;
+  taxSettings: TaxSetting[];
+  globalFeeSettings?: GlobalFee | null;
   onOrderSaved: () => void;
   existingOrder?: ExistingOrder;
 }
@@ -118,6 +136,8 @@ export default function OrderModal({
   options,
   menuRules,
   currencySymbol,
+  taxSettings,
+  globalFeeSettings,
   onOrderSaved,
   existingOrder,
 }: OrderModalProps) {
@@ -138,6 +158,15 @@ export default function OrderModal({
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
+
+  // Debug logging for tax settings
+  useEffect(() => {
+    if (isOpen) {
+      console.log('OrderModal - Tax Settings:', taxSettings);
+      console.log('OrderModal - Tax Settings Length:', taxSettings?.length);
+      console.log('OrderModal - Tax Settings Type:', Array.isArray(taxSettings) ? 'Array' : typeof taxSettings);
+    }
+  }, [isOpen, taxSettings]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -292,11 +321,94 @@ export default function OrderModal({
     return item.price * item.quantity;
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return items.reduce((total, item) => {
       if (!item.menuItemId) return total;
       return total + calculateItemTotal(item);
     }, 0);
+  };
+
+  const calculateTaxes = () => {
+    const subtotal = calculateSubtotal();
+    const taxes: { name: string; rate: number; amount: number; type: string }[] = [];
+    let totalTax = 0;
+
+    // Safety check: taxSettings might be undefined
+    if (!taxSettings || !Array.isArray(taxSettings)) {
+      console.log('calculateTaxes - No tax settings available');
+      return { totalTax: 0, taxes: [] };
+    }
+
+    console.log('calculateTaxes - Subtotal:', subtotal);
+    console.log('calculateTaxes - Processing taxes:', taxSettings);
+
+    taxSettings.forEach(taxSetting => {
+      console.log('calculateTaxes - Tax setting:', taxSetting);
+      if (!taxSetting.enabled) {
+        console.log(`calculateTaxes - Skipped disabled tax: ${taxSetting.name}`);
+        return;
+      }
+
+      let taxAmount = 0;
+
+      if (taxSetting.applyTo === 'per_item') {
+        // Apply tax per item
+        items.forEach(item => {
+          if (!item.menuItemId) return;
+          const itemTotal = calculateItemTotal(item);
+
+          if (taxSetting.type === 'percentage') {
+            taxAmount += (itemTotal * taxSetting.rate) / 100;
+          } else if (taxSetting.type === 'fixed') {
+            taxAmount += taxSetting.rate * item.quantity;
+          }
+        });
+      } else {
+        // Apply to entire order (subtotal)
+        if (taxSetting.type === 'percentage') {
+          taxAmount = (subtotal * taxSetting.rate) / 100;
+        } else if (taxSetting.type === 'fixed') {
+          taxAmount = taxSetting.rate;
+        }
+      }
+
+      totalTax += taxAmount;
+      taxes.push({
+        name: taxSetting.name,
+        rate: taxSetting.rate,
+        amount: taxAmount,
+        type: taxSetting.type,
+      });
+      console.log(`calculateTaxes - Added tax: ${taxSetting.name} (${taxSetting.type}) = $${taxAmount.toFixed(2)}`);
+    });
+
+    console.log('calculateTaxes - Final taxes:', taxes);
+    console.log('calculateTaxes - Total tax:', totalTax);
+
+    return { totalTax, taxes };
+  };
+
+  const calculatePlatformFee = () => {
+    if (!globalFeeSettings || !globalFeeSettings.enabled) {
+      return 0;
+    }
+
+    const subtotal = calculateSubtotal();
+    const threshold = globalFeeSettings.threshold || 0;
+
+    if (subtotal < threshold) {
+      const belowPercent = globalFeeSettings.belowPercent || 0;
+      return (subtotal * belowPercent) / 100;
+    } else {
+      return globalFeeSettings.aboveFlat || 0;
+    }
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const { totalTax } = calculateTaxes();
+    const platformFee = calculatePlatformFee();
+    return subtotal + totalTax + platformFee;
   };
 
   const handleSubmit = async () => {
@@ -627,12 +739,55 @@ export default function OrderModal({
           />
         </div>
 
-        <div className="bg-gray-100 rounded-lg p-4">
+        <div className="bg-gray-100 rounded-lg p-4 space-y-2">
+          {/* Subtotal */}
+          <div className="flex items-center justify-between text-gray-700">
+            <span className="text-sm font-medium">Subtotal</span>
+            <span className="text-sm font-semibold">{currencySymbol}{calculateSubtotal().toFixed(2)}</span>
+          </div>
+
+          {/* Tax Breakdown */}
+          {calculateTaxes().taxes.length > 0 && calculateTaxes().taxes.map((tax, index) => (
+            <div key={index} className="flex items-center justify-between text-gray-600">
+              <span className="text-sm">
+                {tax.name} ({tax.type === 'percentage' ? `${tax.rate}%` : `${currencySymbol}${tax.rate.toFixed(2)}`})
+              </span>
+              <span className="text-sm">{currencySymbol}{tax.amount.toFixed(2)}</span>
+            </div>
+          ))}
+
+          {/* Show message if no taxes configured */}
+          {(!taxSettings || taxSettings.length === 0) && (
+            <div className="flex items-center justify-between text-gray-500">
+              <span className="text-xs italic">No tax configured</span>
+            </div>
+          )}
+
+          {/* Platform Fee */}
+          {calculatePlatformFee() > 0 && (
+            <div className="flex items-center justify-between text-gray-600">
+              <span className="text-sm">
+                Platform Fee
+                {globalFeeSettings && calculateSubtotal() < globalFeeSettings.threshold
+                  ? ` (${globalFeeSettings.belowPercent}%)`
+                  : ''}
+              </span>
+              <span className="text-sm">{currencySymbol}{calculatePlatformFee().toFixed(2)}</span>
+            </div>
+          )}
+
+          {/* Divider - only show if there are items above total */}
+          {(calculateTaxes().taxes.length > 0 || calculatePlatformFee() > 0 || !taxSettings || taxSettings.length === 0) && (
+            <div className="border-t border-gray-300 my-2"></div>
+          )}
+
+          {/* Total */}
           <div className="flex items-center justify-between text-lg font-bold">
-            <span className="text-gray-700">{t('estimatedTotal')}</span>
+            <span className="text-gray-900">Total</span>
             <span className="text-gray-900">{currencySymbol}{calculateTotal().toFixed(2)}</span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+
+          <p className="text-xs text-gray-500 mt-2">
             {t('finalTotalNote')}
           </p>
         </div>

@@ -4,6 +4,46 @@ import prisma from "@/lib/prisma";
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
+// Diagnostic function to check tax configuration
+export async function checkTaxConfiguration(restaurantId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      include: { financialSettings: true },
+    });
+
+    if (!restaurant) {
+      return { success: false, error: 'Restaurant not found' };
+    }
+
+    const taxes = (restaurant.financialSettings?.taxes as any[]) || [];
+    const enabledTaxes = taxes.filter((t: any) => t.enabled);
+
+    return {
+      success: true,
+      data: {
+        hasFinancialSettings: !!restaurant.financialSettings,
+        totalTaxes: taxes.length,
+        enabledTaxes: enabledTaxes.length,
+        taxes: taxes,
+        message: taxes.length === 0
+          ? 'No taxes configured. Go to Settings → Financial to add taxes.'
+          : enabledTaxes.length === 0
+          ? `${taxes.length} tax(es) configured but all are disabled. Enable them in Settings → Financial.`
+          : `${enabledTaxes.length} tax(es) enabled and ready to use.`
+      }
+    };
+  } catch (error: any) {
+    console.error('Error checking tax configuration:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 const DEFAULT_STAGES = [
   { status: 'pending', displayName: 'Pending', color: '#EAB308', order: 0 },
   { status: 'confirmed', displayName: 'Confirmed', color: '#3B82F6', order: 1 },
@@ -249,19 +289,86 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
     let tax = 0;
     const taxBreakdown: any[] = [];
 
+    console.log('=== TAX CALCULATION DEBUG (createInHouseOrder) ===');
+    console.log('Restaurant ID:', input.restaurantId);
+    console.log('Financial Settings exist?', !!restaurant.financialSettings);
+    console.log('Taxes from DB:', taxes);
+    console.log('Taxes length:', taxes.length);
+    console.log('Subtotal for tax calculation:', subtotal);
+
     taxes.forEach((taxSetting: any) => {
-      if (taxSetting.enabled) {
-        const taxAmount = (subtotal * taxSetting.rate) / 100;
-        tax += taxAmount;
-        taxBreakdown.push({
-          name: taxSetting.name,
-          rate: taxSetting.rate,
-          amount: taxAmount,
-        });
+      console.log('Processing tax:', taxSetting.name, 'enabled:', taxSetting.enabled, 'type:', taxSetting.type, 'rate:', taxSetting.rate, 'applyTo:', taxSetting.applyTo);
+
+      if (!taxSetting.enabled) {
+        console.log(`Tax skipped (disabled): ${taxSetting.name}`);
+        return;
       }
+
+      let taxAmount = 0;
+
+      if (taxSetting.applyTo === 'per_item') {
+        // Apply tax per item
+        orderItems.forEach((item) => {
+          const itemTotal = item.price * item.quantity;
+
+          if (taxSetting.type === 'percentage') {
+            taxAmount += (itemTotal * taxSetting.rate) / 100;
+          } else if (taxSetting.type === 'fixed') {
+            taxAmount += taxSetting.rate * item.quantity;
+          }
+        });
+      } else {
+        // Apply to entire order (subtotal)
+        if (taxSetting.type === 'percentage') {
+          taxAmount = (subtotal * taxSetting.rate) / 100;
+        } else if (taxSetting.type === 'fixed') {
+          taxAmount = taxSetting.rate;
+        }
+      }
+
+      tax += taxAmount;
+      taxBreakdown.push({
+        name: taxSetting.name,
+        rate: taxSetting.rate,
+        amount: taxAmount,
+        type: taxSetting.type,
+      });
+      console.log(`Tax applied: ${taxSetting.name} (${taxSetting.type}, ${taxSetting.applyTo}) = $${taxAmount.toFixed(2)}`);
     });
 
-    const total = subtotal + tax;
+    console.log('Final tax breakdown:', taxBreakdown);
+    console.log('Total tax amount:', tax);
+    console.log('=== END TAX CALCULATION DEBUG ===');
+
+    // Calculate global/platform fee
+    const globalFee = restaurant.financialSettings?.globalFee as any;
+    let platformFee = 0;
+
+    console.log('=== GLOBAL FEE CALCULATION DEBUG ===');
+    console.log('Global Fee Settings:', globalFee);
+
+    if (globalFee && globalFee.enabled) {
+      const threshold = globalFee.threshold || 0;
+
+      if (subtotal < threshold) {
+        // Order below threshold - apply percentage fee
+        const belowPercent = globalFee.belowPercent || 0;
+        platformFee = (subtotal * belowPercent) / 100;
+        console.log(`Order below threshold ($${threshold}): ${belowPercent}% fee = $${platformFee.toFixed(2)}`);
+      } else {
+        // Order at or above threshold - apply flat fee
+        const aboveFlat = globalFee.aboveFlat || 0;
+        platformFee = aboveFlat;
+        console.log(`Order at/above threshold ($${threshold}): Flat $${aboveFlat} fee`);
+      }
+    } else {
+      console.log('Global fee disabled or not configured');
+    }
+
+    console.log('Platform Fee:', platformFee);
+    console.log('=== END GLOBAL FEE CALCULATION DEBUG ===');
+
+    const total = subtotal + tax + platformFee;
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
@@ -294,7 +401,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         taxBreakdown,
         tip: 0,
         deliveryFee: 0,
-        platformFee: 0,
+        platformFee,
         total,
         specialInstructions: input.specialInstructions,
         timezone: 'America/New_York',
@@ -386,18 +493,58 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
     const taxBreakdown: any[] = [];
 
     taxes.forEach((taxSetting: any) => {
-      if (taxSetting.enabled) {
-        const taxAmount = (subtotal * taxSetting.rate) / 100;
-        tax += taxAmount;
-        taxBreakdown.push({
-          name: taxSetting.name,
-          rate: taxSetting.rate,
-          amount: taxAmount,
-        });
+      if (!taxSetting.enabled) {
+        return;
       }
+
+      let taxAmount = 0;
+
+      if (taxSetting.applyTo === 'per_item') {
+        // Apply tax per item
+        orderItems.forEach((item) => {
+          const itemTotal = item.price * item.quantity;
+
+          if (taxSetting.type === 'percentage') {
+            taxAmount += (itemTotal * taxSetting.rate) / 100;
+          } else if (taxSetting.type === 'fixed') {
+            taxAmount += taxSetting.rate * item.quantity;
+          }
+        });
+      } else {
+        // Apply to entire order (subtotal)
+        if (taxSetting.type === 'percentage') {
+          taxAmount = (subtotal * taxSetting.rate) / 100;
+        } else if (taxSetting.type === 'fixed') {
+          taxAmount = taxSetting.rate;
+        }
+      }
+
+      tax += taxAmount;
+      taxBreakdown.push({
+        name: taxSetting.name,
+        rate: taxSetting.rate,
+        amount: taxAmount,
+        type: taxSetting.type,
+      });
     });
 
-    const total = subtotal + tax;
+    // Calculate global/platform fee
+    const globalFee = restaurant.financialSettings?.globalFee as any;
+    let platformFee = 0;
+
+    if (globalFee && globalFee.enabled) {
+      const threshold = globalFee.threshold || 0;
+
+      if (subtotal < threshold) {
+        const belowPercent = globalFee.belowPercent || 0;
+        platformFee = (subtotal * belowPercent) / 100;
+      } else {
+        const aboveFlat = globalFee.aboveFlat || 0;
+        platformFee = aboveFlat;
+      }
+    }
+
+    const total = subtotal + tax + platformFee;
 
     const order = await prisma.order.update({
       where: { id: input.orderId },
@@ -412,6 +559,7 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         subtotal,
         tax,
         taxBreakdown,
+        platformFee,
         total,
         specialInstructions: input.specialInstructions,
       },

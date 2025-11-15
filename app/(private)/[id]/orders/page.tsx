@@ -528,6 +528,8 @@ export default function OrdersPage() {
           options={menuData.options || []}
           menuRules={menuData.menuRules || []}
           currencySymbol={menuData.currencySymbol || '$'}
+          taxSettings={menuData.taxSettings || []}
+          globalFeeSettings={menuData.globalFeeSettings || null}
           onOrderSaved={handleOrderSaved}
           existingOrder={editingOrder ? {
             id: editingOrder.id,
