@@ -10,6 +10,8 @@ import { useToast } from '@/components/ui/ToastContainer';
 import { createInHouseOrder, updateInHouseOrder } from '@/lib/serverActions/kitchen.actions';
 import ItemModifierSelector from '@/components/kitchen/ItemModifierSelector';
 import { calculateItemTotalPrice } from '@/lib/utils/modifierPricingCalculator';
+import LocationAutocomplete from '@/components/shared/LocationAutocomplete';
+import type { AddressComponents } from '@/lib/utils/mapbox';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MenuItem {
@@ -151,7 +153,7 @@ export default function OrderModal({
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [orderType, setOrderType] = useState<'pickup' | 'delivery' | 'dine_in'>('dine_in');
-  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState<AddressComponents | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>('pending');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'other'>('cash');
   const [specialInstructions, setSpecialInstructions] = useState('');
@@ -180,7 +182,16 @@ export default function OrderModal({
       setCustomerPhone(existingOrder.customerPhone);
       setCustomerEmail(existingOrder.customerEmail);
       setOrderType(existingOrder.orderType);
-      setDeliveryAddress(existingOrder.deliveryAddress || '');
+      setDeliveryAddress(existingOrder.deliveryAddress ? {
+        street: '',
+        houseNumber: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: '',
+        fullAddress: existingOrder.deliveryAddress,
+        coordinates: { lat: 0, lng: 0 }
+      } : null);
       setPaymentStatus(existingOrder.paymentStatus);
       setPaymentMethod(existingOrder.paymentMethod);
       setSpecialInstructions(existingOrder.specialInstructions || '');
@@ -421,8 +432,8 @@ export default function OrderModal({
     }
 
     // Validate delivery address for delivery orders
-    if (orderType === 'delivery' && !deliveryAddress.trim()) {
-      showToast('error', 'Please enter a delivery address');
+    if (orderType === 'delivery' && !deliveryAddress) {
+      showToast('error', 'Please select a delivery address');
       return;
     }
 
@@ -494,7 +505,7 @@ export default function OrderModal({
         customerEmail: customerEmail || `${customerPhone}@inhouse.local`,
         items: formattedItems,
         orderType,
-        deliveryAddress: orderType === 'delivery' ? deliveryAddress : undefined,
+        deliveryAddress: orderType === 'delivery' && deliveryAddress ? deliveryAddress.fullAddress : undefined,
         paymentStatus,
         paymentMethod,
         specialInstructions,
@@ -524,7 +535,7 @@ export default function OrderModal({
       setCustomerPhone('');
       setCustomerEmail('');
       setOrderType('dine_in');
-      setDeliveryAddress('');
+      setDeliveryAddress(null);
       setPaymentStatus('pending');
       setPaymentMethod('cash');
       setSpecialInstructions('');
@@ -608,10 +619,10 @@ export default function OrderModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Delivery Address {t('required')}
               </label>
-              <Input
-                value={deliveryAddress}
-                onChange={e => setDeliveryAddress(e.target.value)}
-                placeholder="Enter full delivery address"
+              <LocationAutocomplete
+                onSelect={(address) => setDeliveryAddress(address)}
+                placeholder="Enter delivery address..."
+                required={true}
               />
             </div>
           )}
