@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/Input';
 import { Minus, Plus } from 'lucide-react';
+import { calculateModifierPrice } from '@/lib/utils/modifierPricingCalculator';
 
 interface Choice {
   id: string;
@@ -25,6 +26,13 @@ interface Option {
   maxQuantity: number;
 }
 
+interface PriceAdjustment {
+  targetOptionId: string;
+  targetChoiceId?: string;
+  adjustmentType: 'multiplier' | 'addition' | 'fixed';
+  value: number;
+}
+
 interface AppliedOption {
   optionId: string;
   required: boolean;
@@ -34,6 +42,7 @@ interface AppliedOption {
     priceAdjustment: number;
     isAvailable: boolean;
     isDefault: boolean;
+    adjustments: PriceAdjustment[];
   }>;
 }
 
@@ -63,6 +72,61 @@ export default function ItemModifierSelector({
   onOptionsChange,
   currencySymbol,
 }: ItemModifierSelectorProps) {
+  const [initializedForItemKey, setInitializedForItemKey] = useState<string | null>(null);
+
+  // Initialize default selections ONCE when item changes
+  useEffect(() => {
+    if (!itemRules?.appliedOptions || itemRules.appliedOptions.length === 0) {
+      return;
+    }
+
+    // Create unique key for current item configuration
+    const currentItemKey = itemRules.appliedOptions.map(ao => ao.optionId).join('-');
+
+    // Only initialize if this is a new item (different key than last initialized)
+    if (initializedForItemKey !== currentItemKey) {
+      // Check if we should initialize defaults
+      const hasNoSelections = selectedOptions.length === 0;
+
+      if (hasNoSelections) {
+        const defaultSelections: SelectedChoice[] = [];
+
+        itemRules.appliedOptions.forEach(appliedOption => {
+          const option = options.find(opt => opt.id === appliedOption.optionId);
+          if (!option) return;
+
+          // Find default choices for this option
+          const defaultChoices = appliedOption.choiceAdjustments.filter(
+            ca => ca.isDefault && ca.isAvailable
+          );
+
+          defaultChoices.forEach(choiceAdj => {
+            const choice = option.choices.find(c => c.id === choiceAdj.choiceId);
+            if (choice && choice.isAvailable) {
+              defaultSelections.push({
+                optionId: option.id,
+                optionName: option.name,
+                choiceId: choice.id,
+                choiceName: choice.name,
+                quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
+                priceAdjustment: choiceAdj.priceAdjustment,
+              });
+            }
+          });
+        });
+
+        if (defaultSelections.length > 0) {
+          onOptionsChange(defaultSelections);
+        }
+      }
+
+      // Mark this item as initialized
+      setInitializedForItemKey(currentItemKey);
+    }
+    // IMPORTANT: Do NOT include onOptionsChange in dependencies to avoid re-initialization loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemRules, options, initializedForItemKey]);
+
   if (!itemRules?.appliedOptions || itemRules.appliedOptions.length === 0) {
     return null;
   }
@@ -84,33 +148,117 @@ export default function ItemModifierSelector({
     );
   };
 
+  /**
+   * Calculate the dynamic price for a choice considering cross-option pricing rules
+   * This shows what the price would be if this choice is selected with current selections
+   */
+  const calculateChoicePrice = (
+    optionId: string,
+    choiceId: string,
+    choiceAdjustment: any
+  ): number => {
+    // If no adjustments array, just return the base priceAdjustment
+    if (!choiceAdjustment.adjustments || choiceAdjustment.adjustments.length === 0) {
+      return choiceAdjustment.priceAdjustment;
+    }
+
+    // Create a simulated selection set that includes this choice
+    const simulatedSelections = selectedOptions
+      .filter(sc => sc.optionId !== optionId) // Remove other selections from same option
+      .map(sc => ({
+        optionId: sc.optionId,
+        choiceId: sc.choiceId,
+        quantity: sc.quantity,
+      }));
+
+    // Add this choice to the simulation
+    simulatedSelections.push({
+      optionId,
+      choiceId,
+      quantity: 1,
+    });
+
+    // Calculate price using the calculator
+    try {
+      const result = calculateModifierPrice(
+        { appliedOptions: itemRules.appliedOptions },
+        simulatedSelections
+      );
+
+      // Find this choice in the breakdown
+      const breakdown = result.choiceBreakdown.find(cb => cb.choiceId === choiceId);
+      if (breakdown) {
+        return breakdown.finalPrice;
+      }
+    } catch (error) {
+      console.warn('Price calculation failed for choice:', choiceId, error);
+    }
+
+    // Fallback to base price
+    return choiceAdjustment.priceAdjustment;
+  };
+
+  /**
+   * Handle single-select option clicks
+   *
+   * Behavior:
+   * - Clicking a DIFFERENT choice: Always switch to the new choice (even if required)
+   * - Clicking the SAME choice (trying to deselect):
+   *   - If required=true OR requiresSelection=true: Prevent deselection (must keep one selected)
+   *   - If both are false (optional): Allow deselection
+   *
+   * Note: isDefault only affects initial selection, NOT whether user can change it
+   */
   const handleSingleSelect = (
     appliedOption: AppliedOption,
     option: Option,
     choice: Choice,
     choiceAdjustment: any
   ) => {
-    const finalPrice = choice.basePrice + (choiceAdjustment.priceAdjustment || 0);
+    const isCurrentlySelected = isChoiceSelected(option.id, choice.id);
+    const isRequired = appliedOption.required || option.requiresSelection;
 
+    // If clicking the same choice that's already selected
+    if (isCurrentlySelected) {
+      // Only allow deselection if optional (not required)
+      if (!isRequired) {
+        // Remove all selections for this option (deselect)
+        const filteredOptions = selectedOptions.filter(sc => sc.optionId !== option.id);
+        onOptionsChange(filteredOptions);
+      }
+      // If required, do nothing (silently prevent deselection)
+      return;
+    }
+
+    // Clicking a different choice - always switch to it
     const newSelection: SelectedChoice = {
       optionId: option.id,
       optionName: option.name,
       choiceId: choice.id,
       choiceName: choice.name,
       quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
-      priceAdjustment: finalPrice,
+      priceAdjustment: choiceAdjustment.priceAdjustment,
     };
 
+    // Remove old selection and add new one
     const filteredOptions = selectedOptions.filter(sc => sc.optionId !== option.id);
-
-    const isCurrentlySelected = isChoiceSelected(option.id, choice.id);
-    if (isCurrentlySelected && !appliedOption.required && !option.requiresSelection) {
-      onOptionsChange(filteredOptions);
-    } else {
-      onOptionsChange([...filteredOptions, newSelection]);
-    }
+    onOptionsChange([...filteredOptions, newSelection]);
   };
 
+  /**
+   * Handle multi-select option clicks
+   *
+   * Behavior:
+   * - Can select up to maxSelections choices
+   * - If trying to deselect:
+   *   - Check if it would violate minSelections when required
+   *   - If (required=true OR requiresSelection=true) AND count would drop below minSelections: Prevent
+   *   - Otherwise: Allow deselection
+   * - If trying to select:
+   *   - Check if already at maxSelections limit
+   *   - If at limit: Prevent selection
+   *   - Otherwise: Add to selections
+   */
   const handleMultiSelect = (
     appliedOption: AppliedOption,
     option: Option,
@@ -121,31 +269,35 @@ export default function ItemModifierSelector({
     const selectedForOption = getSelectedChoicesForOption(option.id);
 
     if (isSelected) {
+      // Trying to deselect - check if it would violate minimum requirement
       const isRequired = appliedOption.required || option.requiresSelection;
       const wouldViolateMinimum = isRequired && selectedForOption.length <= option.minSelections;
 
       if (wouldViolateMinimum) {
+        // Silently prevent deselection (would go below required minimum)
         return;
       }
 
+      // Allow deselection
       const newOptions = selectedOptions.filter(
         sc => !(sc.optionId === option.id && sc.choiceId === choice.id)
       );
       onOptionsChange(newOptions);
     } else {
+      // Trying to select - check if at maximum limit
       if (selectedForOption.length >= option.maxSelections) {
+        // Silently prevent selection (already at max)
         return;
       }
 
-      const finalPrice = choice.basePrice + (choiceAdjustment.priceAdjustment || 0);
-
+      // Allow selection
       const newSelection: SelectedChoice = {
         optionId: option.id,
         optionName: option.name,
         choiceId: choice.id,
         choiceName: choice.name,
         quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
-        priceAdjustment: finalPrice,
+        priceAdjustment: choiceAdjustment.priceAdjustment,
       };
 
       onOptionsChange([...selectedOptions, newSelection]);
@@ -187,20 +339,31 @@ export default function ItemModifierSelector({
           return (
             <div key={option.id} className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-700">
-                  {option.name}
-                  {!isOptional && <span className="text-red-600 ml-1">*</span>}
-                  {isOptional && <span className="text-gray-500 ml-1 text-xs">(Optional)</span>}
-                </p>
-                <div className="text-xs text-gray-500">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-700">
+                    {option.name}
+                    {!isOptional && <span className="text-red-600 ml-1">*</span>}
+                  </p>
+                  {isOptional && (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                      Optional
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-600">
                   {option.multiSelect && (
-                    <span>
-                      {option.minSelections > 0 && `Min ${option.minSelections}, `}
-                      Max {option.maxSelections}
+                    <span className={`font-medium ${
+                      selectedForOption.length < option.minSelections && !isOptional
+                        ? 'text-orange-600'
+                        : selectedForOption.length >= option.minSelections
+                          ? 'text-green-600'
+                          : 'text-gray-600'
+                    }`}>
+                      {selectedForOption.length}/{option.maxSelections} selected
                     </span>
                   )}
                   {option.allowQuantity && (
-                    <span className="ml-2">
+                    <span className="ml-2 text-gray-500">
                       Qty: {option.minQuantity}-{option.maxQuantity}
                     </span>
                   )}
@@ -224,7 +387,8 @@ export default function ItemModifierSelector({
                       ca => ca.choiceId === choice.id
                     );
 
-                    const finalPrice = choice.basePrice + (choiceAdjustment!.priceAdjustment || 0);
+                    // Calculate dynamic price considering cross-option rules
+                    const finalPrice = calculateChoicePrice(option.id, choice.id, choiceAdjustment);
                     const isSelected = isChoiceSelected(option.id, choice.id);
                     const quantity = getChoiceQuantity(option.id, choice.id);
 
@@ -336,11 +500,32 @@ export default function ItemModifierSelector({
                   })}
               </div>
 
-              {option.multiSelect && selectedForOption.length < option.minSelections && (
-                <p className="text-xs text-orange-600">
-                  Please select at least {option.minSelections} option{option.minSelections > 1 ? 's' : ''}
-                </p>
-              )}
+              {/* Validation message for multi-select */}
+              {option.multiSelect && (() => {
+                const isRequired = appliedOption.required || option.requiresSelection;
+                const currentCount = selectedForOption.length;
+                const { minSelections, maxSelections } = option;
+
+                // Only show message if required and below minimum
+                if (isRequired && currentCount < minSelections) {
+                  let message = '';
+                  if (minSelections === maxSelections) {
+                    message = `Select exactly ${minSelections} option${minSelections > 1 ? 's' : ''}`;
+                  } else if (minSelections > 0) {
+                    message = `Select ${minSelections} to ${maxSelections} option${maxSelections > 1 ? 's' : ''}`;
+                  } else {
+                    message = `Select up to ${maxSelections} option${maxSelections > 1 ? 's' : ''}`;
+                  }
+                  return <p className="text-xs text-orange-600">{message}</p>;
+                }
+
+                // Show helpful info for optional selections
+                if (!isRequired && currentCount === 0 && minSelections === 0) {
+                  return <p className="text-xs text-gray-500">Optional - select up to {maxSelections}</p>;
+                }
+
+                return null;
+              })()}
             </div>
           );
         })}
