@@ -98,6 +98,13 @@ interface ExistingOrder {
   }>;
 }
 
+interface TaxSetting {
+  id: string;
+  name: string;
+  rate: number;
+  enabled: boolean;
+}
+
 interface OrderModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -106,6 +113,7 @@ interface OrderModalProps {
   options: Option[];
   menuRules: MenuRule[];
   currencySymbol: string;
+  taxSettings: TaxSetting[];
   onOrderSaved: () => void;
   existingOrder?: ExistingOrder;
 }
@@ -118,6 +126,7 @@ export default function OrderModal({
   options,
   menuRules,
   currencySymbol,
+  taxSettings,
   onOrderSaved,
   existingOrder,
 }: OrderModalProps) {
@@ -292,11 +301,37 @@ export default function OrderModal({
     return item.price * item.quantity;
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return items.reduce((total, item) => {
       if (!item.menuItemId) return total;
       return total + calculateItemTotal(item);
     }, 0);
+  };
+
+  const calculateTaxes = () => {
+    const subtotal = calculateSubtotal();
+    const taxes: { name: string; rate: number; amount: number }[] = [];
+    let totalTax = 0;
+
+    taxSettings.forEach(taxSetting => {
+      if (taxSetting.enabled) {
+        const taxAmount = (subtotal * taxSetting.rate) / 100;
+        totalTax += taxAmount;
+        taxes.push({
+          name: taxSetting.name,
+          rate: taxSetting.rate,
+          amount: taxAmount,
+        });
+      }
+    });
+
+    return { totalTax, taxes };
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const { totalTax } = calculateTaxes();
+    return subtotal + totalTax;
   };
 
   const handleSubmit = async () => {
@@ -627,12 +662,31 @@ export default function OrderModal({
           />
         </div>
 
-        <div className="bg-gray-100 rounded-lg p-4">
+        <div className="bg-gray-100 rounded-lg p-4 space-y-2">
+          {/* Subtotal */}
+          <div className="flex items-center justify-between text-gray-700">
+            <span className="text-sm font-medium">Subtotal</span>
+            <span className="text-sm font-semibold">{currencySymbol}{calculateSubtotal().toFixed(2)}</span>
+          </div>
+
+          {/* Tax Breakdown */}
+          {calculateTaxes().taxes.map((tax, index) => (
+            <div key={index} className="flex items-center justify-between text-gray-600">
+              <span className="text-sm">{tax.name} ({tax.rate}%)</span>
+              <span className="text-sm">{currencySymbol}{tax.amount.toFixed(2)}</span>
+            </div>
+          ))}
+
+          {/* Divider */}
+          <div className="border-t border-gray-300 my-2"></div>
+
+          {/* Total */}
           <div className="flex items-center justify-between text-lg font-bold">
-            <span className="text-gray-700">{t('estimatedTotal')}</span>
+            <span className="text-gray-900">Total</span>
             <span className="text-gray-900">{currencySymbol}{calculateTotal().toFixed(2)}</span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+
+          <p className="text-xs text-gray-500 mt-2">
             {t('finalTotalNote')}
           </p>
         </div>
