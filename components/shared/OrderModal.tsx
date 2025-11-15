@@ -148,6 +148,15 @@ export default function OrderModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
 
+  // Debug logging for tax settings
+  useEffect(() => {
+    if (isOpen) {
+      console.log('OrderModal - Tax Settings:', taxSettings);
+      console.log('OrderModal - Tax Settings Length:', taxSettings?.length);
+      console.log('OrderModal - Tax Settings Type:', Array.isArray(taxSettings) ? 'Array' : typeof taxSettings);
+    }
+  }, [isOpen, taxSettings]);
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -315,10 +324,14 @@ export default function OrderModal({
 
     // Safety check: taxSettings might be undefined
     if (!taxSettings || !Array.isArray(taxSettings)) {
+      console.log('calculateTaxes - No tax settings available');
       return { totalTax: 0, taxes: [] };
     }
 
+    console.log('calculateTaxes - Processing taxes:', taxSettings);
+
     taxSettings.forEach(taxSetting => {
+      console.log('calculateTaxes - Tax setting:', taxSetting);
       if (taxSetting.enabled) {
         const taxAmount = (subtotal * taxSetting.rate) / 100;
         totalTax += taxAmount;
@@ -327,8 +340,14 @@ export default function OrderModal({
           rate: taxSetting.rate,
           amount: taxAmount,
         });
+        console.log(`calculateTaxes - Added tax: ${taxSetting.name} = ${taxAmount}`);
+      } else {
+        console.log(`calculateTaxes - Skipped disabled tax: ${taxSetting.name}`);
       }
     });
+
+    console.log('calculateTaxes - Final taxes:', taxes);
+    console.log('calculateTaxes - Total tax:', totalTax);
 
     return { totalTax, taxes };
   };
@@ -675,15 +694,24 @@ export default function OrderModal({
           </div>
 
           {/* Tax Breakdown */}
-          {calculateTaxes().taxes.map((tax, index) => (
+          {calculateTaxes().taxes.length > 0 && calculateTaxes().taxes.map((tax, index) => (
             <div key={index} className="flex items-center justify-between text-gray-600">
               <span className="text-sm">{tax.name} ({tax.rate}%)</span>
               <span className="text-sm">{currencySymbol}{tax.amount.toFixed(2)}</span>
             </div>
           ))}
 
-          {/* Divider */}
-          <div className="border-t border-gray-300 my-2"></div>
+          {/* Show message if no taxes configured */}
+          {(!taxSettings || taxSettings.length === 0) && (
+            <div className="flex items-center justify-between text-gray-500">
+              <span className="text-xs italic">No tax configured</span>
+            </div>
+          )}
+
+          {/* Divider - only show if there are items above total */}
+          {(calculateTaxes().taxes.length > 0 || !taxSettings || taxSettings.length === 0) && (
+            <div className="border-t border-gray-300 my-2"></div>
+          )}
 
           {/* Total */}
           <div className="flex items-center justify-between text-lg font-bold">
