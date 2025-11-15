@@ -355,10 +355,14 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
         const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
 
-        // Use coordinates if provided to skip geocoding (optimization)
-        const deliveryAddressOrCoords = input.deliveryCoordinates
-          ? { longitude: input.deliveryCoordinates.longitude, latitude: input.deliveryCoordinates.latitude }
-          : input.deliveryAddress;
+        // IMPORTANT: Shipday needs ADDRESS STRING, not coordinates
+        // Local delivery can use coordinates to optimize (skip geocoding)
+        const deliveryAddressOrCoords =
+          deliverySettings.driverProvider === 'shipday'
+            ? input.deliveryAddress!  // Shipday MUST have address string
+            : (input.deliveryCoordinates
+                ? { longitude: input.deliveryCoordinates.longitude, latitude: input.deliveryCoordinates.latitude }
+                : input.deliveryAddress!);
 
         const deliveryResult = await calculateDeliveryFee(
           restaurantAddress,
@@ -579,10 +583,14 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
         const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
 
-        // Use coordinates if provided to skip geocoding (optimization)
-        const deliveryAddressOrCoords = input.deliveryCoordinates
-          ? { longitude: input.deliveryCoordinates.longitude, latitude: input.deliveryCoordinates.latitude }
-          : input.deliveryAddress;
+        // IMPORTANT: Shipday needs ADDRESS STRING, not coordinates
+        // Local delivery can use coordinates to optimize (skip geocoding)
+        const deliveryAddressOrCoords =
+          deliverySettings.driverProvider === 'shipday'
+            ? input.deliveryAddress!  // Shipday MUST have address string
+            : (input.deliveryCoordinates
+                ? { longitude: input.deliveryCoordinates.longitude, latitude: input.deliveryCoordinates.latitude }
+                : input.deliveryAddress!);
 
         const deliveryResult = await calculateDeliveryFee(
           restaurantAddress,

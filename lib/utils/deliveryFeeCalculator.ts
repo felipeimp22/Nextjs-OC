@@ -353,6 +353,7 @@ export async function calculateDeliveryFee(
     // Calculate fee based on provider
     if (deliverySettings.driverProvider === 'local') {
       // LOCAL DELIVERY - Use restaurant's pricing tiers
+      // Can use coordinates optimization here
       const localFee = calculateLocalDeliveryFee(
         distanceResult.distance,
         deliverySettings.distanceUnit,
@@ -371,13 +372,32 @@ export async function calculateDeliveryFee(
       };
     } else {
       // SHIPDAY DELIVERY - Get quote from Shipday API
+      // IMPORTANT: Shipday needs ADDRESS STRINGS, not coordinates
       const restaurantAddr = typeof restaurantAddress === 'string'
         ? restaurantAddress
         : `${restaurantAddress.latitude},${restaurantAddress.longitude}`;
 
+      // For delivery address, we need the original address string
+      // Coordinates were only for distance calculation optimization
+      let deliveryAddr: string;
+      if (typeof deliveryAddress === 'string') {
+        deliveryAddr = deliveryAddress;
+      } else {
+        // If only coordinates provided, we need to reverse geocode or error
+        console.error('❌ Shipday requires address string, but only coordinates provided');
+        return {
+          deliveryFee: 0,
+          distance: distanceResult.distance,
+          distanceUnit: distanceResult.unit,
+          withinRadius: true,
+          provider: 'shipday',
+          error: 'Shipday requires full address string',
+        };
+      }
+
       const shipdayQuote = await getShipdayQuote({
         restaurantAddress: restaurantAddr,
-        customerAddress: deliveryAddress,
+        customerAddress: deliveryAddr,
         restaurantName,
         customerName,
         customerPhone,
