@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/Input';
 import { Minus, Plus } from 'lucide-react';
+import { calculateModifierPrice } from '@/lib/utils/modifierPricingCalculator';
 
 interface Choice {
   id: string;
@@ -25,6 +26,13 @@ interface Option {
   maxQuantity: number;
 }
 
+interface PriceAdjustment {
+  targetOptionId: string;
+  targetChoiceId?: string;
+  adjustmentType: 'multiplier' | 'addition' | 'fixed';
+  value: number;
+}
+
 interface AppliedOption {
   optionId: string;
   required: boolean;
@@ -34,6 +42,7 @@ interface AppliedOption {
     priceAdjustment: number;
     isAvailable: boolean;
     isDefault: boolean;
+    adjustments: PriceAdjustment[];
   }>;
 }
 
@@ -94,15 +103,13 @@ export default function ItemModifierSelector({
           defaultChoices.forEach(choiceAdj => {
             const choice = option.choices.find(c => c.id === choiceAdj.choiceId);
             if (choice && choice.isAvailable) {
-              const finalPrice = choice.basePrice + (choiceAdj.priceAdjustment || 0);
-
               defaultSelections.push({
                 optionId: option.id,
                 optionName: option.name,
                 choiceId: choice.id,
                 choiceName: choice.name,
                 quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
-                priceAdjustment: finalPrice,
+                priceAdjustment: choiceAdj.priceAdjustment,
               });
             }
           });
@@ -142,6 +149,56 @@ export default function ItemModifierSelector({
   };
 
   /**
+   * Calculate the dynamic price for a choice considering cross-option pricing rules
+   * This shows what the price would be if this choice is selected with current selections
+   */
+  const calculateChoicePrice = (
+    optionId: string,
+    choiceId: string,
+    choiceAdjustment: any
+  ): number => {
+    // If no adjustments array, just return the base priceAdjustment
+    if (!choiceAdjustment.adjustments || choiceAdjustment.adjustments.length === 0) {
+      return choiceAdjustment.priceAdjustment;
+    }
+
+    // Create a simulated selection set that includes this choice
+    const simulatedSelections = selectedOptions
+      .filter(sc => sc.optionId !== optionId) // Remove other selections from same option
+      .map(sc => ({
+        optionId: sc.optionId,
+        choiceId: sc.choiceId,
+        quantity: sc.quantity,
+      }));
+
+    // Add this choice to the simulation
+    simulatedSelections.push({
+      optionId,
+      choiceId,
+      quantity: 1,
+    });
+
+    // Calculate price using the calculator
+    try {
+      const result = calculateModifierPrice(
+        { appliedOptions: itemRules.appliedOptions },
+        simulatedSelections
+      );
+
+      // Find this choice in the breakdown
+      const breakdown = result.choiceBreakdown.find(cb => cb.choiceId === choiceId);
+      if (breakdown) {
+        return breakdown.finalPrice;
+      }
+    } catch (error) {
+      console.warn('Price calculation failed for choice:', choiceId, error);
+    }
+
+    // Fallback to base price
+    return choiceAdjustment.priceAdjustment;
+  };
+
+  /**
    * Handle single-select option clicks
    *
    * Behavior:
@@ -174,15 +231,13 @@ export default function ItemModifierSelector({
     }
 
     // Clicking a different choice - always switch to it
-    const finalPrice = choice.basePrice + (choiceAdjustment.priceAdjustment || 0);
-
     const newSelection: SelectedChoice = {
       optionId: option.id,
       optionName: option.name,
       choiceId: choice.id,
       choiceName: choice.name,
       quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
-      priceAdjustment: finalPrice,
+      priceAdjustment: choiceAdjustment.priceAdjustment,
     };
 
     // Remove old selection and add new one
@@ -236,15 +291,13 @@ export default function ItemModifierSelector({
       }
 
       // Allow selection
-      const finalPrice = choice.basePrice + (choiceAdjustment.priceAdjustment || 0);
-
       const newSelection: SelectedChoice = {
         optionId: option.id,
         optionName: option.name,
         choiceId: choice.id,
         choiceName: choice.name,
         quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
-        priceAdjustment: finalPrice,
+        priceAdjustment: choiceAdjustment.priceAdjustment,
       };
 
       onOptionsChange([...selectedOptions, newSelection]);
@@ -334,7 +387,8 @@ export default function ItemModifierSelector({
                       ca => ca.choiceId === choice.id
                     );
 
-                    const finalPrice = choice.basePrice + (choiceAdjustment!.priceAdjustment || 0);
+                    // Calculate dynamic price considering cross-option rules
+                    const finalPrice = calculateChoicePrice(option.id, choice.id, choiceAdjustment);
                     const isSelected = isChoiceSelected(option.id, choice.id);
                     const quantity = getChoiceQuantity(option.id, choice.id);
 

@@ -157,7 +157,7 @@ export default function MenuItemModifiersModal({
         order: index,
         choiceAdjustments: option.choices.map((choice, choiceIndex) => ({
           choiceId: choice.id,
-          priceAdjustment: 0,
+          priceAdjustment: choice.basePrice,
           isAvailable: true,
           isDefault: choiceIndex === 0,
           adjustments: [],
