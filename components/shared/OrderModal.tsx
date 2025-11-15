@@ -87,6 +87,7 @@ interface ExistingOrder {
   orderType: 'pickup' | 'delivery' | 'dine_in';
   paymentStatus: 'pending' | 'paid';
   paymentMethod: 'card' | 'cash' | 'other';
+  deliveryAddress?: string;
   specialInstructions?: string;
   items: Array<{
     menuItemId: string;
@@ -150,6 +151,7 @@ export default function OrderModal({
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [orderType, setOrderType] = useState<'pickup' | 'delivery' | 'dine_in'>('dine_in');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>('pending');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'other'>('cash');
   const [specialInstructions, setSpecialInstructions] = useState('');
@@ -178,6 +180,7 @@ export default function OrderModal({
       setCustomerPhone(existingOrder.customerPhone);
       setCustomerEmail(existingOrder.customerEmail);
       setOrderType(existingOrder.orderType);
+      setDeliveryAddress(existingOrder.deliveryAddress || '');
       setPaymentStatus(existingOrder.paymentStatus);
       setPaymentMethod(existingOrder.paymentMethod);
       setSpecialInstructions(existingOrder.specialInstructions || '');
@@ -417,6 +420,12 @@ export default function OrderModal({
       return;
     }
 
+    // Validate delivery address for delivery orders
+    if (orderType === 'delivery' && !deliveryAddress.trim()) {
+      showToast('error', 'Please enter a delivery address');
+      return;
+    }
+
     const validItems = items.filter(item => item.menuItemId && item.quantity > 0);
     if (validItems.length === 0) {
       showToast('error', t('addAtLeastOneItem'));
@@ -485,6 +494,7 @@ export default function OrderModal({
         customerEmail: customerEmail || `${customerPhone}@inhouse.local`,
         items: formattedItems,
         orderType,
+        deliveryAddress: orderType === 'delivery' ? deliveryAddress : undefined,
         paymentStatus,
         paymentMethod,
         specialInstructions,
@@ -514,6 +524,7 @@ export default function OrderModal({
       setCustomerPhone('');
       setCustomerEmail('');
       setOrderType('dine_in');
+      setDeliveryAddress('');
       setPaymentStatus('pending');
       setPaymentMethod('cash');
       setSpecialInstructions('');
@@ -590,6 +601,20 @@ export default function OrderModal({
               <option value="delivery">{tTypes('delivery')}</option>
             </Select>
           </div>
+
+          {/* Delivery Address - Only show for delivery orders */}
+          {orderType === 'delivery' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Delivery Address {t('required')}
+              </label>
+              <Input
+                value={deliveryAddress}
+                onChange={e => setDeliveryAddress(e.target.value)}
+                placeholder="Enter full delivery address"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

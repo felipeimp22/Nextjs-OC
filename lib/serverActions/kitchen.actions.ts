@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { calculateTaxes, TaxSetting, TaxCalculationItem } from '@/lib/utils/taxCalculator';
 import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator';
+import { calculateDeliveryFee, DeliverySettings } from '@/lib/utils/deliveryFeeCalculator';
 
 // Diagnostic function to check tax configuration
 export async function checkTaxConfiguration(restaurantId: string) {
@@ -225,6 +226,7 @@ interface CreateInHouseOrderInput {
     specialInstructions?: string;
   }>;
   orderType: 'pickup' | 'delivery' | 'dine_in';
+  deliveryAddress?: string;
   paymentStatus: 'pending' | 'paid';
   paymentMethod: 'card' | 'cash' | 'other';
   specialInstructions?: string;
@@ -239,7 +241,10 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
 
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: input.restaurantId },
-      include: { financialSettings: true },
+      include: {
+        financialSettings: true,
+        deliverySettings: true,
+      },
     });
 
     if (!restaurant) {
@@ -326,7 +331,63 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
       appliedRule: feeResult.appliedRule,
     });
 
-    const total = subtotal + tax + platformFee;
+    // ========================================
+    // CALCULATE DELIVERY FEE (using centralized utility)
+    // ========================================
+    let deliveryFee = 0;
+    let deliveryFeeDetails: any = null;
+
+    if (input.orderType === 'delivery') {
+      console.log('=== DELIVERY FEE CALCULATION (createInHouseOrder) ===');
+      console.log('Using centralized deliveryFeeCalculator utility');
+
+      if (!input.deliveryAddress) {
+        console.error('❌ Delivery address is required for delivery orders');
+        return { success: false, error: 'Delivery address is required for delivery orders' };
+      }
+
+      if (restaurant.deliverySettings) {
+        const deliverySettings = restaurant.deliverySettings as unknown as DeliverySettings;
+        const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
+        const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
+
+        const deliveryResult = await calculateDeliveryFee(
+          restaurantAddress,
+          input.deliveryAddress,
+          deliverySettings,
+          currencySymbol as string,
+          restaurant.name,
+          input.customerName,
+          input.customerPhone,
+          subtotal + tax + platformFee
+        );
+
+        if (deliveryResult.error) {
+          console.error('❌ Delivery fee calculation error:', deliveryResult.error);
+          return { success: false, error: deliveryResult.error };
+        }
+
+        deliveryFee = deliveryResult.deliveryFee;
+        deliveryFeeDetails = {
+          distance: deliveryResult.distance,
+          distanceUnit: deliveryResult.distanceUnit,
+          provider: deliveryResult.provider,
+          tierUsed: deliveryResult.tierUsed,
+          calculationDetails: deliveryResult.calculationDetails,
+        };
+
+        console.log('Delivery fee calculation result:', {
+          deliveryFee: `$${deliveryFee.toFixed(2)}`,
+          distance: `${deliveryResult.distance} ${deliveryResult.distanceUnit}`,
+          provider: deliveryResult.provider,
+        });
+      } else {
+        console.warn('⚠️ Delivery settings not configured for this restaurant');
+        return { success: false, error: 'Delivery is not enabled for this restaurant' };
+      }
+    }
+
+    const total = subtotal + tax + platformFee + deliveryFee;
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
@@ -337,7 +398,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         customerName: input.customerName,
         customerEmail: input.customerEmail,
         customerPhone: input.customerPhone,
-        customerAddress: {},
+        customerAddress: input.deliveryAddress ? { address: input.deliveryAddress } : {},
         restaurantInfo: {
           name: restaurant.name,
           phone: restaurant.phone,
@@ -358,7 +419,8 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         tax,
         taxBreakdown,
         tip: 0,
-        deliveryFee: 0,
+        deliveryFee,
+        deliveryFeeDetails,
         platformFee,
         total,
         specialInstructions: input.specialInstructions,
@@ -398,7 +460,10 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
 
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: input.restaurantId },
-      include: { financialSettings: true },
+      include: {
+        financialSettings: true,
+        deliverySettings: true,
+      },
     });
 
     if (!restaurant) {
@@ -485,7 +550,63 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
       appliedRule: feeResult.appliedRule,
     });
 
-    const total = subtotal + tax + platformFee;
+    // ========================================
+    // CALCULATE DELIVERY FEE (using centralized utility)
+    // ========================================
+    let deliveryFee = 0;
+    let deliveryFeeDetails: any = null;
+
+    if (input.orderType === 'delivery') {
+      console.log('=== DELIVERY FEE CALCULATION (updateInHouseOrder) ===');
+      console.log('Using centralized deliveryFeeCalculator utility');
+
+      if (!input.deliveryAddress) {
+        console.error('❌ Delivery address is required for delivery orders');
+        return { success: false, error: 'Delivery address is required for delivery orders' };
+      }
+
+      if (restaurant.deliverySettings) {
+        const deliverySettings = restaurant.deliverySettings as unknown as DeliverySettings;
+        const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
+        const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
+
+        const deliveryResult = await calculateDeliveryFee(
+          restaurantAddress,
+          input.deliveryAddress,
+          deliverySettings,
+          currencySymbol as string,
+          restaurant.name,
+          input.customerName,
+          input.customerPhone,
+          subtotal + tax + platformFee
+        );
+
+        if (deliveryResult.error) {
+          console.error('❌ Delivery fee calculation error:', deliveryResult.error);
+          return { success: false, error: deliveryResult.error };
+        }
+
+        deliveryFee = deliveryResult.deliveryFee;
+        deliveryFeeDetails = {
+          distance: deliveryResult.distance,
+          distanceUnit: deliveryResult.distanceUnit,
+          provider: deliveryResult.provider,
+          tierUsed: deliveryResult.tierUsed,
+          calculationDetails: deliveryResult.calculationDetails,
+        };
+
+        console.log('Delivery fee calculation result:', {
+          deliveryFee: `$${deliveryFee.toFixed(2)}`,
+          distance: `${deliveryResult.distance} ${deliveryResult.distanceUnit}`,
+          provider: deliveryResult.provider,
+        });
+      } else {
+        console.warn('⚠️ Delivery settings not configured for this restaurant');
+        return { success: false, error: 'Delivery is not enabled for this restaurant' };
+      }
+    }
+
+    const total = subtotal + tax + platformFee + deliveryFee;
 
     const order = await prisma.order.update({
       where: { id: input.orderId },
@@ -493,6 +614,7 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         customerName: input.customerName,
         customerEmail: input.customerEmail,
         customerPhone: input.customerPhone,
+        customerAddress: input.deliveryAddress ? { address: input.deliveryAddress } : {},
         items: orderItems,
         orderType: input.orderType,
         paymentStatus: input.paymentStatus,
@@ -500,6 +622,8 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         subtotal,
         tax,
         taxBreakdown,
+        deliveryFee,
+        deliveryFeeDetails,
         platformFee,
         total,
         specialInstructions: input.specialInstructions,
