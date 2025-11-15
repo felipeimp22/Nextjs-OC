@@ -4,6 +4,46 @@ import prisma from "@/lib/prisma";
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
+// Diagnostic function to check tax configuration
+export async function checkTaxConfiguration(restaurantId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      include: { financialSettings: true },
+    });
+
+    if (!restaurant) {
+      return { success: false, error: 'Restaurant not found' };
+    }
+
+    const taxes = (restaurant.financialSettings?.taxes as any[]) || [];
+    const enabledTaxes = taxes.filter((t: any) => t.enabled);
+
+    return {
+      success: true,
+      data: {
+        hasFinancialSettings: !!restaurant.financialSettings,
+        totalTaxes: taxes.length,
+        enabledTaxes: enabledTaxes.length,
+        taxes: taxes,
+        message: taxes.length === 0
+          ? 'No taxes configured. Go to Settings → Financial to add taxes.'
+          : enabledTaxes.length === 0
+          ? `${taxes.length} tax(es) configured but all are disabled. Enable them in Settings → Financial.`
+          : `${enabledTaxes.length} tax(es) enabled and ready to use.`
+      }
+    };
+  } catch (error: any) {
+    console.error('Error checking tax configuration:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 const DEFAULT_STAGES = [
   { status: 'pending', displayName: 'Pending', color: '#EAB308', order: 0 },
   { status: 'confirmed', displayName: 'Confirmed', color: '#3B82F6', order: 1 },
@@ -249,7 +289,15 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
     let tax = 0;
     const taxBreakdown: any[] = [];
 
+    console.log('=== TAX CALCULATION DEBUG (createInHouseOrder) ===');
+    console.log('Restaurant ID:', input.restaurantId);
+    console.log('Financial Settings exist?', !!restaurant.financialSettings);
+    console.log('Taxes from DB:', taxes);
+    console.log('Taxes length:', taxes.length);
+    console.log('Subtotal for tax calculation:', subtotal);
+
     taxes.forEach((taxSetting: any) => {
+      console.log('Processing tax:', taxSetting.name, 'enabled:', taxSetting.enabled, 'rate:', taxSetting.rate);
       if (taxSetting.enabled) {
         const taxAmount = (subtotal * taxSetting.rate) / 100;
         tax += taxAmount;
@@ -258,8 +306,15 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
           rate: taxSetting.rate,
           amount: taxAmount,
         });
+        console.log(`Tax applied: ${taxSetting.name} = $${taxAmount.toFixed(2)}`);
+      } else {
+        console.log(`Tax skipped (disabled): ${taxSetting.name}`);
       }
     });
+
+    console.log('Final tax breakdown:', taxBreakdown);
+    console.log('Total tax amount:', tax);
+    console.log('=== END TAX CALCULATION DEBUG ===');
 
     const total = subtotal + tax;
 
