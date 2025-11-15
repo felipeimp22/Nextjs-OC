@@ -3,6 +3,8 @@
 import prisma from "@/lib/prisma";
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { calculateTaxes, TaxSetting, TaxCalculationItem } from '@/lib/utils/taxCalculator';
+import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator';
 
 // Diagnostic function to check tax configuration
 export async function checkTaxConfiguration(restaurantId: string) {
@@ -285,88 +287,44 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
       };
     });
 
-    const taxes = (restaurant.financialSettings?.taxes as any[]) || [];
-    let tax = 0;
-    const taxBreakdown: any[] = [];
+    // ========================================
+    // CALCULATE TAXES (using centralized utility)
+    // ========================================
+    console.log('=== TAX CALCULATION (createInHouseOrder) ===');
+    console.log('Using centralized taxCalculator utility');
 
-    console.log('=== TAX CALCULATION DEBUG (createInHouseOrder) ===');
-    console.log('Restaurant ID:', input.restaurantId);
-    console.log('Financial Settings exist?', !!restaurant.financialSettings);
-    console.log('Taxes from DB:', taxes);
-    console.log('Taxes length:', taxes.length);
-    console.log('Subtotal for tax calculation:', subtotal);
+    const taxSettings = (restaurant.financialSettings?.taxes as TaxSetting[]) || [];
+    const taxCalculationItems: TaxCalculationItem[] = orderItems.map(item => ({
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      total: item.price * item.quantity,
+    }));
 
-    taxes.forEach((taxSetting: any) => {
-      console.log('Processing tax:', taxSetting.name, 'enabled:', taxSetting.enabled, 'type:', taxSetting.type, 'rate:', taxSetting.rate, 'applyTo:', taxSetting.applyTo);
+    const taxResult = calculateTaxes(subtotal, taxCalculationItems, taxSettings);
+    const tax = taxResult.totalTax;
+    const taxBreakdown = taxResult.breakdown;
 
-      if (!taxSetting.enabled) {
-        console.log(`Tax skipped (disabled): ${taxSetting.name}`);
-        return;
-      }
-
-      let taxAmount = 0;
-
-      if (taxSetting.applyTo === 'per_item') {
-        // Apply tax per item
-        orderItems.forEach((item) => {
-          const itemTotal = item.price * item.quantity;
-
-          if (taxSetting.type === 'percentage') {
-            taxAmount += (itemTotal * taxSetting.rate) / 100;
-          } else if (taxSetting.type === 'fixed') {
-            taxAmount += taxSetting.rate * item.quantity;
-          }
-        });
-      } else {
-        // Apply to entire order (subtotal)
-        if (taxSetting.type === 'percentage') {
-          taxAmount = (subtotal * taxSetting.rate) / 100;
-        } else if (taxSetting.type === 'fixed') {
-          taxAmount = taxSetting.rate;
-        }
-      }
-
-      tax += taxAmount;
-      taxBreakdown.push({
-        name: taxSetting.name,
-        rate: taxSetting.rate,
-        amount: taxAmount,
-        type: taxSetting.type,
-      });
-      console.log(`Tax applied: ${taxSetting.name} (${taxSetting.type}, ${taxSetting.applyTo}) = $${taxAmount.toFixed(2)}`);
+    console.log('Tax calculation result:', {
+      subtotal: `$${subtotal.toFixed(2)}`,
+      tax: `$${tax.toFixed(2)}`,
+      breakdown: taxBreakdown,
     });
 
-    console.log('Final tax breakdown:', taxBreakdown);
-    console.log('Total tax amount:', tax);
-    console.log('=== END TAX CALCULATION DEBUG ===');
+    // ========================================
+    // CALCULATE GLOBAL FEE (using centralized utility)
+    // ========================================
+    console.log('=== GLOBAL FEE CALCULATION (createInHouseOrder) ===');
+    console.log('Using centralized feeCalculator utility');
 
-    // Calculate global/platform fee
-    const globalFee = restaurant.financialSettings?.globalFee as any;
-    let platformFee = 0;
+    const globalFeeSettings = restaurant.financialSettings?.globalFee as GlobalFeeSettings;
+    const feeResult = calculateGlobalFee(subtotal, globalFeeSettings);
+    const platformFee = feeResult.platformFee;
 
-    console.log('=== GLOBAL FEE CALCULATION DEBUG ===');
-    console.log('Global Fee Settings:', globalFee);
-
-    if (globalFee && globalFee.enabled) {
-      const threshold = globalFee.threshold || 0;
-
-      if (subtotal < threshold) {
-        // Order below threshold - apply percentage fee
-        const belowPercent = globalFee.belowPercent || 0;
-        platformFee = (subtotal * belowPercent) / 100;
-        console.log(`Order below threshold ($${threshold}): ${belowPercent}% fee = $${platformFee.toFixed(2)}`);
-      } else {
-        // Order at or above threshold - apply flat fee
-        const aboveFlat = globalFee.aboveFlat || 0;
-        platformFee = aboveFlat;
-        console.log(`Order at/above threshold ($${threshold}): Flat $${aboveFlat} fee`);
-      }
-    } else {
-      console.log('Global fee disabled or not configured');
-    }
-
-    console.log('Platform Fee:', platformFee);
-    console.log('=== END GLOBAL FEE CALCULATION DEBUG ===');
+    console.log('Fee calculation result:', {
+      platformFee: `$${platformFee.toFixed(2)}`,
+      appliedRule: feeResult.appliedRule,
+    });
 
     const total = subtotal + tax + platformFee;
 
@@ -488,61 +446,44 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
       };
     });
 
-    const taxes = (restaurant.financialSettings?.taxes as any[]) || [];
-    let tax = 0;
-    const taxBreakdown: any[] = [];
+    // ========================================
+    // CALCULATE TAXES (using centralized utility)
+    // ========================================
+    console.log('=== TAX CALCULATION (updateInHouseOrder) ===');
+    console.log('Using centralized taxCalculator utility');
 
-    taxes.forEach((taxSetting: any) => {
-      if (!taxSetting.enabled) {
-        return;
-      }
+    const taxSettings = (restaurant.financialSettings?.taxes as TaxSetting[]) || [];
+    const taxCalculationItems: TaxCalculationItem[] = orderItems.map(item => ({
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      total: item.price * item.quantity,
+    }));
 
-      let taxAmount = 0;
+    const taxResult = calculateTaxes(subtotal, taxCalculationItems, taxSettings);
+    const tax = taxResult.totalTax;
+    const taxBreakdown = taxResult.breakdown;
 
-      if (taxSetting.applyTo === 'per_item') {
-        // Apply tax per item
-        orderItems.forEach((item) => {
-          const itemTotal = item.price * item.quantity;
-
-          if (taxSetting.type === 'percentage') {
-            taxAmount += (itemTotal * taxSetting.rate) / 100;
-          } else if (taxSetting.type === 'fixed') {
-            taxAmount += taxSetting.rate * item.quantity;
-          }
-        });
-      } else {
-        // Apply to entire order (subtotal)
-        if (taxSetting.type === 'percentage') {
-          taxAmount = (subtotal * taxSetting.rate) / 100;
-        } else if (taxSetting.type === 'fixed') {
-          taxAmount = taxSetting.rate;
-        }
-      }
-
-      tax += taxAmount;
-      taxBreakdown.push({
-        name: taxSetting.name,
-        rate: taxSetting.rate,
-        amount: taxAmount,
-        type: taxSetting.type,
-      });
+    console.log('Tax calculation result:', {
+      subtotal: `$${subtotal.toFixed(2)}`,
+      tax: `$${tax.toFixed(2)}`,
+      breakdown: taxBreakdown,
     });
 
-    // Calculate global/platform fee
-    const globalFee = restaurant.financialSettings?.globalFee as any;
-    let platformFee = 0;
+    // ========================================
+    // CALCULATE GLOBAL FEE (using centralized utility)
+    // ========================================
+    console.log('=== GLOBAL FEE CALCULATION (updateInHouseOrder) ===');
+    console.log('Using centralized feeCalculator utility');
 
-    if (globalFee && globalFee.enabled) {
-      const threshold = globalFee.threshold || 0;
+    const globalFeeSettings = restaurant.financialSettings?.globalFee as GlobalFeeSettings;
+    const feeResult = calculateGlobalFee(subtotal, globalFeeSettings);
+    const platformFee = feeResult.platformFee;
 
-      if (subtotal < threshold) {
-        const belowPercent = globalFee.belowPercent || 0;
-        platformFee = (subtotal * belowPercent) / 100;
-      } else {
-        const aboveFlat = globalFee.aboveFlat || 0;
-        platformFee = aboveFlat;
-      }
-    }
+    console.log('Fee calculation result:', {
+      platformFee: `$${platformFee.toFixed(2)}`,
+      appliedRule: feeResult.appliedRule,
+    });
 
     const total = subtotal + tax + platformFee;
 
