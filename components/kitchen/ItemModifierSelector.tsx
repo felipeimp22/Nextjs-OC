@@ -63,6 +63,61 @@ export default function ItemModifierSelector({
   onOptionsChange,
   currencySymbol,
 }: ItemModifierSelectorProps) {
+  const [initializedForItemId, setInitializedForItemId] = useState<string | null>(null);
+
+  // Initialize default selections when item changes or component mounts
+  useEffect(() => {
+    if (!itemRules?.appliedOptions || itemRules.appliedOptions.length === 0) {
+      return;
+    }
+
+    // Get a unique identifier for the current item (use first appliedOption's optionId as proxy)
+    const currentItemKey = itemRules.appliedOptions.map(ao => ao.optionId).join('-');
+
+    // Only initialize if:
+    // 1. No selections exist yet
+    // 2. This is a different item than we initialized before
+    if (selectedOptions.length === 0 && initializedForItemId !== currentItemKey) {
+      const defaultSelections: SelectedChoice[] = [];
+
+      itemRules.appliedOptions.forEach(appliedOption => {
+        const option = options.find(opt => opt.id === appliedOption.optionId);
+        if (!option) return;
+
+        // Find default choices for this option
+        const defaultChoices = appliedOption.choiceAdjustments.filter(
+          ca => ca.isDefault && ca.isAvailable
+        );
+
+        defaultChoices.forEach(choiceAdj => {
+          const choice = option.choices.find(c => c.id === choiceAdj.choiceId);
+          if (choice && choice.isAvailable) {
+            const finalPrice = choice.basePrice + (choiceAdj.priceAdjustment || 0);
+
+            defaultSelections.push({
+              optionId: option.id,
+              optionName: option.name,
+              choiceId: choice.id,
+              choiceName: choice.name,
+              quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
+              priceAdjustment: finalPrice,
+            });
+          }
+        });
+      });
+
+      if (defaultSelections.length > 0) {
+        onOptionsChange(defaultSelections);
+      }
+      setInitializedForItemId(currentItemKey);
+    }
+
+    // Reset initialization flag when item changes
+    if (initializedForItemId && initializedForItemId !== currentItemKey) {
+      setInitializedForItemId(null);
+    }
+  }, [itemRules, options, selectedOptions.length, initializedForItemId, onOptionsChange]);
+
   if (!itemRules?.appliedOptions || itemRules.appliedOptions.length === 0) {
     return null;
   }
@@ -187,20 +242,31 @@ export default function ItemModifierSelector({
           return (
             <div key={option.id} className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-700">
-                  {option.name}
-                  {!isOptional && <span className="text-red-600 ml-1">*</span>}
-                  {isOptional && <span className="text-gray-500 ml-1 text-xs">(Optional)</span>}
-                </p>
-                <div className="text-xs text-gray-500">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-700">
+                    {option.name}
+                    {!isOptional && <span className="text-red-600 ml-1">*</span>}
+                  </p>
+                  {isOptional && (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                      Optional
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-600">
                   {option.multiSelect && (
-                    <span>
-                      {option.minSelections > 0 && `Min ${option.minSelections}, `}
-                      Max {option.maxSelections}
+                    <span className={`font-medium ${
+                      selectedForOption.length < option.minSelections && !isOptional
+                        ? 'text-orange-600'
+                        : selectedForOption.length >= option.minSelections
+                          ? 'text-green-600'
+                          : 'text-gray-600'
+                    }`}>
+                      {selectedForOption.length}/{option.maxSelections} selected
                     </span>
                   )}
                   {option.allowQuantity && (
-                    <span className="ml-2">
+                    <span className="ml-2 text-gray-500">
                       Qty: {option.minQuantity}-{option.maxQuantity}
                     </span>
                   )}
@@ -336,11 +402,32 @@ export default function ItemModifierSelector({
                   })}
               </div>
 
-              {option.multiSelect && selectedForOption.length < option.minSelections && (
-                <p className="text-xs text-orange-600">
-                  Please select at least {option.minSelections} option{option.minSelections > 1 ? 's' : ''}
-                </p>
-              )}
+              {/* Validation message for multi-select */}
+              {option.multiSelect && (() => {
+                const isRequired = appliedOption.required || option.requiresSelection;
+                const currentCount = selectedForOption.length;
+                const { minSelections, maxSelections } = option;
+
+                // Only show message if required and below minimum
+                if (isRequired && currentCount < minSelections) {
+                  let message = '';
+                  if (minSelections === maxSelections) {
+                    message = `Select exactly ${minSelections} option${minSelections > 1 ? 's' : ''}`;
+                  } else if (minSelections > 0) {
+                    message = `Select ${minSelections} to ${maxSelections} option${maxSelections > 1 ? 's' : ''}`;
+                  } else {
+                    message = `Select up to ${maxSelections} option${maxSelections > 1 ? 's' : ''}`;
+                  }
+                  return <p className="text-xs text-orange-600">{message}</p>;
+                }
+
+                // Show helpful info for optional selections
+                if (!isRequired && currentCount === 0 && minSelections === 0) {
+                  return <p className="text-xs text-gray-500">Optional - select up to {maxSelections}</p>;
+                }
+
+                return null;
+              })()}
             </div>
           );
         })}
