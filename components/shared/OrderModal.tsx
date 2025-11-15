@@ -313,6 +313,11 @@ export default function OrderModal({
     const taxes: { name: string; rate: number; amount: number }[] = [];
     let totalTax = 0;
 
+    // Safety check: taxSettings might be undefined
+    if (!taxSettings || !Array.isArray(taxSettings)) {
+      return { totalTax: 0, taxes: [] };
+    }
+
     taxSettings.forEach(taxSetting => {
       if (taxSetting.enabled) {
         const taxAmount = (subtotal * taxSetting.rate) / 100;
