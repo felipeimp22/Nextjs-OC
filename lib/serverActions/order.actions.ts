@@ -222,6 +222,11 @@ export async function createPaymentIntent(orderId: string) {
 
     const amountInCents = Math.round(order.total * 100);
     const platformFeeInCents = Math.round(order.platformFee * 100);
+    const deliveryFeeInCents = Math.round((order.deliveryFee || 0) * 100);
+
+    // Check if this is a Shipday delivery
+    const deliveryInfo = order.deliveryInfo as any;
+    const isShipdayDelivery = deliveryInfo?.provider === 'shipday';
 
     const paymentIntentOptions: any = {
       amount: amountInCents,
@@ -232,6 +237,7 @@ export async function createPaymentIntent(orderId: string) {
         order_id: order.id,
         restaurant_id: order.restaurantId,
         order_number: order.orderNumber,
+        delivery_provider: deliveryInfo?.provider || 'none',
       },
     };
 
@@ -244,7 +250,23 @@ export async function createPaymentIntent(orderId: string) {
     if (hasStripeAccount && (isFullyConnected || isPending)) {
       // Use Stripe Connect - payments go to restaurant account with platform fee
       paymentIntentOptions.connectedAccountId = financialSettings.stripeAccountId;
-      paymentIntentOptions.applicationFeeAmount = platformFeeInCents;
+
+      // Calculate application fee based on delivery provider
+      // For Shipday deliveries: Platform collects both platform fee AND delivery fee (to pay Shipday)
+      // For local deliveries: Platform collects only platform fee (restaurant keeps delivery fee)
+      let applicationFeeAmount = platformFeeInCents;
+
+      if (isShipdayDelivery && deliveryFeeInCents > 0) {
+        applicationFeeAmount = platformFeeInCents + deliveryFeeInCents;
+        console.log(`💰 Shipday delivery detected - Platform collecting delivery fee`);
+        console.log(`   Platform Fee: $${order.platformFee.toFixed(2)}`);
+        console.log(`   Delivery Fee: $${order.deliveryFee.toFixed(2)}`);
+        console.log(`   Total Application Fee: $${(applicationFeeAmount / 100).toFixed(2)}`);
+      } else if (deliveryFeeInCents > 0) {
+        console.log(`💰 Local delivery - Restaurant keeps delivery fee of $${order.deliveryFee.toFixed(2)}`);
+      }
+
+      paymentIntentOptions.applicationFeeAmount = applicationFeeAmount;
 
       // If publishable key is missing, fetch it from Stripe and save it
       if (!connectedAccountPublicKey) {

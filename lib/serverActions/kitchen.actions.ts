@@ -236,6 +236,84 @@ interface CreateInHouseOrderInput {
   specialInstructions?: string;
 }
 
+/**
+ * Calculate delivery fee estimate for order preview
+ * Called by OrderModal to show delivery fee before order submission
+ */
+export async function calculateDeliveryFeeEstimate(
+  restaurantId: string,
+  deliveryAddress: string,
+  deliveryCoordinates?: { latitude: number; longitude: number },
+  customerName?: string,
+  customerPhone?: string,
+  orderValue?: number
+) {
+  try {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      include: {
+        deliverySettings: true,
+        financialSettings: true,
+      },
+    });
+
+    if (!restaurant) {
+      return { success: false, error: 'Restaurant not found', deliveryFee: 0 };
+    }
+
+    if (!restaurant.deliverySettings) {
+      return { success: false, error: 'Delivery not configured', deliveryFee: 0 };
+    }
+
+    const deliverySettings = restaurant.deliverySettings as unknown as DeliverySettings;
+    const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
+    const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
+
+    // Shipday needs ADDRESS STRING, local can use coordinates for optimization
+    const deliveryAddressOrCoords =
+      deliverySettings.driverProvider === 'shipday'
+        ? deliveryAddress
+        : (deliveryCoordinates
+            ? { longitude: deliveryCoordinates.longitude, latitude: deliveryCoordinates.latitude }
+            : deliveryAddress);
+
+    const deliveryResult = await calculateDeliveryFee(
+      restaurantAddress,
+      deliveryAddressOrCoords,
+      deliverySettings,
+      currencySymbol as string,
+      restaurant.name,
+      customerName,
+      customerPhone,
+      orderValue
+    );
+
+    if (deliveryResult.error) {
+      return {
+        success: false,
+        error: deliveryResult.error,
+        deliveryFee: 0,
+      };
+    }
+
+    return {
+      success: true,
+      deliveryFee: deliveryResult.deliveryFee,
+      distance: deliveryResult.distance,
+      distanceUnit: deliveryResult.distanceUnit,
+      provider: deliveryResult.provider,
+      withinRadius: deliveryResult.withinRadius,
+    };
+  } catch (error: any) {
+    console.error('❌ Delivery fee estimate error:', error);
+    return {
+      success: false,
+      error: error.message,
+      deliveryFee: 0,
+    };
+  }
+}
+
 export async function createInHouseOrder(input: CreateInHouseOrderInput) {
   try {
     const session = await auth();
