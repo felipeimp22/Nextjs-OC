@@ -59,7 +59,7 @@ export async function geocodeAddress(
   address: string
 ): Promise<GeocodingResult> {
   try {
-    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+    const mapboxToken = process.env.MAPBOX_TOKEN;
 
     if (!mapboxToken) {
       console.error('❌ Mapbox access token not configured');
@@ -148,7 +148,7 @@ export async function calculateDrivingDistance(
   unit: 'miles' | 'km' = 'miles'
 ): Promise<DistanceResult | null> {
   try {
-    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+    const mapboxToken = process.env.MAPBOX_TOKEN;
 
     if (!mapboxToken) {
       console.error('❌ Mapbox access token not configured, falling back to Haversine');
@@ -278,7 +278,7 @@ export async function calculateDeliveryDistance(
     // Calculate driving distance
     const result = await calculateDrivingDistance(
       restaurantCoords,
-      deliveryGeocode.coordinates,
+      deliveryCoords,
       unit
     );
 

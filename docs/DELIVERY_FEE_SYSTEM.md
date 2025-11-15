@@ -418,8 +418,8 @@ GET https://api.exchangerate-api.com/v4/latest/USD
 ### Required Configuration
 
 ```env
-# Mapbox (for distance calculation)
-NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbHh4eHh4eHgifQ.xxx
+# Mapbox (for distance calculation and geocoding)
+MAPBOX_TOKEN=pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbHh4eHh4eHgifQ.xxx
 
 # Shipday (for third-party delivery)
 SHIPDAY_API_KEY=ATGbo7BFUH.vJuoj5YNGO0Obbgig4hW
@@ -574,7 +574,7 @@ await prisma.order.create({
 - **Solution**: Go to Settings → Delivery and configure
 
 **4. "Mapbox access token not configured"**
-- **Cause**: Missing `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN`
+- **Cause**: Missing `MAPBOX_TOKEN`
 - **Solution**: Add token to `.env.local`, falls back to Haversine distance
 
 **5. "Shipday API error: 401 Unauthorized"**
