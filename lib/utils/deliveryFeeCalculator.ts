@@ -153,22 +153,18 @@ export async function getShipdayQuote(
     console.log('Restaurant:', request.restaurantAddress);
     console.log('Customer:', request.customerAddress);
 
-    // Shipday API endpoint for getting delivery quotes
-    const url = `${baseUrl}/deliveries/quote`;
+    // Shipday API endpoint for getting delivery availability/estimate
+    const url = `${baseUrl}/driver/availability`;
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${Buffer.from(apiKey + ':').toString('base64')}`,
+        'Authorization': `Basic ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         pickupAddress: request.restaurantAddress,
         deliveryAddress: request.customerAddress,
-        pickupBusinessName: request.restaurantName || 'Restaurant',
-        deliveryName: request.customerName || 'Customer',
-        deliveryPhoneNumber: request.customerPhone || '',
-        orderValue: request.orderValue || 0,
       }),
     });
 
@@ -185,19 +181,25 @@ export async function getShipdayQuote(
 
     console.log('✅ Shipday quote received:', data);
 
-    // Parse Shipday response (adjust based on actual API response structure)
-    // This is a placeholder - update based on actual Shipday API documentation
-    const deliveryFee = data.deliveryFee || data.price || data.cost || 0;
-    const currency = data.currency || 'USD';
-    const estimatedTime = data.estimatedTime || data.eta || 0;
+    // Shipday returns array of available services
+    const services = Array.isArray(data) ? data : [data];
+    const firstService = services[0];
+
+    if (!firstService || typeof firstService.fee !== 'number') {
+      console.warn('⚠️ No valid Shipday service available');
+      return {
+        success: false,
+        error: 'No delivery service available',
+      };
+    }
 
     return {
       success: true,
-      deliveryFee: Number(deliveryFee),
-      currency,
-      estimatedTime,
-      carrierId: data.carrierId || data.carrier_id,
-      carrierName: data.carrierName || data.carrier_name,
+      deliveryFee: Number(firstService.fee),
+      currency: 'USD',
+      estimatedTime: firstService.estimatedTime || 30,
+      carrierId: firstService.carrierId || firstService.carrier_id,
+      carrierName: firstService.name || firstService.carrier_name || 'Standard',
     };
   } catch (error) {
     console.error('❌ Shipday quote error:', error);
