@@ -10,7 +10,7 @@ interface CartSidebarProps {
 }
 
 export default function CartSidebar({ currencySymbol, onCheckout }: CartSidebarProps) {
-  const { items, removeItem, updateQuantity, getTotal, getItemCount } = useCartStore();
+  const { items, removeItem, updateQuantity, getTotal, getItemCount, getItemPrice } = useCartStore();
   const isMobile = useIsMobile();
 
   if (items.length === 0) {
@@ -43,11 +43,7 @@ export default function CartSidebar({ currencySymbol, onCheckout }: CartSidebarP
 
       <div className="space-y-4 max-h-96 overflow-y-auto mb-6">
         {items.map((item) => {
-          const optionsTotal = item.selectedOptions.reduce(
-            (sum, opt) => sum + opt.priceAdjustment * (opt.quantity || 1),
-            0
-          );
-          const itemTotal = (item.basePrice + optionsTotal) * item.quantity;
+          const itemTotal = getItemPrice(item.id);
 
           return (
             <div key={item.id} className="border-b border-gray-200 pb-4 last:border-b-0">
@@ -60,13 +56,6 @@ export default function CartSidebar({ currencySymbol, onCheckout }: CartSidebarP
                       {item.selectedOptions.map((opt, idx) => (
                         <p key={idx} className="text-sm text-gray-600">
                           • {opt.choiceName}
-                          {opt.priceAdjustment > 0 && (
-                            <span className="text-gray-500">
-                              {' '}
-                              (+{currencySymbol}
-                              {opt.priceAdjustment.toFixed(2)})
-                            </span>
-                          )}
                         </p>
                       ))}
                     </div>

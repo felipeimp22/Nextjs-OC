@@ -43,13 +43,14 @@ export default function StorePage() {
   };
 
   const handleAddToCart = (item: any, selectedOptions: any[], specialInstructions?: string) => {
+    const itemRules = restaurant.menuRules?.find((rule: any) => rule.menuItemId === item.id);
+
     const cartOptions = selectedOptions.map((opt) => ({
       optionId: opt.optionId,
       optionName: opt.optionName,
       choiceId: opt.choiceId,
       choiceName: opt.choiceName,
       quantity: opt.quantity || 1,
-      priceAdjustment: opt.priceAdjustment,
     }));
 
     addItem(
@@ -59,6 +60,7 @@ export default function StorePage() {
         basePrice: item.price,
         quantity: item.quantity || 1,
         selectedOptions: cartOptions,
+        menuRules: itemRules?.appliedOptions || null,
         specialInstructions,
         image: item.image,
       },

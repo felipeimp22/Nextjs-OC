@@ -34,7 +34,6 @@ export default function ModifierSelector({
       choiceId: choice.id,
       choiceName: choice.name,
       quantity: 1,
-      priceAdjustment: choice.basePrice + (choiceAdjustment.priceAdjustment || 0),
     };
 
     if (option.multiSelect) {
