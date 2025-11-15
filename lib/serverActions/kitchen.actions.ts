@@ -3,6 +3,9 @@
 import prisma from "@/lib/prisma";
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { calculateTaxes, TaxSetting, TaxCalculationItem } from '@/lib/utils/taxCalculator';
+import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator';
+import { calculateDeliveryFee, DeliverySettings } from '@/lib/utils/deliveryFeeCalculator';
 
 // Diagnostic function to check tax configuration
 export async function checkTaxConfiguration(restaurantId: string) {
@@ -223,9 +226,92 @@ interface CreateInHouseOrderInput {
     specialInstructions?: string;
   }>;
   orderType: 'pickup' | 'delivery' | 'dine_in';
+  deliveryAddress?: string;
+  deliveryCoordinates?: {
+    latitude: number;
+    longitude: number;
+  };
   paymentStatus: 'pending' | 'paid';
   paymentMethod: 'card' | 'cash' | 'other';
   specialInstructions?: string;
+}
+
+/**
+ * Calculate delivery fee estimate for order preview
+ * Called by OrderModal to show delivery fee before order submission
+ */
+export async function calculateDeliveryFeeEstimate(
+  restaurantId: string,
+  deliveryAddress: string,
+  deliveryCoordinates?: { latitude: number; longitude: number },
+  customerName?: string,
+  customerPhone?: string,
+  orderValue?: number
+) {
+  try {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      include: {
+        deliverySettings: true,
+        financialSettings: true,
+      },
+    });
+
+    if (!restaurant) {
+      return { success: false, error: 'Restaurant not found', deliveryFee: 0 };
+    }
+
+    if (!restaurant.deliverySettings) {
+      return { success: false, error: 'Delivery not configured', deliveryFee: 0 };
+    }
+
+    const deliverySettings = restaurant.deliverySettings as unknown as DeliverySettings;
+    const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
+    const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
+
+    // Shipday needs ADDRESS STRING, local can use coordinates for optimization
+    const deliveryAddressOrCoords =
+      deliverySettings.driverProvider === 'shipday'
+        ? deliveryAddress
+        : (deliveryCoordinates
+            ? { longitude: deliveryCoordinates.longitude, latitude: deliveryCoordinates.latitude }
+            : deliveryAddress);
+
+    const deliveryResult = await calculateDeliveryFee(
+      restaurantAddress,
+      deliveryAddressOrCoords,
+      deliverySettings,
+      currencySymbol as string,
+      restaurant.name,
+      customerName,
+      customerPhone,
+      orderValue
+    );
+
+    if (deliveryResult.error) {
+      return {
+        success: false,
+        error: deliveryResult.error,
+        deliveryFee: 0,
+      };
+    }
+
+    return {
+      success: true,
+      deliveryFee: deliveryResult.deliveryFee,
+      distance: deliveryResult.distance,
+      distanceUnit: deliveryResult.distanceUnit,
+      provider: deliveryResult.provider,
+      withinRadius: deliveryResult.withinRadius,
+    };
+  } catch (error: any) {
+    console.error('❌ Delivery fee estimate error:', error);
+    return {
+      success: false,
+      error: error.message,
+      deliveryFee: 0,
+    };
+  }
 }
 
 export async function createInHouseOrder(input: CreateInHouseOrderInput) {
@@ -237,7 +323,10 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
 
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: input.restaurantId },
-      include: { financialSettings: true },
+      include: {
+        financialSettings: true,
+        deliverySettings: true,
+      },
     });
 
     if (!restaurant) {
@@ -285,90 +374,111 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
       };
     });
 
-    const taxes = (restaurant.financialSettings?.taxes as any[]) || [];
-    let tax = 0;
-    const taxBreakdown: any[] = [];
+    // ========================================
+    // CALCULATE TAXES (using centralized utility)
+    // ========================================
+    console.log('=== TAX CALCULATION (createInHouseOrder) ===');
+    console.log('Using centralized taxCalculator utility');
 
-    console.log('=== TAX CALCULATION DEBUG (createInHouseOrder) ===');
-    console.log('Restaurant ID:', input.restaurantId);
-    console.log('Financial Settings exist?', !!restaurant.financialSettings);
-    console.log('Taxes from DB:', taxes);
-    console.log('Taxes length:', taxes.length);
-    console.log('Subtotal for tax calculation:', subtotal);
+    const taxSettings = (restaurant.financialSettings?.taxes as TaxSetting[]) || [];
+    const taxCalculationItems: TaxCalculationItem[] = orderItems.map(item => ({
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      total: item.price * item.quantity,
+    }));
 
-    taxes.forEach((taxSetting: any) => {
-      console.log('Processing tax:', taxSetting.name, 'enabled:', taxSetting.enabled, 'type:', taxSetting.type, 'rate:', taxSetting.rate, 'applyTo:', taxSetting.applyTo);
+    const taxResult = calculateTaxes(subtotal, taxCalculationItems, taxSettings);
+    const tax = taxResult.totalTax;
+    const taxBreakdown = taxResult.breakdown;
 
-      if (!taxSetting.enabled) {
-        console.log(`Tax skipped (disabled): ${taxSetting.name}`);
-        return;
-      }
-
-      let taxAmount = 0;
-
-      if (taxSetting.applyTo === 'per_item') {
-        // Apply tax per item
-        orderItems.forEach((item) => {
-          const itemTotal = item.price * item.quantity;
-
-          if (taxSetting.type === 'percentage') {
-            taxAmount += (itemTotal * taxSetting.rate) / 100;
-          } else if (taxSetting.type === 'fixed') {
-            taxAmount += taxSetting.rate * item.quantity;
-          }
-        });
-      } else {
-        // Apply to entire order (subtotal)
-        if (taxSetting.type === 'percentage') {
-          taxAmount = (subtotal * taxSetting.rate) / 100;
-        } else if (taxSetting.type === 'fixed') {
-          taxAmount = taxSetting.rate;
-        }
-      }
-
-      tax += taxAmount;
-      taxBreakdown.push({
-        name: taxSetting.name,
-        rate: taxSetting.rate,
-        amount: taxAmount,
-        type: taxSetting.type,
-      });
-      console.log(`Tax applied: ${taxSetting.name} (${taxSetting.type}, ${taxSetting.applyTo}) = $${taxAmount.toFixed(2)}`);
+    console.log('Tax calculation result:', {
+      subtotal: `$${subtotal.toFixed(2)}`,
+      tax: `$${tax.toFixed(2)}`,
+      breakdown: taxBreakdown,
     });
 
-    console.log('Final tax breakdown:', taxBreakdown);
-    console.log('Total tax amount:', tax);
-    console.log('=== END TAX CALCULATION DEBUG ===');
+    // ========================================
+    // CALCULATE GLOBAL FEE (using centralized utility)
+    // ========================================
+    console.log('=== GLOBAL FEE CALCULATION (createInHouseOrder) ===');
+    console.log('Using centralized feeCalculator utility');
 
-    // Calculate global/platform fee
-    const globalFee = restaurant.financialSettings?.globalFee as any;
-    let platformFee = 0;
+    const globalFeeSettings = restaurant.financialSettings?.globalFee as GlobalFeeSettings;
+    const feeResult = calculateGlobalFee(subtotal, globalFeeSettings);
+    const platformFee = feeResult.platformFee;
 
-    console.log('=== GLOBAL FEE CALCULATION DEBUG ===');
-    console.log('Global Fee Settings:', globalFee);
+    console.log('Fee calculation result:', {
+      platformFee: `$${platformFee.toFixed(2)}`,
+      appliedRule: feeResult.appliedRule,
+    });
 
-    if (globalFee && globalFee.enabled) {
-      const threshold = globalFee.threshold || 0;
+    // ========================================
+    // CALCULATE DELIVERY FEE (using centralized utility)
+    // ========================================
+    let deliveryFee = 0;
+    let deliveryFeeDetails: any = null;
 
-      if (subtotal < threshold) {
-        // Order below threshold - apply percentage fee
-        const belowPercent = globalFee.belowPercent || 0;
-        platformFee = (subtotal * belowPercent) / 100;
-        console.log(`Order below threshold ($${threshold}): ${belowPercent}% fee = $${platformFee.toFixed(2)}`);
-      } else {
-        // Order at or above threshold - apply flat fee
-        const aboveFlat = globalFee.aboveFlat || 0;
-        platformFee = aboveFlat;
-        console.log(`Order at/above threshold ($${threshold}): Flat $${aboveFlat} fee`);
+    if (input.orderType === 'delivery') {
+      console.log('=== DELIVERY FEE CALCULATION (createInHouseOrder) ===');
+      console.log('Using centralized deliveryFeeCalculator utility');
+
+      if (!input.deliveryAddress) {
+        console.error('❌ Delivery address is required for delivery orders');
+        return { success: false, error: 'Delivery address is required for delivery orders' };
       }
-    } else {
-      console.log('Global fee disabled or not configured');
+
+      if (restaurant.deliverySettings) {
+        const deliverySettings = restaurant.deliverySettings as unknown as DeliverySettings;
+        const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
+        const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
+
+        // IMPORTANT: Shipday needs ADDRESS STRING, not coordinates
+        // Local delivery can use coordinates to optimize (skip geocoding)
+        const deliveryAddressOrCoords =
+          deliverySettings.driverProvider === 'shipday'
+            ? input.deliveryAddress!  // Shipday MUST have address string
+            : (input.deliveryCoordinates
+                ? { longitude: input.deliveryCoordinates.longitude, latitude: input.deliveryCoordinates.latitude }
+                : input.deliveryAddress!);
+
+        const deliveryResult = await calculateDeliveryFee(
+          restaurantAddress,
+          deliveryAddressOrCoords,
+          deliverySettings,
+          currencySymbol as string,
+          restaurant.name,
+          input.customerName,
+          input.customerPhone,
+          subtotal + tax + platformFee
+        );
+
+        if (deliveryResult.error) {
+          console.error('❌ Delivery fee calculation error:', deliveryResult.error);
+          return { success: false, error: deliveryResult.error };
+        }
+
+        deliveryFee = deliveryResult.deliveryFee;
+        deliveryFeeDetails = {
+          distance: deliveryResult.distance,
+          distanceUnit: deliveryResult.distanceUnit,
+          provider: deliveryResult.provider,
+          tierUsed: deliveryResult.tierUsed,
+          calculationDetails: deliveryResult.calculationDetails,
+        };
+
+        console.log('Delivery fee calculation result:', {
+          deliveryFee: `$${deliveryFee.toFixed(2)}`,
+          distance: `${deliveryResult.distance} ${deliveryResult.distanceUnit}`,
+          provider: deliveryResult.provider,
+        });
+      } else {
+        console.warn('⚠️ Delivery settings not configured for this restaurant');
+        return { success: false, error: 'Delivery is not enabled for this restaurant' };
+      }
     }
 
-    console.log('Platform Fee:', platformFee);
-    console.log('=== END GLOBAL FEE CALCULATION DEBUG ===');
-
-    const total = subtotal + tax + platformFee;
+    const total = subtotal + tax + platformFee + deliveryFee;
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
@@ -379,7 +489,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         customerName: input.customerName,
         customerEmail: input.customerEmail,
         customerPhone: input.customerPhone,
-        customerAddress: {},
+        customerAddress: input.deliveryAddress ? { address: input.deliveryAddress } : {},
         restaurantInfo: {
           name: restaurant.name,
           phone: restaurant.phone,
@@ -400,7 +510,9 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         tax,
         taxBreakdown,
         tip: 0,
-        deliveryFee: 0,
+        deliveryFee,
+        deliveryDistance: deliveryFeeDetails?.distance || null,
+        deliveryInfo: deliveryFeeDetails || null,
         platformFee,
         total,
         specialInstructions: input.specialInstructions,
@@ -440,7 +552,10 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
 
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: input.restaurantId },
-      include: { financialSettings: true },
+      include: {
+        financialSettings: true,
+        deliverySettings: true,
+      },
     });
 
     if (!restaurant) {
@@ -488,63 +603,111 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
       };
     });
 
-    const taxes = (restaurant.financialSettings?.taxes as any[]) || [];
-    let tax = 0;
-    const taxBreakdown: any[] = [];
+    // ========================================
+    // CALCULATE TAXES (using centralized utility)
+    // ========================================
+    console.log('=== TAX CALCULATION (updateInHouseOrder) ===');
+    console.log('Using centralized taxCalculator utility');
 
-    taxes.forEach((taxSetting: any) => {
-      if (!taxSetting.enabled) {
-        return;
-      }
+    const taxSettings = (restaurant.financialSettings?.taxes as TaxSetting[]) || [];
+    const taxCalculationItems: TaxCalculationItem[] = orderItems.map(item => ({
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      total: item.price * item.quantity,
+    }));
 
-      let taxAmount = 0;
+    const taxResult = calculateTaxes(subtotal, taxCalculationItems, taxSettings);
+    const tax = taxResult.totalTax;
+    const taxBreakdown = taxResult.breakdown;
 
-      if (taxSetting.applyTo === 'per_item') {
-        // Apply tax per item
-        orderItems.forEach((item) => {
-          const itemTotal = item.price * item.quantity;
-
-          if (taxSetting.type === 'percentage') {
-            taxAmount += (itemTotal * taxSetting.rate) / 100;
-          } else if (taxSetting.type === 'fixed') {
-            taxAmount += taxSetting.rate * item.quantity;
-          }
-        });
-      } else {
-        // Apply to entire order (subtotal)
-        if (taxSetting.type === 'percentage') {
-          taxAmount = (subtotal * taxSetting.rate) / 100;
-        } else if (taxSetting.type === 'fixed') {
-          taxAmount = taxSetting.rate;
-        }
-      }
-
-      tax += taxAmount;
-      taxBreakdown.push({
-        name: taxSetting.name,
-        rate: taxSetting.rate,
-        amount: taxAmount,
-        type: taxSetting.type,
-      });
+    console.log('Tax calculation result:', {
+      subtotal: `$${subtotal.toFixed(2)}`,
+      tax: `$${tax.toFixed(2)}`,
+      breakdown: taxBreakdown,
     });
 
-    // Calculate global/platform fee
-    const globalFee = restaurant.financialSettings?.globalFee as any;
-    let platformFee = 0;
+    // ========================================
+    // CALCULATE GLOBAL FEE (using centralized utility)
+    // ========================================
+    console.log('=== GLOBAL FEE CALCULATION (updateInHouseOrder) ===');
+    console.log('Using centralized feeCalculator utility');
 
-    if (globalFee && globalFee.enabled) {
-      const threshold = globalFee.threshold || 0;
+    const globalFeeSettings = restaurant.financialSettings?.globalFee as GlobalFeeSettings;
+    const feeResult = calculateGlobalFee(subtotal, globalFeeSettings);
+    const platformFee = feeResult.platformFee;
 
-      if (subtotal < threshold) {
-        const belowPercent = globalFee.belowPercent || 0;
-        platformFee = (subtotal * belowPercent) / 100;
+    console.log('Fee calculation result:', {
+      platformFee: `$${platformFee.toFixed(2)}`,
+      appliedRule: feeResult.appliedRule,
+    });
+
+    // ========================================
+    // CALCULATE DELIVERY FEE (using centralized utility)
+    // ========================================
+    let deliveryFee = 0;
+    let deliveryFeeDetails: any = null;
+
+    if (input.orderType === 'delivery') {
+      console.log('=== DELIVERY FEE CALCULATION (updateInHouseOrder) ===');
+      console.log('Using centralized deliveryFeeCalculator utility');
+
+      if (!input.deliveryAddress) {
+        console.error('❌ Delivery address is required for delivery orders');
+        return { success: false, error: 'Delivery address is required for delivery orders' };
+      }
+
+      if (restaurant.deliverySettings) {
+        const deliverySettings = restaurant.deliverySettings as unknown as DeliverySettings;
+        const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
+        const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
+
+        // IMPORTANT: Shipday needs ADDRESS STRING, not coordinates
+        // Local delivery can use coordinates to optimize (skip geocoding)
+        const deliveryAddressOrCoords =
+          deliverySettings.driverProvider === 'shipday'
+            ? input.deliveryAddress!  // Shipday MUST have address string
+            : (input.deliveryCoordinates
+                ? { longitude: input.deliveryCoordinates.longitude, latitude: input.deliveryCoordinates.latitude }
+                : input.deliveryAddress!);
+
+        const deliveryResult = await calculateDeliveryFee(
+          restaurantAddress,
+          deliveryAddressOrCoords,
+          deliverySettings,
+          currencySymbol as string,
+          restaurant.name,
+          input.customerName,
+          input.customerPhone,
+          subtotal + tax + platformFee
+        );
+
+        if (deliveryResult.error) {
+          console.error('❌ Delivery fee calculation error:', deliveryResult.error);
+          return { success: false, error: deliveryResult.error };
+        }
+
+        deliveryFee = deliveryResult.deliveryFee;
+        deliveryFeeDetails = {
+          distance: deliveryResult.distance,
+          distanceUnit: deliveryResult.distanceUnit,
+          provider: deliveryResult.provider,
+          tierUsed: deliveryResult.tierUsed,
+          calculationDetails: deliveryResult.calculationDetails,
+        };
+
+        console.log('Delivery fee calculation result:', {
+          deliveryFee: `$${deliveryFee.toFixed(2)}`,
+          distance: `${deliveryResult.distance} ${deliveryResult.distanceUnit}`,
+          provider: deliveryResult.provider,
+        });
       } else {
-        const aboveFlat = globalFee.aboveFlat || 0;
-        platformFee = aboveFlat;
+        console.warn('⚠️ Delivery settings not configured for this restaurant');
+        return { success: false, error: 'Delivery is not enabled for this restaurant' };
       }
     }
 
-    const total = subtotal + tax + platformFee;
+    const total = subtotal + tax + platformFee + deliveryFee;
 
     const order = await prisma.order.update({
       where: { id: input.orderId },
@@ -552,6 +715,7 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         customerName: input.customerName,
         customerEmail: input.customerEmail,
         customerPhone: input.customerPhone,
+        customerAddress: input.deliveryAddress ? { address: input.deliveryAddress } : {},
         items: orderItems,
         orderType: input.orderType,
         paymentStatus: input.paymentStatus,
@@ -559,6 +723,9 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         subtotal,
         tax,
         taxBreakdown,
+        deliveryFee,
+        deliveryDistance: deliveryFeeDetails?.distance || null,
+        deliveryInfo: deliveryFeeDetails || null,
         platformFee,
         total,
         specialInstructions: input.specialInstructions,

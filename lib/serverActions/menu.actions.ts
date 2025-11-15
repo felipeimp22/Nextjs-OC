@@ -843,6 +843,7 @@ export async function getRestaurantMenuData(restaurantId: string) {
         },
         menuRules: true,
         financialSettings: true,
+        deliverySettings: true,
       },
     });
 
@@ -859,6 +860,15 @@ export async function getRestaurantMenuData(restaurantId: string) {
         currencySymbol: restaurant.financialSettings?.currencySymbol || '$',
         taxSettings: (restaurant.financialSettings?.taxes as any[]) || [],
         globalFeeSettings: restaurant.financialSettings?.globalFee || null,
+        deliverySettings: restaurant.deliverySettings || null,
+        restaurantAddress: {
+          street: restaurant.street,
+          city: restaurant.city,
+          state: restaurant.state,
+          zipCode: restaurant.zipCode,
+          country: restaurant.country,
+        },
+        restaurantName: restaurant.name,
       },
       error: null,
     };

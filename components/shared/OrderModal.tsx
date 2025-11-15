@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createInHouseOrder, updateInHouseOrder } from '@/lib/serverActions/kitchen.actions';
+import { createInHouseOrder, updateInHouseOrder, calculateDeliveryFeeEstimate } from '@/lib/serverActions/kitchen.actions';
 import ItemModifierSelector from '@/components/kitchen/ItemModifierSelector';
 import { calculateItemTotalPrice } from '@/lib/utils/modifierPricingCalculator';
+import LocationAutocomplete from '@/components/shared/LocationAutocomplete';
+import type { AddressComponents } from '@/lib/utils/mapbox';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MenuItem {
@@ -87,6 +89,7 @@ interface ExistingOrder {
   orderType: 'pickup' | 'delivery' | 'dine_in';
   paymentStatus: 'pending' | 'paid';
   paymentMethod: 'card' | 'cash' | 'other';
+  deliveryAddress?: string;
   specialInstructions?: string;
   items: Array<{
     menuItemId: string;
@@ -150,14 +153,63 @@ export default function OrderModal({
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [orderType, setOrderType] = useState<'pickup' | 'delivery' | 'dine_in'>('dine_in');
+  const [deliveryAddress, setDeliveryAddress] = useState<AddressComponents | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>('pending');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'other'>('cash');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [items, setItems] = useState<OrderItemInput[]>([
     { menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' },
   ]);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [deliveryFeeLoading, setDeliveryFeeLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
+
+  // Calculate delivery fee when address is selected
+  useEffect(() => {
+    const fetchDeliveryFee = async () => {
+      if (orderType === 'delivery' && deliveryAddress && isOpen) {
+        setDeliveryFeeLoading(true);
+        try {
+          const subtotal = calculateSubtotal();
+          const { totalTax } = calculateTaxes();
+          const platformFee = calculatePlatformFee();
+          const orderValue = subtotal + totalTax + platformFee;
+
+          const result = await calculateDeliveryFeeEstimate(
+            restaurantId,
+            deliveryAddress.fullAddress,
+            {
+              latitude: deliveryAddress.coordinates.lat,
+              longitude: deliveryAddress.coordinates.lng,
+            },
+            customerName || undefined,
+            customerPhone || undefined,
+            orderValue
+          );
+
+          if (result.success) {
+            setDeliveryFee(result.deliveryFee);
+          } else {
+            setDeliveryFee(0);
+            if (result.error) {
+              showToast('error', result.error);
+            }
+          }
+        } catch (error: any) {
+          console.error('Failed to calculate delivery fee:', error);
+          setDeliveryFee(0);
+        } finally {
+          setDeliveryFeeLoading(false);
+        }
+      } else {
+        // Reset delivery fee if not delivery order
+        setDeliveryFee(0);
+      }
+    };
+
+    fetchDeliveryFee();
+  }, [orderType, deliveryAddress, items, isOpen]);
 
   // Debug logging for tax settings
   useEffect(() => {
@@ -178,6 +230,16 @@ export default function OrderModal({
       setCustomerPhone(existingOrder.customerPhone);
       setCustomerEmail(existingOrder.customerEmail);
       setOrderType(existingOrder.orderType);
+      setDeliveryAddress(existingOrder.deliveryAddress ? {
+        street: '',
+        houseNumber: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: '',
+        fullAddress: existingOrder.deliveryAddress,
+        coordinates: { lat: 0, lng: 0 }
+      } : null);
       setPaymentStatus(existingOrder.paymentStatus);
       setPaymentMethod(existingOrder.paymentMethod);
       setSpecialInstructions(existingOrder.specialInstructions || '');
@@ -408,12 +470,18 @@ export default function OrderModal({
     const subtotal = calculateSubtotal();
     const { totalTax } = calculateTaxes();
     const platformFee = calculatePlatformFee();
-    return subtotal + totalTax + platformFee;
+    return subtotal + totalTax + platformFee + deliveryFee;
   };
 
   const handleSubmit = async () => {
     if (!customerName || !customerPhone) {
       showToast('error', t('fillCustomerInfo'));
+      return;
+    }
+
+    // Validate delivery address for delivery orders
+    if (orderType === 'delivery' && !deliveryAddress) {
+      showToast('error', 'Please select a delivery address');
       return;
     }
 
@@ -485,6 +553,11 @@ export default function OrderModal({
         customerEmail: customerEmail || `${customerPhone}@inhouse.local`,
         items: formattedItems,
         orderType,
+        deliveryAddress: orderType === 'delivery' && deliveryAddress ? deliveryAddress.fullAddress : undefined,
+        deliveryCoordinates: orderType === 'delivery' && deliveryAddress ? {
+          latitude: deliveryAddress.coordinates.lat,
+          longitude: deliveryAddress.coordinates.lng,
+        } : undefined,
         paymentStatus,
         paymentMethod,
         specialInstructions,
@@ -514,6 +587,8 @@ export default function OrderModal({
       setCustomerPhone('');
       setCustomerEmail('');
       setOrderType('dine_in');
+      setDeliveryAddress(null);
+      setDeliveryFee(0);
       setPaymentStatus('pending');
       setPaymentMethod('cash');
       setSpecialInstructions('');
@@ -590,6 +665,20 @@ export default function OrderModal({
               <option value="delivery">{tTypes('delivery')}</option>
             </Select>
           </div>
+
+          {/* Delivery Address - Only show for delivery orders */}
+          {orderType === 'delivery' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Delivery Address {t('required')}
+              </label>
+              <LocationAutocomplete
+                onSelect={(address) => setDeliveryAddress(address)}
+                placeholder="Enter delivery address..."
+                required={true}
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -776,8 +865,21 @@ export default function OrderModal({
             </div>
           )}
 
+          {/* Delivery Fee - Show for delivery orders (even when $0) */}
+          {orderType === 'delivery' && (
+            <div className="flex items-center justify-between text-gray-600">
+              <span className="text-sm">
+                Delivery Fee
+                {deliveryFeeLoading && <span className="ml-2 text-xs text-gray-400">(calculating...)</span>}
+              </span>
+              <span className="text-sm">
+                {deliveryFeeLoading ? '...' : `${currencySymbol}${deliveryFee.toFixed(2)}`}
+              </span>
+            </div>
+          )}
+
           {/* Divider - only show if there are items above total */}
-          {(calculateTaxes().taxes.length > 0 || calculatePlatformFee() > 0 || !taxSettings || taxSettings.length === 0) && (
+          {(calculateTaxes().taxes.length > 0 || calculatePlatformFee() > 0 || orderType === 'delivery' || !taxSettings || taxSettings.length === 0) && (
             <div className="border-t border-gray-300 my-2"></div>
           )}
 
