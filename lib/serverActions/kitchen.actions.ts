@@ -297,26 +297,78 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
     console.log('Subtotal for tax calculation:', subtotal);
 
     taxes.forEach((taxSetting: any) => {
-      console.log('Processing tax:', taxSetting.name, 'enabled:', taxSetting.enabled, 'rate:', taxSetting.rate);
-      if (taxSetting.enabled) {
-        const taxAmount = (subtotal * taxSetting.rate) / 100;
-        tax += taxAmount;
-        taxBreakdown.push({
-          name: taxSetting.name,
-          rate: taxSetting.rate,
-          amount: taxAmount,
-        });
-        console.log(`Tax applied: ${taxSetting.name} = $${taxAmount.toFixed(2)}`);
-      } else {
+      console.log('Processing tax:', taxSetting.name, 'enabled:', taxSetting.enabled, 'type:', taxSetting.type, 'rate:', taxSetting.rate, 'applyTo:', taxSetting.applyTo);
+
+      if (!taxSetting.enabled) {
         console.log(`Tax skipped (disabled): ${taxSetting.name}`);
+        return;
       }
+
+      let taxAmount = 0;
+
+      if (taxSetting.applyTo === 'per_item') {
+        // Apply tax per item
+        orderItems.forEach((item) => {
+          const itemTotal = item.price * item.quantity;
+
+          if (taxSetting.type === 'percentage') {
+            taxAmount += (itemTotal * taxSetting.rate) / 100;
+          } else if (taxSetting.type === 'fixed') {
+            taxAmount += taxSetting.rate * item.quantity;
+          }
+        });
+      } else {
+        // Apply to entire order (subtotal)
+        if (taxSetting.type === 'percentage') {
+          taxAmount = (subtotal * taxSetting.rate) / 100;
+        } else if (taxSetting.type === 'fixed') {
+          taxAmount = taxSetting.rate;
+        }
+      }
+
+      tax += taxAmount;
+      taxBreakdown.push({
+        name: taxSetting.name,
+        rate: taxSetting.rate,
+        amount: taxAmount,
+        type: taxSetting.type,
+      });
+      console.log(`Tax applied: ${taxSetting.name} (${taxSetting.type}, ${taxSetting.applyTo}) = $${taxAmount.toFixed(2)}`);
     });
 
     console.log('Final tax breakdown:', taxBreakdown);
     console.log('Total tax amount:', tax);
     console.log('=== END TAX CALCULATION DEBUG ===');
 
-    const total = subtotal + tax;
+    // Calculate global/platform fee
+    const globalFee = restaurant.financialSettings?.globalFee as any;
+    let platformFee = 0;
+
+    console.log('=== GLOBAL FEE CALCULATION DEBUG ===');
+    console.log('Global Fee Settings:', globalFee);
+
+    if (globalFee && globalFee.enabled) {
+      const threshold = globalFee.threshold || 0;
+
+      if (subtotal < threshold) {
+        // Order below threshold - apply percentage fee
+        const belowPercent = globalFee.belowPercent || 0;
+        platformFee = (subtotal * belowPercent) / 100;
+        console.log(`Order below threshold ($${threshold}): ${belowPercent}% fee = $${platformFee.toFixed(2)}`);
+      } else {
+        // Order at or above threshold - apply flat fee
+        const aboveFlat = globalFee.aboveFlat || 0;
+        platformFee = aboveFlat;
+        console.log(`Order at/above threshold ($${threshold}): Flat $${aboveFlat} fee`);
+      }
+    } else {
+      console.log('Global fee disabled or not configured');
+    }
+
+    console.log('Platform Fee:', platformFee);
+    console.log('=== END GLOBAL FEE CALCULATION DEBUG ===');
+
+    const total = subtotal + tax + platformFee;
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
@@ -349,7 +401,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         taxBreakdown,
         tip: 0,
         deliveryFee: 0,
-        platformFee: 0,
+        platformFee,
         total,
         specialInstructions: input.specialInstructions,
         timezone: 'America/New_York',
@@ -441,18 +493,58 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
     const taxBreakdown: any[] = [];
 
     taxes.forEach((taxSetting: any) => {
-      if (taxSetting.enabled) {
-        const taxAmount = (subtotal * taxSetting.rate) / 100;
-        tax += taxAmount;
-        taxBreakdown.push({
-          name: taxSetting.name,
-          rate: taxSetting.rate,
-          amount: taxAmount,
-        });
+      if (!taxSetting.enabled) {
+        return;
       }
+
+      let taxAmount = 0;
+
+      if (taxSetting.applyTo === 'per_item') {
+        // Apply tax per item
+        orderItems.forEach((item) => {
+          const itemTotal = item.price * item.quantity;
+
+          if (taxSetting.type === 'percentage') {
+            taxAmount += (itemTotal * taxSetting.rate) / 100;
+          } else if (taxSetting.type === 'fixed') {
+            taxAmount += taxSetting.rate * item.quantity;
+          }
+        });
+      } else {
+        // Apply to entire order (subtotal)
+        if (taxSetting.type === 'percentage') {
+          taxAmount = (subtotal * taxSetting.rate) / 100;
+        } else if (taxSetting.type === 'fixed') {
+          taxAmount = taxSetting.rate;
+        }
+      }
+
+      tax += taxAmount;
+      taxBreakdown.push({
+        name: taxSetting.name,
+        rate: taxSetting.rate,
+        amount: taxAmount,
+        type: taxSetting.type,
+      });
     });
 
-    const total = subtotal + tax;
+    // Calculate global/platform fee
+    const globalFee = restaurant.financialSettings?.globalFee as any;
+    let platformFee = 0;
+
+    if (globalFee && globalFee.enabled) {
+      const threshold = globalFee.threshold || 0;
+
+      if (subtotal < threshold) {
+        const belowPercent = globalFee.belowPercent || 0;
+        platformFee = (subtotal * belowPercent) / 100;
+      } else {
+        const aboveFlat = globalFee.aboveFlat || 0;
+        platformFee = aboveFlat;
+      }
+    }
+
+    const total = subtotal + tax + platformFee;
 
     const order = await prisma.order.update({
       where: { id: input.orderId },
@@ -467,6 +559,7 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         subtotal,
         tax,
         taxBreakdown,
+        platformFee,
         total,
         specialInstructions: input.specialInstructions,
       },

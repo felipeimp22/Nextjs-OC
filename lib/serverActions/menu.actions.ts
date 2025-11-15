@@ -858,6 +858,7 @@ export async function getRestaurantMenuData(restaurantId: string) {
         menuRules: restaurant.menuRules,
         currencySymbol: restaurant.financialSettings?.currencySymbol || '$',
         taxSettings: (restaurant.financialSettings?.taxes as any[]) || [],
+        globalFeeSettings: restaurant.financialSettings?.globalFee || null,
       },
       error: null,
     };

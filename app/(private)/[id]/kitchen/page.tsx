@@ -218,6 +218,7 @@ export default function KitchenPage() {
         menuRules={menuData?.menuRules || []}
         currencySymbol={menuData?.currencySymbol || '$'}
         taxSettings={menuData?.taxSettings || []}
+        globalFeeSettings={menuData?.globalFeeSettings || null}
         onOrderSaved={handleOrderCreated}
       />
 
