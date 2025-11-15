@@ -506,6 +506,10 @@ export default function OrderModal({
         items: formattedItems,
         orderType,
         deliveryAddress: orderType === 'delivery' && deliveryAddress ? deliveryAddress.fullAddress : undefined,
+        deliveryCoordinates: orderType === 'delivery' && deliveryAddress ? {
+          latitude: deliveryAddress.coordinates.lat,
+          longitude: deliveryAddress.coordinates.lng,
+        } : undefined,
         paymentStatus,
         paymentMethod,
         specialInstructions,

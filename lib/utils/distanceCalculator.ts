@@ -238,7 +238,7 @@ export async function calculateDrivingDistance(
  */
 export async function calculateDeliveryDistance(
   restaurantAddress: string | Coordinates,
-  deliveryAddress: string,
+  deliveryAddress: string | Coordinates,
   maximumRadius: number,
   unit: 'miles' | 'km' = 'miles'
 ): Promise<DistanceResult | null> {
@@ -261,11 +261,18 @@ export async function calculateDeliveryDistance(
       restaurantCoords = restaurantAddress;
     }
 
-    // Geocode delivery address
-    const deliveryGeocode = await geocodeAddress(deliveryAddress);
-    if (!deliveryGeocode.success || !deliveryGeocode.coordinates) {
-      console.error('❌ Failed to geocode delivery address');
-      return null;
+    // Geocode delivery address if it's a string, otherwise use provided coordinates
+    let deliveryCoords: Coordinates;
+    if (typeof deliveryAddress === 'string') {
+      const deliveryGeocode = await geocodeAddress(deliveryAddress);
+      if (!deliveryGeocode.success || !deliveryGeocode.coordinates) {
+        console.error('❌ Failed to geocode delivery address');
+        return null;
+      }
+      deliveryCoords = deliveryGeocode.coordinates;
+    } else {
+      deliveryCoords = deliveryAddress;
+      console.log('✅ Using provided coordinates (skipping geocoding)');
     }
 
     // Calculate driving distance

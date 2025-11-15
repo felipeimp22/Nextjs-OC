@@ -227,6 +227,10 @@ interface CreateInHouseOrderInput {
   }>;
   orderType: 'pickup' | 'delivery' | 'dine_in';
   deliveryAddress?: string;
+  deliveryCoordinates?: {
+    latitude: number;
+    longitude: number;
+  };
   paymentStatus: 'pending' | 'paid';
   paymentMethod: 'card' | 'cash' | 'other';
   specialInstructions?: string;
@@ -351,9 +355,14 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
         const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
 
+        // Use coordinates if provided to skip geocoding (optimization)
+        const deliveryAddressOrCoords = input.deliveryCoordinates
+          ? { longitude: input.deliveryCoordinates.longitude, latitude: input.deliveryCoordinates.latitude }
+          : input.deliveryAddress;
+
         const deliveryResult = await calculateDeliveryFee(
           restaurantAddress,
-          input.deliveryAddress,
+          deliveryAddressOrCoords,
           deliverySettings,
           currencySymbol as string,
           restaurant.name,
@@ -570,9 +579,14 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
         const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
 
+        // Use coordinates if provided to skip geocoding (optimization)
+        const deliveryAddressOrCoords = input.deliveryCoordinates
+          ? { longitude: input.deliveryCoordinates.longitude, latitude: input.deliveryCoordinates.latitude }
+          : input.deliveryAddress;
+
         const deliveryResult = await calculateDeliveryFee(
           restaurantAddress,
-          input.deliveryAddress,
+          deliveryAddressOrCoords,
           deliverySettings,
           currencySymbol as string,
           restaurant.name,

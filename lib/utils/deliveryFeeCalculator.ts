@@ -287,7 +287,7 @@ export function getCurrencyCodeFromSymbol(symbol: string): string {
  */
 export async function calculateDeliveryFee(
   restaurantAddress: string | Coordinates,
-  deliveryAddress: string,
+  deliveryAddress: string | Coordinates,
   deliverySettings: DeliverySettings,
   restaurantCurrencySymbol: string = '$',
   restaurantName?: string,
@@ -313,9 +313,14 @@ export async function calculateDeliveryFee(
     }
 
     // Calculate distance
+    // If deliveryAddress is already Coordinates, convert it to proper format
+    const deliveryAddr = typeof deliveryAddress === 'string'
+      ? deliveryAddress
+      : deliveryAddress; // Coordinates object
+
     const distanceResult = await calculateDeliveryDistance(
       restaurantAddress,
-      deliveryAddress,
+      deliveryAddr,
       deliverySettings.maximumRadius,
       deliverySettings.distanceUnit
     );
