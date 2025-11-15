@@ -63,60 +63,62 @@ export default function ItemModifierSelector({
   onOptionsChange,
   currencySymbol,
 }: ItemModifierSelectorProps) {
-  const [initializedForItemId, setInitializedForItemId] = useState<string | null>(null);
+  const [initializedForItemKey, setInitializedForItemKey] = useState<string | null>(null);
 
-  // Initialize default selections when item changes or component mounts
+  // Initialize default selections ONCE when item changes
   useEffect(() => {
     if (!itemRules?.appliedOptions || itemRules.appliedOptions.length === 0) {
       return;
     }
 
-    // Get a unique identifier for the current item (use first appliedOption's optionId as proxy)
+    // Create unique key for current item configuration
     const currentItemKey = itemRules.appliedOptions.map(ao => ao.optionId).join('-');
 
-    // Only initialize if:
-    // 1. No selections exist yet
-    // 2. This is a different item than we initialized before
-    if (selectedOptions.length === 0 && initializedForItemId !== currentItemKey) {
-      const defaultSelections: SelectedChoice[] = [];
+    // Only initialize if this is a new item (different key than last initialized)
+    if (initializedForItemKey !== currentItemKey) {
+      // Check if we should initialize defaults
+      const hasNoSelections = selectedOptions.length === 0;
 
-      itemRules.appliedOptions.forEach(appliedOption => {
-        const option = options.find(opt => opt.id === appliedOption.optionId);
-        if (!option) return;
+      if (hasNoSelections) {
+        const defaultSelections: SelectedChoice[] = [];
 
-        // Find default choices for this option
-        const defaultChoices = appliedOption.choiceAdjustments.filter(
-          ca => ca.isDefault && ca.isAvailable
-        );
+        itemRules.appliedOptions.forEach(appliedOption => {
+          const option = options.find(opt => opt.id === appliedOption.optionId);
+          if (!option) return;
 
-        defaultChoices.forEach(choiceAdj => {
-          const choice = option.choices.find(c => c.id === choiceAdj.choiceId);
-          if (choice && choice.isAvailable) {
-            const finalPrice = choice.basePrice + (choiceAdj.priceAdjustment || 0);
+          // Find default choices for this option
+          const defaultChoices = appliedOption.choiceAdjustments.filter(
+            ca => ca.isDefault && ca.isAvailable
+          );
 
-            defaultSelections.push({
-              optionId: option.id,
-              optionName: option.name,
-              choiceId: choice.id,
-              choiceName: choice.name,
-              quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
-              priceAdjustment: finalPrice,
-            });
-          }
+          defaultChoices.forEach(choiceAdj => {
+            const choice = option.choices.find(c => c.id === choiceAdj.choiceId);
+            if (choice && choice.isAvailable) {
+              const finalPrice = choice.basePrice + (choiceAdj.priceAdjustment || 0);
+
+              defaultSelections.push({
+                optionId: option.id,
+                optionName: option.name,
+                choiceId: choice.id,
+                choiceName: choice.name,
+                quantity: option.allowQuantity ? Math.max(option.minQuantity, 1) : 1,
+                priceAdjustment: finalPrice,
+              });
+            }
+          });
         });
-      });
 
-      if (defaultSelections.length > 0) {
-        onOptionsChange(defaultSelections);
+        if (defaultSelections.length > 0) {
+          onOptionsChange(defaultSelections);
+        }
       }
-      setInitializedForItemId(currentItemKey);
-    }
 
-    // Reset initialization flag when item changes
-    if (initializedForItemId && initializedForItemId !== currentItemKey) {
-      setInitializedForItemId(null);
+      // Mark this item as initialized
+      setInitializedForItemKey(currentItemKey);
     }
-  }, [itemRules, options, selectedOptions.length, initializedForItemId, onOptionsChange]);
+    // IMPORTANT: Do NOT include onOptionsChange in dependencies to avoid re-initialization loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemRules, options, initializedForItemKey]);
 
   if (!itemRules?.appliedOptions || itemRules.appliedOptions.length === 0) {
     return null;
@@ -139,12 +141,39 @@ export default function ItemModifierSelector({
     );
   };
 
+  /**
+   * Handle single-select option clicks
+   *
+   * Behavior:
+   * - Clicking a DIFFERENT choice: Always switch to the new choice (even if required)
+   * - Clicking the SAME choice (trying to deselect):
+   *   - If required=true OR requiresSelection=true: Prevent deselection (must keep one selected)
+   *   - If both are false (optional): Allow deselection
+   *
+   * Note: isDefault only affects initial selection, NOT whether user can change it
+   */
   const handleSingleSelect = (
     appliedOption: AppliedOption,
     option: Option,
     choice: Choice,
     choiceAdjustment: any
   ) => {
+    const isCurrentlySelected = isChoiceSelected(option.id, choice.id);
+    const isRequired = appliedOption.required || option.requiresSelection;
+
+    // If clicking the same choice that's already selected
+    if (isCurrentlySelected) {
+      // Only allow deselection if optional (not required)
+      if (!isRequired) {
+        // Remove all selections for this option (deselect)
+        const filteredOptions = selectedOptions.filter(sc => sc.optionId !== option.id);
+        onOptionsChange(filteredOptions);
+      }
+      // If required, do nothing (silently prevent deselection)
+      return;
+    }
+
+    // Clicking a different choice - always switch to it
     const finalPrice = choice.basePrice + (choiceAdjustment.priceAdjustment || 0);
 
     const newSelection: SelectedChoice = {
@@ -156,16 +185,25 @@ export default function ItemModifierSelector({
       priceAdjustment: finalPrice,
     };
 
+    // Remove old selection and add new one
     const filteredOptions = selectedOptions.filter(sc => sc.optionId !== option.id);
-
-    const isCurrentlySelected = isChoiceSelected(option.id, choice.id);
-    if (isCurrentlySelected && !appliedOption.required && !option.requiresSelection) {
-      onOptionsChange(filteredOptions);
-    } else {
-      onOptionsChange([...filteredOptions, newSelection]);
-    }
+    onOptionsChange([...filteredOptions, newSelection]);
   };
 
+  /**
+   * Handle multi-select option clicks
+   *
+   * Behavior:
+   * - Can select up to maxSelections choices
+   * - If trying to deselect:
+   *   - Check if it would violate minSelections when required
+   *   - If (required=true OR requiresSelection=true) AND count would drop below minSelections: Prevent
+   *   - Otherwise: Allow deselection
+   * - If trying to select:
+   *   - Check if already at maxSelections limit
+   *   - If at limit: Prevent selection
+   *   - Otherwise: Add to selections
+   */
   const handleMultiSelect = (
     appliedOption: AppliedOption,
     option: Option,
@@ -176,22 +214,28 @@ export default function ItemModifierSelector({
     const selectedForOption = getSelectedChoicesForOption(option.id);
 
     if (isSelected) {
+      // Trying to deselect - check if it would violate minimum requirement
       const isRequired = appliedOption.required || option.requiresSelection;
       const wouldViolateMinimum = isRequired && selectedForOption.length <= option.minSelections;
 
       if (wouldViolateMinimum) {
+        // Silently prevent deselection (would go below required minimum)
         return;
       }
 
+      // Allow deselection
       const newOptions = selectedOptions.filter(
         sc => !(sc.optionId === option.id && sc.choiceId === choice.id)
       );
       onOptionsChange(newOptions);
     } else {
+      // Trying to select - check if at maximum limit
       if (selectedForOption.length >= option.maxSelections) {
+        // Silently prevent selection (already at max)
         return;
       }
 
+      // Allow selection
       const finalPrice = choice.basePrice + (choiceAdjustment.priceAdjustment || 0);
 
       const newSelection: SelectedChoice = {
