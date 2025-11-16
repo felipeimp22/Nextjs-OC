@@ -139,7 +139,7 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
 
       console.log('📦 Creating Shipday delivery for order:', options.orderNumber);
 
-      const response = await this.client.post('/order', payload);
+      const response = await this.client.post('/orders', payload);
 
       if (!response.data.orderId) {
         throw new Error('No order ID returned from Shipday');
@@ -180,7 +180,7 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
     try {
       console.log('🔍 Checking Shipday delivery status:', externalId);
 
-      const response = await this.client.get(`/order/${externalId}`);
+      const response = await this.client.get(`/orders/${externalId}`);
 
       return {
         status: this.mapShipdayStatus(response.data.orderState),
@@ -218,7 +218,7 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
     try {
       console.log('❌ Cancelling Shipday delivery:', options.externalId);
 
-      await this.client.delete(`/order/${options.externalId}`, {
+      await this.client.delete(`/orders/${options.externalId}`, {
         data: { reason: options.reason || 'Order cancelled' },
       });
 

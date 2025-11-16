@@ -214,17 +214,17 @@ await prisma.order.update({
    - **Response:** Array of available services with fees
 
 2. **Create Delivery** (used after order creation)
-   - **Endpoint:** `POST /order`
+   - **Endpoint:** `POST /orders`
    - **Purpose:** Dispatch delivery to Shipday
    - **Response:** Order ID, tracking URL, status
 
 3. **Get Status** (can be used for tracking)
-   - **Endpoint:** `GET /order/{orderId}`
+   - **Endpoint:** `GET /orders/{orderId}`
    - **Purpose:** Check delivery status
    - **Response:** Status, driver info, ETA
 
 4. **Cancel Delivery** (for order cancellations)
-   - **Endpoint:** `DELETE /order/{orderId}`
+   - **Endpoint:** `DELETE /orders/{orderId}`
    - **Purpose:** Cancel delivery
    - **Body:** `{ reason: string }`
 
