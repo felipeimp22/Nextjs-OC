@@ -219,6 +219,8 @@ export default function KitchenPage() {
         currencySymbol={menuData?.currencySymbol || '$'}
         taxSettings={menuData?.taxSettings || []}
         globalFeeSettings={menuData?.globalFeeSettings || null}
+        deliverySettings={menuData?.deliverySettings || null}
+        restaurantTimezone={menuData?.restaurantTimezone}
         onOrderSaved={handleOrderCreated}
       />
 
