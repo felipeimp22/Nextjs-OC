@@ -237,6 +237,7 @@ interface CreateInHouseOrderInput {
   specialInstructions?: string;
   prepTime?: number;
   scheduledPickupTime?: string;
+  driverTip?: number;
 }
 
 /**
@@ -481,7 +482,8 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
       }
     }
 
-    const total = subtotal + tax + platformFee + deliveryFee;
+    const driverTip = input.driverTip || 0;
+    const total = subtotal + tax + platformFee + deliveryFee + driverTip;
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
@@ -513,6 +515,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         tax,
         taxBreakdown,
         tip: 0,
+        driverTip,
         deliveryFee,
         deliveryDistance: deliveryFeeDetails?.distance || null,
         deliveryInfo: deliveryFeeDetails || null,
@@ -557,8 +560,11 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
           customerName: input.customerName,
           customerPhone: input.customerPhone,
           customerEmail: input.customerEmail,
-          orderValue: total,
-          tip: 0,
+          orderValue: subtotal,
+          tax,
+          deliveryFee,
+          tip: driverTip,
+          discountAmount: 0,
           items: orderItems.map(item => ({
             name: item.name,
             quantity: item.quantity,
@@ -589,6 +595,53 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         // Don't fail the whole order, but log the error
         // Order is still created, but delivery dispatch failed
       }
+    }
+
+    // ========================================
+    // PLATFORM RECEIVABLE: Track what restaurant owes platform
+    // ========================================
+    try {
+      const isShipdayDelivery = input.orderType === 'delivery' && deliveryFeeDetails?.provider === 'shipday';
+
+      // Calculate what restaurant owes platform
+      let platformReceivableAmount = platformFee;
+      let receivableDeliveryFee = 0;
+      let receivableDriverTip = 0;
+
+      if (isShipdayDelivery) {
+        // For Shipday deliveries, platform collects delivery fee and driver tip to pay Shipday
+        receivableDeliveryFee = deliveryFee;
+        receivableDriverTip = driverTip;
+        platformReceivableAmount += deliveryFee + driverTip;
+      }
+
+      await prisma.platformReceivable.create({
+        data: {
+          restaurantId: input.restaurantId,
+          orderId: order.id,
+          platformFee,
+          deliveryFee: receivableDeliveryFee,
+          driverTip: receivableDriverTip,
+          totalOwed: platformReceivableAmount,
+          remainingBalance: platformReceivableAmount,
+          status: 'pending',
+          orderType: input.orderType,
+          deliveryProvider: isShipdayDelivery ? 'shipday' : null,
+        },
+      });
+
+      console.log('✅ Platform receivable created:', {
+        orderId: order.id,
+        totalOwed: `$${platformReceivableAmount.toFixed(2)}`,
+        breakdown: {
+          platformFee: `$${platformFee.toFixed(2)}`,
+          deliveryFee: `$${receivableDeliveryFee.toFixed(2)}`,
+          driverTip: `$${receivableDriverTip.toFixed(2)}`,
+        },
+      });
+    } catch (receivableError: any) {
+      console.error('❌ Failed to create platform receivable:', receivableError.message);
+      // Don't fail the order if receivable creation fails
     }
 
     revalidatePath(`/${input.restaurantId}/kitchen`);

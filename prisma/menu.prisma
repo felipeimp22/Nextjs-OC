@@ -261,6 +261,7 @@ model Order {
   tax Float
   taxBreakdown Json? // Detailed tax breakdown
   tip Float @default(0)
+  driverTip Float @default(0) // Tip for delivery driver (Shipday, etc.)
   deliveryFee Float @default(0)
   platformFee Float @default(0)
   total Float

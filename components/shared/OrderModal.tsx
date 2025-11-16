@@ -179,6 +179,7 @@ export default function OrderModal({
   ]);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryFeeLoading, setDeliveryFeeLoading] = useState(false);
+  const [driverTip, setDriverTip] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
 
@@ -516,7 +517,8 @@ export default function OrderModal({
     const subtotal = calculateSubtotal();
     const { totalTax } = calculateTaxes();
     const platformFee = calculatePlatformFee();
-    return subtotal + totalTax + platformFee + deliveryFee;
+    const tipAmount = orderType === 'delivery' ? driverTip : 0;
+    return subtotal + totalTax + platformFee + deliveryFee + tipAmount;
   };
 
   const handleSubmit = async () => {
@@ -609,6 +611,7 @@ export default function OrderModal({
         specialInstructions,
         prepTime,
         scheduledPickupTime: scheduledPickupTime ? new Date(scheduledPickupTime).toISOString() : undefined,
+        driverTip: orderType === 'delivery' ? driverTip : 0,
       };
 
       const result = existingOrder
@@ -637,6 +640,7 @@ export default function OrderModal({
       setOrderType('dine_in');
       setDeliveryAddress(null);
       setDeliveryFee(0);
+      setDriverTip(0);
       setPrepTime(30);
       setScheduledPickupTime('');
       setPaymentStatus('pending');
@@ -736,6 +740,27 @@ export default function OrderModal({
                 onSelect={(address) => setDeliveryAddress(address)}
                 placeholder="Enter delivery address..."
                 required={true}
+              />
+            </div>
+          )}
+
+          {/* Driver Tip - Only show for delivery orders */}
+          {orderType === 'delivery' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('driverTip')}
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={driverTip}
+                onChange={e => {
+                  const value = parseFloat(e.target.value);
+                  setDriverTip(isNaN(value) ? 0 : value);
+                }}
+                placeholder="0.00"
+                disabled={isShipdayOrder}
               />
             </div>
           )}
@@ -968,6 +993,14 @@ export default function OrderModal({
               <span className="text-sm">
                 {deliveryFeeLoading ? '...' : `${currencySymbol}${deliveryFee.toFixed(2)}`}
               </span>
+            </div>
+          )}
+
+          {/* Driver Tip - Show for delivery orders */}
+          {orderType === 'delivery' && (
+            <div className="flex items-center justify-between text-gray-600">
+              <span className="text-sm">{t('driverTip')}</span>
+              <span className="text-sm">{currencySymbol}{driverTip.toFixed(2)}</span>
             </div>
           )}
 

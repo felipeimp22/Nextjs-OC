@@ -38,7 +38,10 @@ export interface CreateDeliveryOptions {
   customerPhone: string;
   customerEmail?: string;
   orderValue: number;
+  tax?: number;
+  deliveryFee?: number;
   tip?: number;
+  discountAmount?: number;
   items?: Array<{
     name: string;
     quantity: number;

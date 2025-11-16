@@ -829,6 +829,7 @@
       "pickupTime": "Horário de Coleta",
       "pickupTimePlaceholder": "Selecionar horário de coleta",
       "deliveryTime": "Horário de Entrega",
+      "driverTip": "Gorjeta do Motorista",
       "asap": "O mais rápido possível",
       "scheduled": "Agendado",
       "shipdayOrderWarning": "Este pedido foi enviado ao Shipday e não pode ser editado para evitar cobranças extras."

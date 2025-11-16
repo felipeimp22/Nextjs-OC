@@ -828,6 +828,7 @@
       "pickupTime": "Hora de Recogida",
       "pickupTimePlaceholder": "Seleccionar hora de recogida",
       "deliveryTime": "Hora de Entrega",
+      "driverTip": "Propina del Conductor",
       "asap": "Lo antes posible",
       "scheduled": "Programado",
       "shipdayOrderWarning": "Este pedido está enviado a Shipday y no puede ser editado para evitar cargos adicionales."

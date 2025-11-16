@@ -132,7 +132,11 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
         customerPhoneNumber: options.customerPhone,
         customerEmail: options.customerEmail || '',
         orderValue: options.orderValue,
+        tax: options.tax || 0,
+        deliveryFee: options.deliveryFee || 0,
         tip: options.tip || 0,
+        discountAmount: options.discountAmount || 0,
+        totalOrderCost: options.orderValue + (options.tax || 0) + (options.deliveryFee || 0) + (options.tip || 0) - (options.discountAmount || 0),
         deliveryInstruction: options.specialInstructions || '',
         pickupTime: options.scheduledTime?.toISOString() || new Date().toISOString(),
         orderItems: options.items?.map(item => ({

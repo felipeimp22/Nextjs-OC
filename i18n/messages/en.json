@@ -841,6 +841,7 @@
       "pickupTime": "Pickup Time",
       "pickupTimePlaceholder": "Select pickup time",
       "deliveryTime": "Delivery Time",
+      "driverTip": "Driver Tip",
       "asap": "ASAP",
       "scheduled": "Scheduled",
       "shipdayOrderWarning": "This order is dispatched to Shipday and cannot be edited to avoid extra charges."
