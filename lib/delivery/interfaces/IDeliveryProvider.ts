@@ -30,6 +30,8 @@ export interface DeliveryEstimateResult {
 export interface CreateDeliveryOptions {
   orderId: string;
   orderNumber: string;
+  restaurantName: string;
+  restaurantPhone: string;
   pickupAddress: DeliveryAddress;
   deliveryAddress: DeliveryAddress;
   customerName: string;

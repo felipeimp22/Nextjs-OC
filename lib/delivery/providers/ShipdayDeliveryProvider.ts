@@ -116,13 +116,17 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
 
     try {
       const pickupAddress = this.formatAddress(options.pickupAddress);
-      const deliveryAddress = this.formatAddress(options.deliveryAddress);
+
+      // Handle delivery address: if city/state/zip are empty, use street field directly (full address string)
+      const deliveryAddress = (options.deliveryAddress.city && options.deliveryAddress.state)
+        ? this.formatAddress(options.deliveryAddress)
+        : options.deliveryAddress.street;
 
       const payload = {
         orderNumber: options.orderNumber,
-        restaurantName: options.pickupAddress.street, // Should be from restaurant data
+        restaurantName: options.restaurantName,
         restaurantAddress: pickupAddress,
-        restaurantPhoneNumber: options.pickupAddress.instructions || '', // Should be from restaurant data
+        restaurantPhoneNumber: options.restaurantPhone,
         customerName: options.customerName,
         customerAddress: deliveryAddress,
         customerPhoneNumber: options.customerPhone,

@@ -125,17 +125,17 @@ In `DeliverySettings` model:
 - `orderType === 'delivery'`
 - `deliveryInfo.provider === 'shipday'`
 
-**API Endpoint:** `POST https://api.shipday.com/order`
+**API Endpoint:** `POST https://api.shipday.com/orders`
 
 **Request Payload:**
 ```typescript
 {
   orderNumber: string,           // Unique order number
-  restaurantName: string,        // Restaurant name
-  restaurantAddress: string,     // Full formatted address
-  restaurantPhoneNumber: string, // Restaurant phone
+  restaurantName: string,        // From Restaurant.name
+  restaurantAddress: string,     // Formatted from Restaurant address fields
+  restaurantPhoneNumber: string, // From Restaurant.phone
   customerName: string,          // Customer name
-  customerAddress: string,       // Full delivery address
+  customerAddress: string,       // Full delivery address string
   customerPhoneNumber: string,   // Customer phone
   customerEmail: string,         // Optional
   orderValue: number,            // Total order amount
@@ -148,6 +148,12 @@ In `DeliverySettings` model:
   }]
 }
 ```
+
+**Payload Construction Details:**
+- `restaurantName`: Passed directly from `Restaurant.name` (not from address)
+- `restaurantPhone`: Passed directly from `Restaurant.phone` (not from instructions)
+- `restaurantAddress`: Formatted as `"{street}, {city}, {state} {zipCode}"`
+- `customerAddress`: Accepts full address string (e.g., "123 Main St, City, State 12345")
 
 **Authentication:**
 - Header: `Authorization: Basic {SHIPDAY_API_KEY}`
@@ -448,13 +454,19 @@ Customer Order Flow (Future):
   - Shipday order detection
   - Field disabling logic
 
-- **Backend:** `lib/serverActions/kitchen.actions.ts:530-590`
+- **Backend:** `lib/serverActions/kitchen.actions.ts:538-568`
   - Shipday integration call
+  - Passes restaurant name and phone
   - Error handling
 
-- **Provider:** `lib/delivery/providers/ShipdayDeliveryProvider.ts:102-166`
+- **Provider:** `lib/delivery/providers/ShipdayDeliveryProvider.ts:117-146`
   - API implementation
   - Request formatting
+  - Handles full address strings for delivery
+
+- **Interface:** `lib/delivery/interfaces/IDeliveryProvider.ts:30-48`
+  - CreateDeliveryOptions interface
+  - Includes restaurantName and restaurantPhone
 
 - **Factory:** `lib/delivery/DeliveryFactory.ts:22-32`
   - Provider initialization

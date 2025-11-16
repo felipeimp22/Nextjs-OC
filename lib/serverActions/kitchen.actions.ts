@@ -538,6 +538,8 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         const shipdayResult = await provider.createDelivery({
           orderId: order.id,
           orderNumber: order.orderNumber,
+          restaurantName: restaurant.name,
+          restaurantPhone: restaurant.phone,
           pickupAddress: {
             street: restaurant.street,
             city: restaurant.city,
