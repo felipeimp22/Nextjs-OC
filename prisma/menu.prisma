@@ -272,6 +272,10 @@ model Order {
   // Special instructions
   specialInstructions String?
 
+  // Kitchen prep and scheduling
+  prepTime Int? // Preparation time in minutes
+  scheduledPickupTime DateTime? // When order should be ready for pickup/delivery
+
   // Timezone and local time
   timezone String @default("UTC")
   localDate String? // YYYY-MM-DD in restaurant's timezone

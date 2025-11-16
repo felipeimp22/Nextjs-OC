@@ -91,6 +91,12 @@ interface ExistingOrder {
   paymentMethod: 'card' | 'cash' | 'other';
   deliveryAddress?: string;
   specialInstructions?: string;
+  prepTime?: number;
+  scheduledPickupTime?: string | Date;
+  deliveryInfo?: {
+    provider?: string;
+    externalId?: string;
+  };
   items: Array<{
     menuItemId: string;
     name: string;
@@ -99,6 +105,11 @@ interface ExistingOrder {
     options?: Array<{ name: string; choice: string; priceAdjustment: number }>;
     specialInstructions?: string;
   }>;
+}
+
+interface DeliverySettings {
+  enabled: boolean;
+  driverProvider: string;
 }
 
 interface TaxSetting {
@@ -127,6 +138,8 @@ interface OrderModalProps {
   currencySymbol: string;
   taxSettings: TaxSetting[];
   globalFeeSettings?: GlobalFee | null;
+  deliverySettings?: DeliverySettings | null;
+  restaurantTimezone?: string;
   onOrderSaved: () => void;
   existingOrder?: ExistingOrder;
 }
@@ -141,6 +154,8 @@ export default function OrderModal({
   currencySymbol,
   taxSettings,
   globalFeeSettings,
+  deliverySettings = null,
+  restaurantTimezone = 'America/New_York',
   onOrderSaved,
   existingOrder,
 }: OrderModalProps) {
@@ -157,6 +172,8 @@ export default function OrderModal({
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>('pending');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'other'>('cash');
   const [specialInstructions, setSpecialInstructions] = useState('');
+  const [prepTime, setPrepTime] = useState(30);
+  const [scheduledPickupTime, setScheduledPickupTime] = useState('');
   const [items, setItems] = useState<OrderItemInput[]>([
     { menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' },
   ]);
@@ -164,6 +181,26 @@ export default function OrderModal({
   const [deliveryFeeLoading, setDeliveryFeeLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
+
+  const isShipdayOrder = existingOrder?.deliveryInfo?.provider === 'shipday' && existingOrder?.deliveryInfo?.externalId;
+  const showShipdayFields = orderType === 'delivery' && deliverySettings?.driverProvider === 'shipday';
+
+  const formatDateTimeForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  useEffect(() => {
+    if (prepTime > 0 && (showShipdayFields || orderType === 'pickup' || orderType === 'delivery')) {
+      const now = new Date();
+      const pickup = new Date(now.getTime() + prepTime * 60000);
+      setScheduledPickupTime(formatDateTimeForInput(pickup));
+    }
+  }, [prepTime, orderType, showShipdayFields]);
 
   // Calculate delivery fee when address is selected
   useEffect(() => {
@@ -243,6 +280,13 @@ export default function OrderModal({
       setPaymentStatus(existingOrder.paymentStatus);
       setPaymentMethod(existingOrder.paymentMethod);
       setSpecialInstructions(existingOrder.specialInstructions || '');
+      setPrepTime(existingOrder.prepTime || 30);
+      if (existingOrder.scheduledPickupTime) {
+        const pickupDate = typeof existingOrder.scheduledPickupTime === 'string'
+          ? new Date(existingOrder.scheduledPickupTime)
+          : existingOrder.scheduledPickupTime;
+        setScheduledPickupTime(formatDateTimeForInput(pickupDate));
+      }
 
       const formattedItems: OrderItemInput[] = existingOrder.items.map(item => {
         const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
@@ -314,6 +358,8 @@ export default function OrderModal({
       setPaymentStatus('pending');
       setPaymentMethod('cash');
       setSpecialInstructions('');
+      setPrepTime(30);
+      setScheduledPickupTime('');
       setItems([{ menuItemId: '', quantity: 1, price: 0, selectedModifiers: [], specialInstructions: '' }]);
     }
   }, [existingOrder, isOpen, options, menuItems, menuRules]);
@@ -561,6 +607,8 @@ export default function OrderModal({
         paymentStatus,
         paymentMethod,
         specialInstructions,
+        prepTime,
+        scheduledPickupTime: scheduledPickupTime ? new Date(scheduledPickupTime).toISOString() : undefined,
       };
 
       const result = existingOrder
@@ -589,6 +637,8 @@ export default function OrderModal({
       setOrderType('dine_in');
       setDeliveryAddress(null);
       setDeliveryFee(0);
+      setPrepTime(30);
+      setScheduledPickupTime('');
       setPaymentStatus('pending');
       setPaymentMethod('cash');
       setSpecialInstructions('');
@@ -613,13 +663,22 @@ export default function OrderModal({
           <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button onClick={handleSubmit} disabled={isSubmitting || isShipdayOrder}>
             {buttonText}
           </Button>
         </>
       }
     >
       <div className="space-y-6">
+        {/* Shipday Order Warning */}
+        {isShipdayOrder && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-800">
+              ⚠️ {t('shipdayOrderWarning')}
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -628,6 +687,7 @@ export default function OrderModal({
             <Input
               value={customerName}
               onChange={e => setCustomerName(e.target.value)}
+              disabled={isShipdayOrder}
               placeholder={t('customerNamePlaceholder')}
             />
           </div>
@@ -680,11 +740,41 @@ export default function OrderModal({
             </div>
           )}
 
+          {/* Prep Time */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('prepTimeMinutes')}
+            </label>
+            <Input
+              type="number"
+              min="1"
+              value={prepTime}
+              onChange={e => setPrepTime(parseInt(e.target.value) || 30)}
+              placeholder={t('prepTimePlaceholder')}
+              disabled={isShipdayOrder}
+            />
+          </div>
+
+          {/* Pickup Time - Show for Shipday or all order types */}
+          {(showShipdayFields || orderType === 'pickup' || orderType === 'delivery') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {orderType === 'delivery' ? t('deliveryTime') : t('pickupTime')}
+              </label>
+              <Input
+                type="datetime-local"
+                value={scheduledPickupTime}
+                onChange={e => setScheduledPickupTime(e.target.value)}
+                disabled={isShipdayOrder}
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('paymentStatus')} {t('required')}
             </label>
-            <Select value={paymentStatus} onChange={e => setPaymentStatus(e.target.value as any)}>
+            <Select value={paymentStatus} onChange={e => setPaymentStatus(e.target.value as any)} disabled={isShipdayOrder}>
               <option value="pending">{tPaymentStatus('pending')}</option>
               <option value="paid">{tPaymentStatus('paid')}</option>
             </Select>

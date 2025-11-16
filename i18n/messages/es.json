@@ -821,7 +821,16 @@
       "orderUpdatedSuccess": "Pedido actualizado exitosamente",
       "orderCreatedFailed": "Error al crear el pedido",
       "orderUpdatedFailed": "Error al actualizar el pedido",
-      "required": "*"
+      "required": "*",
+      "prepTime": "Tiempo de Preparación",
+      "prepTimeMinutes": "Tiempo de preparación (minutos)",
+      "prepTimePlaceholder": "30",
+      "pickupTime": "Hora de Recogida",
+      "pickupTimePlaceholder": "Seleccionar hora de recogida",
+      "deliveryTime": "Hora de Entrega",
+      "asap": "Lo antes posible",
+      "scheduled": "Programado",
+      "shipdayOrderWarning": "Este pedido está enviado a Shipday y no puede ser editado para evitar cargos adicionales."
     },
     "edit": "Editar",
     "actions": "Acciones"

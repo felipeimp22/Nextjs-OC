@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { calculateTaxes, TaxSetting, TaxCalculationItem } from '@/lib/utils/taxCalculator';
 import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator';
 import { calculateDeliveryFee, DeliverySettings } from '@/lib/utils/deliveryFeeCalculator';
+import { DeliveryFactory } from '@/lib/delivery/DeliveryFactory';
 
 // Diagnostic function to check tax configuration
 export async function checkTaxConfiguration(restaurantId: string) {
@@ -234,6 +235,8 @@ interface CreateInHouseOrderInput {
   paymentStatus: 'pending' | 'paid';
   paymentMethod: 'card' | 'cash' | 'other';
   specialInstructions?: string;
+  prepTime?: number;
+  scheduledPickupTime?: string;
 }
 
 /**
@@ -516,11 +519,75 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         platformFee,
         total,
         specialInstructions: input.specialInstructions,
+        prepTime: input.prepTime || null,
+        scheduledPickupTime: input.scheduledPickupTime ? new Date(input.scheduledPickupTime) : null,
         timezone: 'America/New_York',
         localDate: new Date().toISOString().split('T')[0],
         localDateTime: new Date(),
       },
     });
+
+    // ========================================
+    // SHIPDAY INTEGRATION: Create delivery if using Shipday
+    // ========================================
+    if (input.orderType === 'delivery' && deliveryFeeDetails?.provider === 'shipday') {
+      console.log('=== SHIPDAY DELIVERY CREATION ===');
+      try {
+        const provider = await DeliveryFactory.getProvider('shipday');
+
+        const shipdayResult = await provider.createDelivery({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          pickupAddress: {
+            street: restaurant.street,
+            city: restaurant.city,
+            state: restaurant.state,
+            zipCode: restaurant.zipCode,
+            country: restaurant.country || 'US',
+          },
+          deliveryAddress: {
+            street: input.deliveryAddress || '',
+            city: '',
+            state: '',
+            zipCode: '',
+            country: '',
+          },
+          customerName: input.customerName,
+          customerPhone: input.customerPhone,
+          customerEmail: input.customerEmail,
+          orderValue: total,
+          tip: 0,
+          items: orderItems.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+          })),
+          specialInstructions: input.specialInstructions,
+          scheduledTime: input.scheduledPickupTime ? new Date(input.scheduledPickupTime) : undefined,
+        });
+
+        // Update order with Shipday delivery info
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            deliveryInfo: {
+              ...deliveryFeeDetails,
+              externalId: shipdayResult.externalId,
+              trackingUrl: shipdayResult.trackingUrl,
+              status: shipdayResult.status,
+            },
+          },
+        });
+
+        console.log('✅ Shipday delivery created:', {
+          externalId: shipdayResult.externalId,
+          trackingUrl: shipdayResult.trackingUrl,
+        });
+      } catch (shipdayError: any) {
+        console.error('❌ Failed to create Shipday delivery:', shipdayError.message);
+        // Don't fail the whole order, but log the error
+        // Order is still created, but delivery dispatch failed
+      }
+    }
 
     revalidatePath(`/${input.restaurantId}/kitchen`);
     revalidatePath(`/${input.restaurantId}/orders`);
