@@ -747,9 +747,12 @@ export default function OrderModal({
             </label>
             <Input
               type="number"
-              min="1"
+              min="0"
               value={prepTime}
-              onChange={e => setPrepTime(parseInt(e.target.value) || 30)}
+              onChange={e => {
+                const value = parseInt(e.target.value);
+                setPrepTime(isNaN(value) ? 30 : value);
+              }}
               placeholder={t('prepTimePlaceholder')}
               disabled={isShipdayOrder}
             />
