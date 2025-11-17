@@ -8,6 +8,8 @@ export interface DeliveryAddress {
   country?: string;
   lat?: number;
   lng?: number;
+  latitude?: number;
+  longitude?: number;
   instructions?: string;
 }
 
@@ -42,6 +44,7 @@ export interface CreateDeliveryOptions {
   deliveryFee?: number;
   tip?: number;
   discountAmount?: number;
+  paymentMethod?: string;
   items?: Array<{
     name: string;
     quantity: number;

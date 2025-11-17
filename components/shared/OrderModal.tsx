@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { formatInTimeZone, toDate } from 'date-fns-tz';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastContainer';
-import { createInHouseOrder, updateInHouseOrder, calculateDeliveryFeeEstimate } from '@/lib/serverActions/kitchen.actions';
-import ItemModifierSelector from '@/components/kitchen/ItemModifierSelector';
+import { createInHouseOrder, updateInHouseOrder, calculateDeliveryFeeEstimate } from '@/lib/serverActions/order.actions';
+import ItemModifierSelector from '@/components/shared/ItemModifierSelector';
 import { calculateItemTotalPrice } from '@/lib/utils/modifierPricingCalculator';
 import LocationAutocomplete from '@/components/shared/LocationAutocomplete';
 import type { AddressComponents } from '@/lib/utils/mapbox';
@@ -197,11 +198,22 @@ export default function OrderModal({
 
   useEffect(() => {
     if (prepTime > 0 && (showShipdayFields || orderType === 'pickup' || orderType === 'delivery')) {
-      const now = new Date();
-      const pickup = new Date(now.getTime() + prepTime * 60000);
-      setScheduledPickupTime(formatDateTimeForInput(pickup));
+      // Use restaurant timezone (default to UTC if not provided)
+      const timezone = restaurantTimezone || 'UTC';
+
+      // Get current time in restaurant timezone
+      const nowInRestaurantTz = new Date();
+
+      // Add prep time
+      const pickup = new Date(nowInRestaurantTz.getTime() + prepTime * 60000);
+
+      // Format for datetime-local input (needs to be in restaurant timezone)
+      // formatInTimeZone will convert the UTC date to the restaurant's local time
+      const formattedTime = formatInTimeZone(pickup, timezone, "yyyy-MM-dd'T'HH:mm");
+
+      setScheduledPickupTime(formattedTime);
     }
-  }, [prepTime, orderType, showShipdayFields]);
+  }, [prepTime, orderType, showShipdayFields, restaurantTimezone]);
 
   // Calculate delivery fee when address is selected
   useEffect(() => {
@@ -735,12 +747,19 @@ export default function OrderModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Delivery Address {t('required')}
+                {isShipdayOrder && <span className="text-xs text-gray-500 ml-2">(Locked - Order dispatched to Shipday)</span>}
               </label>
               <LocationAutocomplete
                 onSelect={(address) => setDeliveryAddress(address)}
                 placeholder="Enter delivery address..."
                 required={true}
+                disabled={isShipdayOrder}
               />
+              {isShipdayOrder && deliveryAddress && (
+                <div className="mt-1 text-sm text-gray-600">
+                  {deliveryAddress.fullAddress}
+                </div>
+              )}
             </div>
           )}
 
@@ -749,6 +768,7 @@ export default function OrderModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('driverTip')}
+                {isShipdayOrder && <span className="text-xs text-gray-500 ml-2">(Locked - Order dispatched to Shipday)</span>}
               </label>
               <Input
                 type="number"
@@ -769,6 +789,7 @@ export default function OrderModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('prepTimeMinutes')}
+              {isShipdayOrder && <span className="text-xs text-gray-500 ml-2">(Locked - Order dispatched to Shipday)</span>}
             </label>
             <Input
               type="number"
@@ -788,6 +809,7 @@ export default function OrderModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {orderType === 'delivery' ? t('deliveryTime') : t('pickupTime')}
+                {isShipdayOrder && <span className="text-xs text-gray-500 ml-2">(Locked - Order dispatched to Shipday)</span>}
               </label>
               <Input
                 type="datetime-local"

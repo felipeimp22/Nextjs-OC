@@ -10,6 +10,7 @@ interface LocationAutocompleteProps {
   placeholder?: string;
   required?: boolean;
   error?: string;
+  disabled?: boolean;
 }
 
 export default function LocationAutocomplete({
@@ -17,6 +18,7 @@ export default function LocationAutocomplete({
   placeholder = 'Enter delivery address...',
   required = false,
   error,
+  disabled = false,
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -117,6 +119,7 @@ export default function LocationAutocomplete({
         onChange={handleInputChange}
         placeholder={placeholder}
         required={required}
+        disabled={disabled}
       />
 
       {isSearching && (

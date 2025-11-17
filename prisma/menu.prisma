@@ -277,10 +277,10 @@ model Order {
   prepTime Int? // Preparation time in minutes
   scheduledPickupTime DateTime? // When order should be ready for pickup/delivery
 
-  // Timezone and local time
-  timezone String @default("UTC")
-  localDate String? // YYYY-MM-DD in restaurant's timezone
-  localDateTime DateTime?
+  // Timezone and local time (DEPRECATED - Use StoreHours.timezone instead)
+  timezone String? // DEPRECATED: Use restaurant.storeHours.timezone
+  localDate String? // DEPRECATED: Calculate from createdAt + restaurant.storeHours.timezone
+  localDateTime DateTime? // DEPRECATED: Use createdAt with restaurant.storeHours.timezone
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
