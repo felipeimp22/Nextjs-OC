@@ -183,9 +183,6 @@ export async function createOrder(input: CreateOrderInput) {
         total: orderDraft.total,
         deliveryDistance: input.deliveryDistance,
         specialInstructions: input.specialInstructions,
-        timezone: 'America/New_York',
-        localDate: new Date().toISOString().split('T')[0],
-        localDateTime: new Date(),
       },
     });
 

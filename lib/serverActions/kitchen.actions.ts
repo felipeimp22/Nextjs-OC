@@ -330,6 +330,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
       include: {
         financialSettings: true,
         deliverySettings: true,
+        storeHours: true,
       },
     });
 
@@ -524,9 +525,6 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         specialInstructions: input.specialInstructions,
         prepTime: input.prepTime || null,
         scheduledPickupTime: input.scheduledPickupTime ? new Date(input.scheduledPickupTime) : null,
-        timezone: 'America/New_York',
-        localDate: new Date().toISOString().split('T')[0],
-        localDateTime: new Date(),
       },
     });
 
@@ -699,6 +697,7 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
       include: {
         financialSettings: true,
         deliverySettings: true,
+        storeHours: true,
       },
     });
 
