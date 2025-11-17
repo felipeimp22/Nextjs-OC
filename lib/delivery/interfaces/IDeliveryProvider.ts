@@ -42,6 +42,7 @@ export interface CreateDeliveryOptions {
   deliveryFee?: number;
   tip?: number;
   discountAmount?: number;
+  paymentMethod?: string;
   items?: Array<{
     name: string;
     quantity: number;

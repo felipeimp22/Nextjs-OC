@@ -122,6 +122,26 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
         ? this.formatAddress(options.deliveryAddress)
         : options.deliveryAddress.street;
 
+      // Format scheduled time for Shipday API
+      const scheduledTime = options.scheduledTime || new Date();
+      const deliveryTime = new Date(scheduledTime.getTime() + 30 * 60000); // Add 30 minutes for delivery
+
+      // Format date as YYYY-MM-DD
+      const formatDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      // Format time as HH:MM:SS
+      const formatTime = (date: Date) => {
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
+      };
+
       const payload = {
         orderNumber: options.orderNumber,
         restaurantName: options.restaurantName,
@@ -134,11 +154,14 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
         orderValue: options.orderValue,
         tax: options.tax || 0,
         deliveryFee: options.deliveryFee || 0,
-        tip: options.tip || 0,
+        tips: options.tip || 0,
         discountAmount: options.discountAmount || 0,
         totalOrderCost: options.orderValue + (options.tax || 0) + (options.deliveryFee || 0) + (options.tip || 0) - (options.discountAmount || 0),
         deliveryInstruction: options.specialInstructions || '',
-        pickupTime: options.scheduledTime?.toISOString() || new Date().toISOString(),
+        expectedDeliveryDate: formatDate(scheduledTime),
+        expectedPickupTime: formatTime(scheduledTime),
+        expectedDeliveryTime: formatTime(deliveryTime),
+        paymentMethod: options.paymentMethod || '',
         orderItems: options.items?.map(item => ({
           name: item.name,
           quantity: item.quantity,
@@ -146,6 +169,7 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
       };
 
       console.log('📦 Creating Shipday delivery for order:', options.orderNumber);
+      console.log('📋 Shipday payload:', JSON.stringify(payload, null, 2));
 
       const response = await this.client.post('/orders', payload);
 

@@ -565,6 +565,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
           deliveryFee,
           tip: driverTip,
           discountAmount: 0,
+          paymentMethod: input.paymentMethod,
           items: orderItems.map(item => ({
             name: item.name,
             quantity: item.quantity,
