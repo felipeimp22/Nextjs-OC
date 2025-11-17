@@ -1259,3 +1259,4 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
     console.error('Error updating in-house order:', error);
     return { success: false, error: error.message };
   }
+}

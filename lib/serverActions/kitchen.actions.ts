@@ -213,5 +213,3 @@ export async function updateOrdersBatch(updates: Array<{ id: string; status?: st
     return { success: false, error: error.message };
   }
 }
-
-}
