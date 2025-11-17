@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { formatInTimeZone, toDate } from 'date-fns-tz';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -197,11 +198,22 @@ export default function OrderModal({
 
   useEffect(() => {
     if (prepTime > 0 && (showShipdayFields || orderType === 'pickup' || orderType === 'delivery')) {
-      const now = new Date();
-      const pickup = new Date(now.getTime() + prepTime * 60000);
-      setScheduledPickupTime(formatDateTimeForInput(pickup));
+      // Use restaurant timezone (default to UTC if not provided)
+      const timezone = restaurantTimezone || 'UTC';
+
+      // Get current time in restaurant timezone
+      const nowInRestaurantTz = new Date();
+
+      // Add prep time
+      const pickup = new Date(nowInRestaurantTz.getTime() + prepTime * 60000);
+
+      // Format for datetime-local input (needs to be in restaurant timezone)
+      // formatInTimeZone will convert the UTC date to the restaurant's local time
+      const formattedTime = formatInTimeZone(pickup, timezone, "yyyy-MM-dd'T'HH:mm");
+
+      setScheduledPickupTime(formattedTime);
     }
-  }, [prepTime, orderType, showShipdayFields]);
+  }, [prepTime, orderType, showShipdayFields, restaurantTimezone]);
 
   // Calculate delivery fee when address is selected
   useEffect(() => {
