@@ -967,7 +967,6 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
           })),
           specialInstructions: input.specialInstructions,
           scheduledTime: order.scheduledPickupTime || undefined,
-          timezone: restaurantTimezone,
         });
 
         // Update order with Shipday delivery info
