@@ -338,6 +338,9 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
       return { success: false, error: 'Restaurant not found' };
     }
 
+    // Get restaurant timezone from StoreHours
+    const restaurantTimezone = restaurant.storeHours?.timezone || 'UTC';
+
     const menuItems = await prisma.menuItem.findMany({
       where: {
         id: { in: input.items.map(item => item.menuItemId) },
@@ -525,6 +528,9 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         specialInstructions: input.specialInstructions,
         prepTime: input.prepTime || null,
         scheduledPickupTime: input.scheduledPickupTime ? new Date(input.scheduledPickupTime) : null,
+        timezone: restaurantTimezone,
+        localDate: new Date().toISOString().split('T')[0],
+        localDateTime: new Date(),
       },
     });
 
@@ -705,6 +711,9 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
       return { success: false, error: 'Restaurant not found' };
     }
 
+    // Get restaurant timezone from StoreHours
+    const restaurantTimezone = restaurant.storeHours?.timezone || 'UTC';
+
     const menuItems = await prisma.menuItem.findMany({
       where: {
         id: { in: input.items.map(item => item.menuItemId) },
@@ -872,6 +881,9 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         platformFee,
         total,
         specialInstructions: input.specialInstructions,
+        timezone: restaurantTimezone,
+        localDate: new Date().toISOString().split('T')[0],
+        localDateTime: new Date(),
       },
     });
 

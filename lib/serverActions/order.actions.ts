@@ -134,12 +134,16 @@ export async function createOrder(input: CreateOrderInput) {
       where: { id: input.restaurantId },
       include: {
         financialSettings: true,
+        storeHours: true,
       },
     });
 
     if (!restaurant) {
       return { success: false, error: 'Restaurant not found' };
     }
+
+    // Get restaurant timezone from StoreHours
+    const restaurantTimezone = restaurant.storeHours?.timezone || 'UTC';
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
@@ -183,6 +187,9 @@ export async function createOrder(input: CreateOrderInput) {
         total: orderDraft.total,
         deliveryDistance: input.deliveryDistance,
         specialInstructions: input.specialInstructions,
+        timezone: restaurantTimezone,
+        localDate: new Date().toISOString().split('T')[0],
+        localDateTime: new Date(),
       },
     });
 
