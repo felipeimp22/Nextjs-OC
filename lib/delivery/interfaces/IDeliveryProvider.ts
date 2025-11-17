@@ -51,6 +51,7 @@ export interface CreateDeliveryOptions {
   }>;
   specialInstructions?: string;
   scheduledTime?: Date;
+  timezone?: string; // Restaurant timezone for proper time formatting
 }
 
 export interface CreateDeliveryResult {

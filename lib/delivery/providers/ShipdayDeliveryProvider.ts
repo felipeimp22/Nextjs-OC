@@ -1,6 +1,7 @@
 // lib/delivery/providers/ShipdayDeliveryProvider.ts
 
 import axios from 'axios';
+import { formatInTimeZone } from 'date-fns-tz';
 import {
   IDeliveryProvider,
   DeliveryEstimateOptions,
@@ -126,20 +127,17 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
       const scheduledTime = options.scheduledTime || new Date();
       const deliveryTime = new Date(scheduledTime.getTime() + 30 * 60000); // Add 30 minutes for delivery
 
-      // Format date as YYYY-MM-DD
-      const formatDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+      // Get restaurant timezone (default to UTC if not provided)
+      const timezone = options.timezone || 'UTC';
+
+      // Format date as YYYY-MM-DD in restaurant timezone
+      const formatDate = (date: Date, tz: string) => {
+        return formatInTimeZone(date, tz, 'yyyy-MM-dd');
       };
 
-      // Format time as HH:MM:SS
-      const formatTime = (date: Date) => {
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-        return `${hours}:${minutes}:${seconds}`;
+      // Format time as HH:MM:SS in restaurant timezone
+      const formatTime = (date: Date, tz: string) => {
+        return formatInTimeZone(date, tz, 'HH:mm:ss');
       };
 
       const payload = {
@@ -158,9 +156,9 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
         discountAmount: options.discountAmount || 0,
         totalOrderCost: options.orderValue + (options.tax || 0) + (options.deliveryFee || 0) + (options.tip || 0) - (options.discountAmount || 0),
         deliveryInstruction: options.specialInstructions || '',
-        expectedDeliveryDate: formatDate(scheduledTime),
-        expectedPickupTime: formatTime(scheduledTime),
-        expectedDeliveryTime: formatTime(deliveryTime),
+        expectedDeliveryDate: formatDate(scheduledTime, timezone),
+        expectedPickupTime: formatTime(scheduledTime, timezone),
+        expectedDeliveryTime: formatTime(deliveryTime, timezone),
         paymentMethod: options.paymentMethod || '',
         ...(options.pickupAddress.latitude && options.pickupAddress.longitude ? {
           pickupLatitude: options.pickupAddress.latitude,
