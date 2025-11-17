@@ -918,7 +918,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         restaurantAddress: `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`,
         restaurantCoords: { lat: restaurant.geoLat, lng: restaurant.geoLng },
         prepTime: input.prepTime,
-        scheduledPickupTime: input.scheduledPickupTime,
+        scheduledPickupTime: order.scheduledPickupTime,
         orderValue: subtotal,
         tax,
         deliveryFee,
@@ -966,7 +966,7 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
             quantity: item.quantity,
           })),
           specialInstructions: input.specialInstructions,
-          scheduledTime: input.scheduledPickupTime ? new Date(input.scheduledPickupTime) : undefined,
+          scheduledTime: order.scheduledPickupTime || undefined,
           timezone: restaurantTimezone,
         });
 
