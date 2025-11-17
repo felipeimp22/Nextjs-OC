@@ -116,19 +116,27 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
 
     try {
       const pickupAddress = this.formatAddress(options.pickupAddress);
-      const deliveryAddress = this.formatAddress(options.deliveryAddress);
+
+      // Handle delivery address: if city/state/zip are empty, use street field directly (full address string)
+      const deliveryAddress = (options.deliveryAddress.city && options.deliveryAddress.state)
+        ? this.formatAddress(options.deliveryAddress)
+        : options.deliveryAddress.street;
 
       const payload = {
         orderNumber: options.orderNumber,
-        restaurantName: options.pickupAddress.street, // Should be from restaurant data
+        restaurantName: options.restaurantName,
         restaurantAddress: pickupAddress,
-        restaurantPhoneNumber: options.pickupAddress.instructions || '', // Should be from restaurant data
+        restaurantPhoneNumber: options.restaurantPhone,
         customerName: options.customerName,
         customerAddress: deliveryAddress,
         customerPhoneNumber: options.customerPhone,
         customerEmail: options.customerEmail || '',
         orderValue: options.orderValue,
+        tax: options.tax || 0,
+        deliveryFee: options.deliveryFee || 0,
         tip: options.tip || 0,
+        discountAmount: options.discountAmount || 0,
+        totalOrderCost: options.orderValue + (options.tax || 0) + (options.deliveryFee || 0) + (options.tip || 0) - (options.discountAmount || 0),
         deliveryInstruction: options.specialInstructions || '',
         pickupTime: options.scheduledTime?.toISOString() || new Date().toISOString(),
         orderItems: options.items?.map(item => ({
@@ -139,7 +147,7 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
 
       console.log('📦 Creating Shipday delivery for order:', options.orderNumber);
 
-      const response = await this.client.post('/order', payload);
+      const response = await this.client.post('/orders', payload);
 
       if (!response.data.orderId) {
         throw new Error('No order ID returned from Shipday');
@@ -180,7 +188,7 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
     try {
       console.log('🔍 Checking Shipday delivery status:', externalId);
 
-      const response = await this.client.get(`/order/${externalId}`);
+      const response = await this.client.get(`/orders/${externalId}`);
 
       return {
         status: this.mapShipdayStatus(response.data.orderState),
@@ -218,7 +226,7 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
     try {
       console.log('❌ Cancelling Shipday delivery:', options.externalId);
 
-      await this.client.delete(`/order/${options.externalId}`, {
+      await this.client.delete(`/orders/${options.externalId}`, {
         data: { reason: options.reason || 'Order cancelled' },
       });
 

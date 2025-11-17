@@ -23,6 +23,8 @@ interface Order {
   specialInstructions?: string;
   createdAt: Date;
   paymentStatus: string;
+  prepTime?: number;
+  scheduledPickupTime?: Date;
 }
 
 interface OrderTicketProps {
@@ -118,6 +120,12 @@ export default function OrderTicket({ order, currencySymbol }: OrderTicketProps)
             <Phone className="w-4 h-4 text-gray-400" />
             <span>{order.customerPhone}</span>
           </div>
+          {order.prepTime && (
+            <div className="flex items-center gap-2 text-sm text-blue-600 font-medium">
+              <Clock className="w-4 h-4" />
+              <span>Prep: {order.prepTime} min</span>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-gray-200 pt-3">

@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { calculateTaxes, TaxSetting, TaxCalculationItem } from '@/lib/utils/taxCalculator';
 import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator';
 import { calculateDeliveryFee, DeliverySettings } from '@/lib/utils/deliveryFeeCalculator';
+import { DeliveryFactory } from '@/lib/delivery/DeliveryFactory';
 
 // Diagnostic function to check tax configuration
 export async function checkTaxConfiguration(restaurantId: string) {
@@ -234,6 +235,9 @@ interface CreateInHouseOrderInput {
   paymentStatus: 'pending' | 'paid';
   paymentMethod: 'card' | 'cash' | 'other';
   specialInstructions?: string;
+  prepTime?: number;
+  scheduledPickupTime?: string;
+  driverTip?: number;
 }
 
 /**
@@ -478,7 +482,8 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
       }
     }
 
-    const total = subtotal + tax + platformFee + deliveryFee;
+    const driverTip = input.driverTip || 0;
+    const total = subtotal + tax + platformFee + deliveryFee + driverTip;
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
@@ -510,17 +515,134 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         tax,
         taxBreakdown,
         tip: 0,
+        driverTip,
         deliveryFee,
         deliveryDistance: deliveryFeeDetails?.distance || null,
         deliveryInfo: deliveryFeeDetails || null,
         platformFee,
         total,
         specialInstructions: input.specialInstructions,
+        prepTime: input.prepTime || null,
+        scheduledPickupTime: input.scheduledPickupTime ? new Date(input.scheduledPickupTime) : null,
         timezone: 'America/New_York',
         localDate: new Date().toISOString().split('T')[0],
         localDateTime: new Date(),
       },
     });
+
+    // ========================================
+    // SHIPDAY INTEGRATION: Create delivery if using Shipday
+    // ========================================
+    if (input.orderType === 'delivery' && deliveryFeeDetails?.provider === 'shipday') {
+      console.log('=== SHIPDAY DELIVERY CREATION ===');
+      try {
+        const provider = await DeliveryFactory.getProvider('shipday');
+
+        const shipdayResult = await provider.createDelivery({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          restaurantName: restaurant.name,
+          restaurantPhone: restaurant.phone,
+          pickupAddress: {
+            street: restaurant.street,
+            city: restaurant.city,
+            state: restaurant.state,
+            zipCode: restaurant.zipCode,
+            country: restaurant.country || 'US',
+          },
+          deliveryAddress: {
+            street: input.deliveryAddress || '',
+            city: '',
+            state: '',
+            zipCode: '',
+            country: '',
+          },
+          customerName: input.customerName,
+          customerPhone: input.customerPhone,
+          customerEmail: input.customerEmail,
+          orderValue: subtotal,
+          tax,
+          deliveryFee,
+          tip: driverTip,
+          discountAmount: 0,
+          items: orderItems.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+          })),
+          specialInstructions: input.specialInstructions,
+          scheduledTime: input.scheduledPickupTime ? new Date(input.scheduledPickupTime) : undefined,
+        });
+
+        // Update order with Shipday delivery info
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            deliveryInfo: {
+              ...deliveryFeeDetails,
+              externalId: shipdayResult.externalId,
+              trackingUrl: shipdayResult.trackingUrl,
+              status: shipdayResult.status,
+            },
+          },
+        });
+
+        console.log('✅ Shipday delivery created:', {
+          externalId: shipdayResult.externalId,
+          trackingUrl: shipdayResult.trackingUrl,
+        });
+      } catch (shipdayError: any) {
+        console.error('❌ Failed to create Shipday delivery:', shipdayError.message);
+        // Don't fail the whole order, but log the error
+        // Order is still created, but delivery dispatch failed
+      }
+    }
+
+    // ========================================
+    // PLATFORM RECEIVABLE: Track what restaurant owes platform
+    // ========================================
+    try {
+      const isShipdayDelivery = input.orderType === 'delivery' && deliveryFeeDetails?.provider === 'shipday';
+
+      // Calculate what restaurant owes platform
+      let platformReceivableAmount = platformFee;
+      let receivableDeliveryFee = 0;
+      let receivableDriverTip = 0;
+
+      if (isShipdayDelivery) {
+        // For Shipday deliveries, platform collects delivery fee and driver tip to pay Shipday
+        receivableDeliveryFee = deliveryFee;
+        receivableDriverTip = driverTip;
+        platformReceivableAmount += deliveryFee + driverTip;
+      }
+
+      await prisma.platformReceivable.create({
+        data: {
+          restaurantId: input.restaurantId,
+          orderId: order.id,
+          platformFee,
+          deliveryFee: receivableDeliveryFee,
+          driverTip: receivableDriverTip,
+          totalOwed: platformReceivableAmount,
+          remainingBalance: platformReceivableAmount,
+          status: 'pending',
+          orderType: input.orderType,
+          deliveryProvider: isShipdayDelivery ? 'shipday' : null,
+        },
+      });
+
+      console.log('✅ Platform receivable created:', {
+        orderId: order.id,
+        totalOwed: `$${platformReceivableAmount.toFixed(2)}`,
+        breakdown: {
+          platformFee: `$${platformFee.toFixed(2)}`,
+          deliveryFee: `$${receivableDeliveryFee.toFixed(2)}`,
+          driverTip: `$${receivableDriverTip.toFixed(2)}`,
+        },
+      });
+    } catch (receivableError: any) {
+      console.error('❌ Failed to create platform receivable:', receivableError.message);
+      // Don't fail the order if receivable creation fails
+    }
 
     revalidatePath(`/${input.restaurantId}/kitchen`);
     revalidatePath(`/${input.restaurantId}/orders`);

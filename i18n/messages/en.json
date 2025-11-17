@@ -834,7 +834,17 @@
       "orderUpdatedSuccess": "Order updated successfully",
       "orderCreatedFailed": "Failed to create order",
       "orderUpdatedFailed": "Failed to update order",
-      "required": "*"
+      "required": "*",
+      "prepTime": "Prep Time",
+      "prepTimeMinutes": "Preparation time (minutes)",
+      "prepTimePlaceholder": "30",
+      "pickupTime": "Pickup Time",
+      "pickupTimePlaceholder": "Select pickup time",
+      "deliveryTime": "Delivery Time",
+      "driverTip": "Driver Tip",
+      "asap": "ASAP",
+      "scheduled": "Scheduled",
+      "shipdayOrderWarning": "This order is dispatched to Shipday and cannot be edited to avoid extra charges."
     }
   }
 }

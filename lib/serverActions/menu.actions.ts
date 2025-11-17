@@ -844,6 +844,7 @@ export async function getRestaurantMenuData(restaurantId: string) {
         menuRules: true,
         financialSettings: true,
         deliverySettings: true,
+        storeHours: true,
       },
     });
 
@@ -861,6 +862,7 @@ export async function getRestaurantMenuData(restaurantId: string) {
         taxSettings: (restaurant.financialSettings?.taxes as any[]) || [],
         globalFeeSettings: restaurant.financialSettings?.globalFee || null,
         deliverySettings: restaurant.deliverySettings || null,
+        restaurantTimezone: restaurant.storeHours?.timezone || 'America/New_York',
         restaurantAddress: {
           street: restaurant.street,
           city: restaurant.city,
