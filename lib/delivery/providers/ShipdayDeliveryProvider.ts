@@ -162,6 +162,14 @@ export class ShipdayDeliveryProvider implements IDeliveryProvider {
         expectedPickupTime: formatTime(scheduledTime),
         expectedDeliveryTime: formatTime(deliveryTime),
         paymentMethod: options.paymentMethod || '',
+        ...(options.pickupAddress.latitude && options.pickupAddress.longitude ? {
+          pickupLatitude: options.pickupAddress.latitude,
+          pickupLongitude: options.pickupAddress.longitude,
+        } : {}),
+        ...(options.deliveryAddress.latitude && options.deliveryAddress.longitude ? {
+          deliveryLatitude: options.deliveryAddress.latitude,
+          deliveryLongitude: options.deliveryAddress.longitude,
+        } : {}),
         orderItems: options.items?.map(item => ({
           name: item.name,
           quantity: item.quantity,

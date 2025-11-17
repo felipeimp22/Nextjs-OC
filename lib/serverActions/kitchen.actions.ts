@@ -535,6 +535,23 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
     // ========================================
     if (input.orderType === 'delivery' && deliveryFeeDetails?.provider === 'shipday') {
       console.log('=== SHIPDAY DELIVERY CREATION ===');
+      console.log('🔍 Shipday Input Data:', {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        customerName: input.customerName,
+        deliveryAddress: input.deliveryAddress,
+        deliveryCoordinates: input.deliveryCoordinates,
+        restaurantAddress: `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`,
+        restaurantCoords: { lat: restaurant.geoLat, lng: restaurant.geoLng },
+        prepTime: input.prepTime,
+        scheduledPickupTime: input.scheduledPickupTime,
+        orderValue: subtotal,
+        tax,
+        deliveryFee,
+        driverTip,
+        paymentMethod: input.paymentMethod,
+      });
+
       try {
         const provider = await DeliveryFactory.getProvider('shipday');
 
@@ -549,6 +566,8 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
             state: restaurant.state,
             zipCode: restaurant.zipCode,
             country: restaurant.country || 'US',
+            latitude: restaurant.geoLat || undefined,
+            longitude: restaurant.geoLng || undefined,
           },
           deliveryAddress: {
             street: input.deliveryAddress || '',
@@ -556,6 +575,8 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
             state: '',
             zipCode: '',
             country: '',
+            latitude: input.deliveryCoordinates?.latitude,
+            longitude: input.deliveryCoordinates?.longitude,
           },
           customerName: input.customerName,
           customerPhone: input.customerPhone,

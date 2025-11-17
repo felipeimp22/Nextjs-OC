@@ -8,6 +8,8 @@ export interface DeliveryAddress {
   country?: string;
   lat?: number;
   lng?: number;
+  latitude?: number;
+  longitude?: number;
   instructions?: string;
 }
 

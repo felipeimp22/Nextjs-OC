@@ -735,12 +735,19 @@ export default function OrderModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Delivery Address {t('required')}
+                {isShipdayOrder && <span className="text-xs text-gray-500 ml-2">(Locked - Order dispatched to Shipday)</span>}
               </label>
               <LocationAutocomplete
                 onSelect={(address) => setDeliveryAddress(address)}
                 placeholder="Enter delivery address..."
                 required={true}
+                disabled={isShipdayOrder}
               />
+              {isShipdayOrder && deliveryAddress && (
+                <div className="mt-1 text-sm text-gray-600">
+                  {deliveryAddress.fullAddress}
+                </div>
+              )}
             </div>
           )}
 
@@ -749,6 +756,7 @@ export default function OrderModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('driverTip')}
+                {isShipdayOrder && <span className="text-xs text-gray-500 ml-2">(Locked - Order dispatched to Shipday)</span>}
               </label>
               <Input
                 type="number"
@@ -769,6 +777,7 @@ export default function OrderModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('prepTimeMinutes')}
+              {isShipdayOrder && <span className="text-xs text-gray-500 ml-2">(Locked - Order dispatched to Shipday)</span>}
             </label>
             <Input
               type="number"
@@ -788,6 +797,7 @@ export default function OrderModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {orderType === 'delivery' ? t('deliveryTime') : t('pickupTime')}
+                {isShipdayOrder && <span className="text-xs text-gray-500 ml-2">(Locked - Order dispatched to Shipday)</span>}
               </label>
               <Input
                 type="datetime-local"
