@@ -188,7 +188,7 @@ export async function updateOrderPriority(orderId: string, priority: number) {
   }
 }
 
-export async function updateOrdersBatch(updates: Array<{ id: string; status?: string; priority?: number }>) {
+export async function updateOrdersBatch(restaurantId: string, updates: Array<{ id: string; status?: string; priority?: number }>) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -207,6 +207,7 @@ export async function updateOrdersBatch(updates: Array<{ id: string; status?: st
       )
     );
 
+    revalidatePath(`/${restaurantId}/kitchen`);
     return { success: true };
   } catch (error: any) {
     console.error('Error updating orders batch:', error);

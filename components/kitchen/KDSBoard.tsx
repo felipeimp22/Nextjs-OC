@@ -54,9 +54,10 @@ interface KDSBoardProps {
   initialOrders: Order[];
   stages: KitchenStage[];
   currencySymbol: string;
+  restaurantId: string;
 }
 
-export default function KDSBoard({ initialOrders, stages, currencySymbol }: KDSBoardProps) {
+export default function KDSBoard({ initialOrders, stages, currencySymbol, restaurantId }: KDSBoardProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const { showToast } = useToast();
@@ -186,7 +187,7 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol }: KDSB
         return [...otherOrders, ...updatedOrders];
       });
 
-      const result = await updateOrdersBatch(updates);
+      const result = await updateOrdersBatch(restaurantId, updates);
       if (!result.success) {
         showToast('error', 'Failed to update order');
         setOrders(initialOrders);
@@ -205,7 +206,7 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol }: KDSB
         )
       );
 
-      const result = await updateOrdersBatch(updates);
+      const result = await updateOrdersBatch(restaurantId, updates);
       if (!result.success) {
         showToast('error', 'Failed to update order');
         setOrders(initialOrders);
