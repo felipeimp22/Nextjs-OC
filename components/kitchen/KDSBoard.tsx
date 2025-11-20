@@ -156,86 +156,58 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
     if (!activeOrder) return;
 
     console.log('=== DRAG END ===');
-    console.log('activeId:', activeId);
-    console.log('overId:', overId);
-    console.log('activeOrder current status:', activeOrder.status);
+    console.log('Active Order ID:', activeId);
+    console.log('Dropped on:', overId);
+    console.log('Current Status:', activeOrder.status);
 
-    const overIsColumn = enabledStages.some(stage => stage.status === overId);
-    let finalStatus = activeOrder.status;
+    // Determine the new status
+    let newStatus = activeOrder.status;
 
-    if (overIsColumn) {
-      finalStatus = overId;
-      console.log('Dropped on column:', finalStatus);
+    // Check if dropped on a column (stage)
+    const droppedStage = enabledStages.find(stage => stage.status === overId);
+    if (droppedStage) {
+      newStatus = droppedStage.status;
+      console.log('Dropped on column, new status:', newStatus);
     } else {
-      const overOrder = orders.find(o => o.id === overId);
-      if (overOrder) {
-        finalStatus = overOrder.status;
-        console.log('Dropped on order, status:', finalStatus);
+      // Dropped on another order - get that order's status
+      const targetOrder = orders.find(o => o.id === overId);
+      if (targetOrder) {
+        newStatus = targetOrder.status;
+        console.log('Dropped on order, new status:', newStatus);
       }
     }
 
-    const statusOrders = orders.filter(o => o.status === finalStatus);
-    const activeIndex = statusOrders.findIndex(o => o.id === activeId);
-    const overIndex = statusOrders.findIndex(o => o.id === overId);
+    // Check if status actually changed
+    if (activeOrder.status === newStatus) {
+      console.log('No status change needed');
+      return;
+    }
 
-    if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-      const reorderedOrders = arrayMove(statusOrders, activeIndex, overIndex);
-      const updates = reorderedOrders.map((order, index) => ({
-        id: order.id,
-        priority: reorderedOrders.length - index,
-        ...(order.id === activeId && { status: finalStatus }),
-      }));
+    console.log('Status changing from', activeOrder.status, 'to', newStatus);
 
-      setOrders(prevOrders => {
-        const otherOrders = prevOrders.filter(o => o.status !== finalStatus);
-        const updatedOrders = reorderedOrders.map((order, index) => ({
-          ...order,
-          priority: reorderedOrders.length - index,
-          ...(order.id === activeId && { status: finalStatus }),
-        }));
-        return [...otherOrders, ...updatedOrders];
-      });
+    // Update UI optimistically
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === activeId ? { ...order, status: newStatus } : order
+      )
+    );
 
-      const result = await updateOrdersBatch(restaurantId, updates);
-      if (!result.success) {
-        showToast('error', 'Failed to update order');
-        setOrders(initialOrders);
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
-      }
-    } else if (activeOrder.status !== finalStatus) {
-      console.log('Status change detected!');
-      console.log('From:', activeOrder.status, 'To:', finalStatus);
+    // Update in database
+    console.log('Calling updateOrdersBatch with:', { id: activeId, status: newStatus });
+    const result = await updateOrdersBatch(restaurantId, [
+      { id: activeId, status: newStatus }
+    ]);
 
-      const updates = [
-        {
-          id: activeId,
-          status: finalStatus,
-        },
-      ];
+    console.log('Server response:', result);
 
-      console.log('Sending updates to server:', updates);
-
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === activeId ? { ...order, status: finalStatus } : order
-        )
-      );
-
-      console.log('Calling updateOrdersBatch...');
-      const result = await updateOrdersBatch(restaurantId, updates);
-      console.log('updateOrdersBatch result:', result);
-
-      if (!result.success) {
-        console.error('Update failed:', result.error);
-        showToast('error', 'Failed to update order');
-        setOrders(initialOrders);
-      } else {
-        console.log('✅ Update successful, invalidating React Query cache...');
-        queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
-      }
+    if (!result.success) {
+      console.error('❌ Update failed:', result.error);
+      showToast('error', 'Failed to update order status');
+      // Rollback on failure
+      setOrders(initialOrders);
     } else {
-      console.log('No status change needed. Current:', activeOrder.status, 'Final:', finalStatus);
+      console.log('✅ Status updated successfully, invalidating cache...');
+      queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
     }
   };
 
