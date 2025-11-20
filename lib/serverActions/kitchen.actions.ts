@@ -188,28 +188,53 @@ export async function updateOrderPriority(orderId: string, priority: number) {
   }
 }
 
-export async function updateOrdersBatch(updates: Array<{ id: string; status?: string; priority?: number }>) {
+export async function updateOrdersBatch(restaurantId: string, updates: Array<{ id: string; status?: string; priority?: number }>) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
+      console.error('❌ updateOrdersBatch: Unauthorized - no session');
       return { success: false, error: "Unauthorized" };
     }
 
-    await Promise.all(
-      updates.map(update =>
-        prisma.order.update({
+    console.log('=== UPDATE ORDERS BATCH ===');
+    console.log('restaurantId:', restaurantId);
+    console.log('updates:', JSON.stringify(updates, null, 2));
+
+    const results = await Promise.all(
+      updates.map(async (update) => {
+        const updateData: any = {};
+
+        if (update.status) {
+          updateData.status = update.status;
+        }
+
+        if (update.priority !== undefined) {
+          updateData.priority = update.priority;
+        }
+
+        console.log(`Updating order ${update.id}:`, updateData);
+
+        const result = await prisma.order.update({
           where: { id: update.id },
-          data: {
-            ...(update.status && { status: update.status }),
-            ...(update.priority !== undefined && { priority: update.priority }),
-          },
-        })
-      )
+          data: updateData,
+        });
+
+        console.log(`✅ Order ${update.id} updated to status: ${result.status}, priority: ${result.priority}`);
+        return result;
+      })
     );
 
+    revalidatePath(`/${restaurantId}/kitchen`);
+    console.log('✅ updateOrdersBatch completed successfully');
+    console.log('Updated orders:', results.map(r => ({ id: r.id, status: r.status, priority: r.priority })));
     return { success: true };
   } catch (error: any) {
-    console.error('Error updating orders batch:', error);
+    console.error('❌ Error updating orders batch:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
     return { success: false, error: error.message };
   }
 }
