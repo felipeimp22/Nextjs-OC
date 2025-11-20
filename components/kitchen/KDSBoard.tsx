@@ -153,15 +153,22 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
     const activeOrder = orders.find(o => o.id === activeId);
     if (!activeOrder) return;
 
+    console.log('=== DRAG END ===');
+    console.log('activeId:', activeId);
+    console.log('overId:', overId);
+    console.log('activeOrder current status:', activeOrder.status);
+
     const overIsColumn = enabledStages.some(stage => stage.status === overId);
     let finalStatus = activeOrder.status;
 
     if (overIsColumn) {
       finalStatus = overId;
+      console.log('Dropped on column:', finalStatus);
     } else {
       const overOrder = orders.find(o => o.id === overId);
       if (overOrder) {
         finalStatus = overOrder.status;
+        console.log('Dropped on order, status:', finalStatus);
       }
     }
 
@@ -193,6 +200,9 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
         setOrders(initialOrders);
       }
     } else if (activeOrder.status !== finalStatus) {
+      console.log('Status change detected!');
+      console.log('From:', activeOrder.status, 'To:', finalStatus);
+
       const updates = [
         {
           id: activeId,
@@ -200,17 +210,27 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
         },
       ];
 
+      console.log('Sending updates to server:', updates);
+
       setOrders(prevOrders =>
         prevOrders.map(order =>
           order.id === activeId ? { ...order, status: finalStatus } : order
         )
       );
 
+      console.log('Calling updateOrdersBatch...');
       const result = await updateOrdersBatch(restaurantId, updates);
+      console.log('updateOrdersBatch result:', result);
+
       if (!result.success) {
+        console.error('Update failed:', result.error);
         showToast('error', 'Failed to update order');
         setOrders(initialOrders);
+      } else {
+        console.log('✅ Update successful');
       }
+    } else {
+      console.log('No status change needed. Current:', activeOrder.status, 'Final:', finalStatus);
     }
   };
 
