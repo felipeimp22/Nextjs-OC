@@ -14,6 +14,7 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { QueryClient } from '@tanstack/react-query';
 import KDSColumn from './KDSColumn';
 import OrderTicket from './OrderTicket';
 import { updateOrdersBatch } from '@/lib/serverActions/kitchen.actions';
@@ -55,9 +56,10 @@ interface KDSBoardProps {
   stages: KitchenStage[];
   currencySymbol: string;
   restaurantId: string;
+  queryClient: QueryClient;
 }
 
-export default function KDSBoard({ initialOrders, stages, currencySymbol, restaurantId }: KDSBoardProps) {
+export default function KDSBoard({ initialOrders, stages, currencySymbol, restaurantId, queryClient }: KDSBoardProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const { showToast } = useToast();
@@ -198,6 +200,8 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
       if (!result.success) {
         showToast('error', 'Failed to update order');
         setOrders(initialOrders);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
       }
     } else if (activeOrder.status !== finalStatus) {
       console.log('Status change detected!');
@@ -227,7 +231,8 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
         showToast('error', 'Failed to update order');
         setOrders(initialOrders);
       } else {
-        console.log('✅ Update successful');
+        console.log('✅ Update successful, invalidating React Query cache...');
+        queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
       }
     } else {
       console.log('No status change needed. Current:', activeOrder.status, 'Final:', finalStatus);

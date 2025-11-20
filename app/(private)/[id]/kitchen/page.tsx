@@ -193,6 +193,7 @@ export default function KitchenPage() {
           stages={stages}
           currencySymbol={menuData?.currencySymbol || '$'}
           restaurantId={restaurantId}
+          queryClient={queryClient}
         />
       </div>
     </div>
