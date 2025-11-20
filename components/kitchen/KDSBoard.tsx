@@ -134,15 +134,7 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
 
     if (overIsColumn) {
       console.log('Over column:', overId);
-      const newStatus = overId;
-      if (activeOrder.status !== newStatus) {
-        console.log('Would change status from', activeOrder.status, 'to', newStatus);
-        setOrders(prevOrders =>
-          prevOrders.map(order =>
-            order.id === activeId ? { ...order, status: newStatus } : order
-          )
-        );
-      }
+      // DO NOT UPDATE STATE HERE - let handleDragEnd do it
     } else {
       const overOrder = orders.find(o => o.id === overId);
       if (!overOrder) {
@@ -151,15 +143,7 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
       }
 
       console.log('Over order:', overOrder.orderNumber, 'Status:', overOrder.status);
-
-      if (activeOrder.status !== overOrder.status) {
-        console.log('Would change status from', activeOrder.status, 'to', overOrder.status);
-        setOrders(prevOrders =>
-          prevOrders.map(order =>
-            order.id === activeId ? { ...order, status: overOrder.status } : order
-          )
-        );
-      }
+      // DO NOT UPDATE STATE HERE - let handleDragEnd do it
     }
   };
 
