@@ -11,6 +11,7 @@ import { calculateTaxes, TaxSetting, TaxCalculationItem } from '@/lib/utils/taxC
 import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator';
 import { calculateDeliveryFee, DeliverySettings } from '@/lib/utils/deliveryFeeCalculator';
 import { DeliveryFactory } from '@/lib/delivery/DeliveryFactory';
+import { calculateItemTotalPrice } from '@/lib/utils/modifierPricingCalculator';
 
 interface CreateOrderInput {
   restaurantId: string;
@@ -720,6 +721,24 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
 
     const menuItemsMap = new Map<string, typeof menuItems[0]>(menuItems.map(item => [item.id, item]));
 
+    // Fetch all menu rules for items in this order
+    const menuItemIds = input.items.map(item => item.menuItemId);
+    const menuRules = await prisma.menuRules.findMany({
+      where: {
+        menuItemId: { in: menuItemIds }
+      }
+    });
+
+    // Create a map for quick lookup
+    const menuRulesMap = new Map(
+      menuRules.map(rule => [rule.menuItemId, rule])
+    );
+
+    // Fetch all options for the restaurant (needed to resolve option names)
+    const allOptions = await prisma.option.findMany({
+      where: { restaurantId: input.restaurantId }
+    });
+
     let subtotal = 0;
     const orderItems = input.items.map(item => {
       const menuItem = menuItemsMap.get(item.menuItemId);
@@ -727,16 +746,98 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
         throw new Error(`Menu item ${item.menuItemId} not found`);
       }
 
+      // 🔒 SECURITY: Always recalculate prices on backend
+      // Never trust prices sent from frontend - they can be manipulated
+
+      // Get menu rules for this item
+      const itemRules = menuRulesMap.get(item.menuItemId);
+      const appliedOptions = (itemRules as any)?.appliedOptions as any[] | undefined;
+
+      // Calculate price using centralized modifier pricing calculator
       let itemPrice: number;
-      if (item.price !== undefined && item.price !== null) {
-        itemPrice = item.price;
-      } else {
-        itemPrice = Number(menuItem.price);
-        if (item.options) {
-          item.options.forEach(option => {
-            itemPrice += option.priceAdjustment;
-          });
+
+      if (item.options && item.options.length > 0 && itemRules && appliedOptions) {
+        console.log('=== ITEM PRICING CALCULATION ===');
+        console.log('Menu Item:', menuItem.name);
+        console.log('Base Price:', `$${menuItem.price.toFixed(2)}`);
+        console.log('Options Selected:', item.options.length);
+        console.log('Menu Rules Found:', {
+          appliedOptionsCount: appliedOptions.length,
+          menuItemId: item.menuItemId,
+        });
+
+        // Convert option names to IDs for calculator
+        const selectedChoices = item.options
+          .map(inputOption => {
+            // Find option by name
+            const option = allOptions.find(opt => opt.name === inputOption.name);
+            if (!option) {
+              console.warn(`⚠️ Option "${inputOption.name}" not found, skipping`);
+              return null;
+            }
+
+            // Find choice by name within the option
+            const choice = (option.choices as any[]).find(
+              (c: any) => c.name === inputOption.choice
+            );
+            if (!choice) {
+              console.warn(`⚠️ Choice "${inputOption.choice}" not found in option "${option.name}", skipping`);
+              return null;
+            }
+
+            return {
+              optionId: option.id,
+              choiceId: choice.id,
+              quantity: 1, // Default quantity, can be extended later
+            };
+          })
+          .filter((choice): choice is { optionId: string; choiceId: string; quantity: number } => choice !== null);
+
+        // Use centralized pricing calculator
+        const pricingResult = calculateItemTotalPrice(
+          menuItem.price,
+          { appliedOptions },
+          selectedChoices,
+          1 // Calculate for single unit, will multiply by quantity later
+        );
+
+        itemPrice = pricingResult.itemTotal;
+
+        console.log(`💰 Item "${menuItem.name}" pricing calculated:`, {
+          basePrice: menuItem.price,
+          modifierPrice: pricingResult.modifierPrice,
+          itemTotal: itemPrice,
+          breakdownErrors: pricingResult.breakdown.errors.length > 0
+            ? pricingResult.breakdown.errors
+            : 'none',
+        });
+
+        // Log any pricing errors
+        if (pricingResult.breakdown.errors.length > 0) {
+          console.error('⚠️ Pricing calculation errors:', pricingResult.breakdown.errors);
         }
+
+        console.log('Final Item Price:', `$${itemPrice.toFixed(2)}`);
+        console.log('Quantity:', item.quantity);
+        console.log('Item Total:', `$${(itemPrice * item.quantity).toFixed(2)}`);
+        console.log('===================================');
+      } else if (item.options && item.options.length > 0) {
+        // Options provided but no menu rules found
+        // Fall back to simple addition (shouldn't happen in production)
+        console.warn(`⚠️ No menu rules found for item ${item.menuItemId}, using fallback pricing`);
+        itemPrice = Number(menuItem.price);
+        item.options.forEach(option => {
+          itemPrice += option.priceAdjustment;
+        });
+      } else {
+        // No options selected, use base price
+        console.log('=== ITEM PRICING CALCULATION ===');
+        console.log('Menu Item:', menuItem.name);
+        console.log('Base Price:', `$${menuItem.price.toFixed(2)}`);
+        console.log('Options Selected:', 0);
+        console.log('Final Item Price:', `$${menuItem.price.toFixed(2)}`);
+        console.log('===================================');
+        itemPrice = Number(menuItem.price);
       }
 
       const finalPrice = itemPrice * item.quantity;
@@ -1088,6 +1189,24 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
 
     const menuItemsMap = new Map<string, typeof menuItems[0]>(menuItems.map(item => [item.id, item]));
 
+    // Fetch all menu rules for items in this order
+    const menuItemIds = input.items.map(item => item.menuItemId);
+    const menuRules = await prisma.menuRules.findMany({
+      where: {
+        menuItemId: { in: menuItemIds }
+      }
+    });
+
+    // Create a map for quick lookup
+    const menuRulesMap = new Map(
+      menuRules.map(rule => [rule.menuItemId, rule])
+    );
+
+    // Fetch all options for the restaurant (needed to resolve option names)
+    const allOptions = await prisma.option.findMany({
+      where: { restaurantId: input.restaurantId }
+    });
+
     let subtotal = 0;
     const orderItems = input.items.map(item => {
       const menuItem = menuItemsMap.get(item.menuItemId);
@@ -1095,16 +1214,98 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         throw new Error(`Menu item ${item.menuItemId} not found`);
       }
 
+      // 🔒 SECURITY: Always recalculate prices on backend
+      // Never trust prices sent from frontend - they can be manipulated
+
+      // Get menu rules for this item
+      const itemRules = menuRulesMap.get(item.menuItemId);
+      const appliedOptions = (itemRules as any)?.appliedOptions as any[] | undefined;
+
+      // Calculate price using centralized modifier pricing calculator
       let itemPrice: number;
-      if (item.price !== undefined && item.price !== null) {
-        itemPrice = item.price;
-      } else {
-        itemPrice = Number(menuItem.price);
-        if (item.options) {
-          item.options.forEach(option => {
-            itemPrice += option.priceAdjustment;
-          });
+
+      if (item.options && item.options.length > 0 && itemRules && appliedOptions) {
+        console.log('=== ITEM PRICING CALCULATION ===');
+        console.log('Menu Item:', menuItem.name);
+        console.log('Base Price:', `$${menuItem.price.toFixed(2)}`);
+        console.log('Options Selected:', item.options.length);
+        console.log('Menu Rules Found:', {
+          appliedOptionsCount: appliedOptions.length,
+          menuItemId: item.menuItemId,
+        });
+
+        // Convert option names to IDs for calculator
+        const selectedChoices = item.options
+          .map(inputOption => {
+            // Find option by name
+            const option = allOptions.find(opt => opt.name === inputOption.name);
+            if (!option) {
+              console.warn(`⚠️ Option "${inputOption.name}" not found, skipping`);
+              return null;
+            }
+
+            // Find choice by name within the option
+            const choice = (option.choices as any[]).find(
+              (c: any) => c.name === inputOption.choice
+            );
+            if (!choice) {
+              console.warn(`⚠️ Choice "${inputOption.choice}" not found in option "${option.name}", skipping`);
+              return null;
+            }
+
+            return {
+              optionId: option.id,
+              choiceId: choice.id,
+              quantity: 1, // Default quantity, can be extended later
+            };
+          })
+          .filter((choice): choice is { optionId: string; choiceId: string; quantity: number } => choice !== null);
+
+        // Use centralized pricing calculator
+        const pricingResult = calculateItemTotalPrice(
+          menuItem.price,
+          { appliedOptions },
+          selectedChoices,
+          1 // Calculate for single unit, will multiply by quantity later
+        );
+
+        itemPrice = pricingResult.itemTotal;
+
+        console.log(`💰 Item "${menuItem.name}" pricing calculated:`, {
+          basePrice: menuItem.price,
+          modifierPrice: pricingResult.modifierPrice,
+          itemTotal: itemPrice,
+          breakdownErrors: pricingResult.breakdown.errors.length > 0
+            ? pricingResult.breakdown.errors
+            : 'none',
+        });
+
+        // Log any pricing errors
+        if (pricingResult.breakdown.errors.length > 0) {
+          console.error('⚠️ Pricing calculation errors:', pricingResult.breakdown.errors);
         }
+
+        console.log('Final Item Price:', `$${itemPrice.toFixed(2)}`);
+        console.log('Quantity:', item.quantity);
+        console.log('Item Total:', `$${(itemPrice * item.quantity).toFixed(2)}`);
+        console.log('===================================');
+      } else if (item.options && item.options.length > 0) {
+        // Options provided but no menu rules found
+        // Fall back to simple addition (shouldn't happen in production)
+        console.warn(`⚠️ No menu rules found for item ${item.menuItemId}, using fallback pricing`);
+        itemPrice = Number(menuItem.price);
+        item.options.forEach(option => {
+          itemPrice += option.priceAdjustment;
+        });
+      } else {
+        // No options selected, use base price
+        console.log('=== ITEM PRICING CALCULATION ===');
+        console.log('Menu Item:', menuItem.name);
+        console.log('Base Price:', `$${menuItem.price.toFixed(2)}`);
+        console.log('Options Selected:', 0);
+        console.log('Final Item Price:', `$${menuItem.price.toFixed(2)}`);
+        console.log('===================================');
+        itemPrice = Number(menuItem.price);
       }
 
       const finalPrice = itemPrice * item.quantity;
