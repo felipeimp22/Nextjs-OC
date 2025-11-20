@@ -101,14 +101,23 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
+    console.log('🟢 DRAG START');
+    console.log('Active ID:', active.id);
     const order = orders.find(o => o.id === active.id);
     if (order) {
+      console.log('Order found:', order.orderNumber, 'Status:', order.status);
       setActiveOrder(order);
+    } else {
+      console.log('❌ Order not found for ID:', active.id);
     }
   };
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
+
+    console.log('🟡 DRAG OVER');
+    console.log('Active:', active.id);
+    console.log('Over:', over?.id || 'null');
 
     if (!over) return;
 
@@ -116,13 +125,18 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
     const overId = over.id as string;
 
     const activeOrder = orders.find(o => o.id === activeId);
-    if (!activeOrder) return;
+    if (!activeOrder) {
+      console.log('❌ Active order not found');
+      return;
+    }
 
     const overIsColumn = enabledStages.some(stage => stage.status === overId);
 
     if (overIsColumn) {
+      console.log('Over column:', overId);
       const newStatus = overId;
       if (activeOrder.status !== newStatus) {
+        console.log('Would change status from', activeOrder.status, 'to', newStatus);
         setOrders(prevOrders =>
           prevOrders.map(order =>
             order.id === activeId ? { ...order, status: newStatus } : order
@@ -131,9 +145,15 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
       }
     } else {
       const overOrder = orders.find(o => o.id === overId);
-      if (!overOrder) return;
+      if (!overOrder) {
+        console.log('❌ Over order not found');
+        return;
+      }
+
+      console.log('Over order:', overOrder.orderNumber, 'Status:', overOrder.status);
 
       if (activeOrder.status !== overOrder.status) {
+        console.log('Would change status from', activeOrder.status, 'to', overOrder.status);
         setOrders(prevOrders =>
           prevOrders.map(order =>
             order.id === activeId ? { ...order, status: overOrder.status } : order
@@ -144,19 +164,29 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    console.log('🔴 DRAG END CALLED');
+    console.log('Event:', event);
+
     const { active, over } = event;
     setActiveOrder(null);
 
-    if (!over) return;
+    if (!over) {
+      console.log('❌ No over target, drag cancelled');
+      return;
+    }
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
     const activeOrder = orders.find(o => o.id === activeId);
-    if (!activeOrder) return;
+    if (!activeOrder) {
+      console.log('❌ Active order not found for ID:', activeId);
+      return;
+    }
 
     console.log('=== DRAG END ===');
     console.log('Active Order ID:', activeId);
+    console.log('Active Order Number:', activeOrder.orderNumber);
     console.log('Dropped on:', overId);
     console.log('Current Status:', activeOrder.status);
 
@@ -167,23 +197,25 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
     const droppedStage = enabledStages.find(stage => stage.status === overId);
     if (droppedStage) {
       newStatus = droppedStage.status;
-      console.log('Dropped on column, new status:', newStatus);
+      console.log('✅ Dropped on column:', droppedStage.displayName, 'new status:', newStatus);
     } else {
       // Dropped on another order - get that order's status
       const targetOrder = orders.find(o => o.id === overId);
       if (targetOrder) {
         newStatus = targetOrder.status;
-        console.log('Dropped on order, new status:', newStatus);
+        console.log('✅ Dropped on order:', targetOrder.orderNumber, 'new status:', newStatus);
+      } else {
+        console.log('❌ Could not determine target - overId:', overId);
       }
     }
 
     // Check if status actually changed
     if (activeOrder.status === newStatus) {
-      console.log('No status change needed');
+      console.log('⚠️ No status change needed - both are:', newStatus);
       return;
     }
 
-    console.log('Status changing from', activeOrder.status, 'to', newStatus);
+    console.log('🔄 Status changing from', activeOrder.status, 'to', newStatus);
 
     // Update UI optimistically
     setOrders(prevOrders =>
@@ -193,21 +225,29 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
     );
 
     // Update in database
-    console.log('Calling updateOrdersBatch with:', { id: activeId, status: newStatus });
-    const result = await updateOrdersBatch(restaurantId, [
-      { id: activeId, status: newStatus }
-    ]);
+    console.log('📤 Calling updateOrdersBatch with:', { id: activeId, status: newStatus });
 
-    console.log('Server response:', result);
+    try {
+      const result = await updateOrdersBatch(restaurantId, [
+        { id: activeId, status: newStatus }
+      ]);
 
-    if (!result.success) {
-      console.error('❌ Update failed:', result.error);
-      showToast('error', 'Failed to update order status');
-      // Rollback on failure
+      console.log('📥 Server response:', result);
+
+      if (!result.success) {
+        console.error('❌ Update failed:', result.error);
+        showToast('error', 'Failed to update order status');
+        // Rollback on failure
+        setOrders(initialOrders);
+      } else {
+        console.log('✅ Status updated successfully, invalidating cache...');
+        queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
+        showToast('success', 'Order status updated');
+      }
+    } catch (error) {
+      console.error('💥 Exception in updateOrdersBatch:', error);
+      showToast('error', 'Error updating order');
       setOrders(initialOrders);
-    } else {
-      console.log('✅ Status updated successfully, invalidating cache...');
-      queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
     }
   };
 
