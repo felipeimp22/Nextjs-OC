@@ -590,7 +590,7 @@ interface CreateInHouseOrderInput {
   items: Array<{
     menuItemId: string;
     quantity: number;
-    price?: number;
+    // Backend always recalculates price - never trust frontend
     options?: Array<{ name: string; choice: string; priceAdjustment: number }>;
     specialInstructions?: string;
   }>;
