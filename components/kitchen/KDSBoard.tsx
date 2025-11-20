@@ -193,9 +193,110 @@ export default function KDSBoard({ initialOrders, stages, currencySymbol, restau
       }
     }
 
-    // Check if status actually changed
-    if (activeOrder.status === newStatus) {
-      console.log('⚠️ No status change needed - both are:', newStatus);
+    // Check if status changed or if reordering within same column
+    const statusChanged = activeOrder.status !== newStatus;
+
+    if (!statusChanged) {
+      // Same column - check if position changed
+      console.log('Same column - checking if position changed');
+
+      // If dropped on the column itself (empty area), no position change
+      if (droppedStage) {
+        console.log('⚠️ Dropped on empty column area - no position change');
+        return;
+      }
+
+      // Get all orders in this column sorted by priority (highest first, then by createdAt)
+      const ordersInColumn = orders
+        .filter(o => o.status === activeOrder.status)
+        .sort((a, b) => {
+          if (a.priority !== b.priority) {
+            return b.priority - a.priority;
+          }
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+
+      // Find positions
+      const activeIndex = ordersInColumn.findIndex(o => o.id === activeId);
+      const targetIndex = ordersInColumn.findIndex(o => o.id === overId);
+
+      if (activeIndex === -1 || targetIndex === -1) {
+        console.log('❌ Could not find order positions');
+        return;
+      }
+
+      if (activeIndex === targetIndex) {
+        console.log('⚠️ No position change - same position');
+        return;
+      }
+
+      console.log('📍 Position change detected:', activeIndex, '→', targetIndex);
+
+      // Remove active order to calculate proper target position
+      const ordersWithoutActive = ordersInColumn.filter(o => o.id !== activeId);
+      const newTargetIndex = ordersWithoutActive.findIndex(o => o.id === overId);
+
+      // Calculate new priority based on target position
+      let newPriority: number;
+
+      if (newTargetIndex === 0) {
+        // Inserting at the top
+        newPriority = ordersWithoutActive[0].priority + 1;
+        console.log('📌 Inserting at top, new priority:', newPriority);
+      } else if (newTargetIndex === ordersWithoutActive.length - 1) {
+        // Inserting at the bottom (after the last order)
+        newPriority = ordersWithoutActive[newTargetIndex].priority - 1;
+        console.log('📌 Inserting at bottom, new priority:', newPriority);
+      } else {
+        // Inserting between orders
+        const aboveOrder = ordersWithoutActive[newTargetIndex - 1];
+        const belowOrder = ordersWithoutActive[newTargetIndex];
+
+        const abovePriority = aboveOrder.priority;
+        const belowPriority = belowOrder.priority;
+
+        if (Math.abs(abovePriority - belowPriority) <= 1) {
+          // Priorities too close, use decimal
+          newPriority = (abovePriority + belowPriority) / 2;
+          console.log('⚠️ Priorities close, using decimal:', newPriority);
+        } else {
+          newPriority = Math.floor((abovePriority + belowPriority) / 2);
+          console.log('📌 Inserting between orders, new priority:', newPriority);
+        }
+      }
+
+      // Update UI optimistically
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === activeId ? { ...order, priority: newPriority } : order
+        )
+      );
+
+      // Update in database
+      console.log('📤 Calling updateOrdersBatch with priority:', { id: activeId, priority: newPriority });
+
+      try {
+        const result = await updateOrdersBatch(restaurantId, [
+          { id: activeId, priority: newPriority }
+        ]);
+
+        console.log('📥 Server response:', result);
+
+        if (!result.success) {
+          console.error('❌ Update failed:', result.error);
+          showToast('error', 'Failed to update order position');
+          setOrders(initialOrders);
+        } else {
+          console.log('✅ Priority updated successfully, invalidating cache...');
+          queryClient.invalidateQueries({ queryKey: ['kitchenOrders', restaurantId] });
+          showToast('success', 'Order position updated');
+        }
+      } catch (error) {
+        console.error('💥 Exception in updateOrdersBatch:', error);
+        showToast('error', 'Error updating order');
+        setOrders(initialOrders);
+      }
+
       return;
     }
 
