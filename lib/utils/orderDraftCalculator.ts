@@ -20,6 +20,7 @@
 import { calculateTaxes, TaxSetting, TaxCalculationItem } from './taxCalculator';
 import { calculateDeliveryFee, DeliveryPricingTier, GeoLocation, checkDeliveryDistance } from './distance';
 import { DeliveryFactory } from '../delivery';
+import { calculateItemTotalPrice } from './modifierPricingCalculator';
 
 export interface MenuItem {
   id: string;
@@ -157,6 +158,7 @@ export async function calculateOrderDraft(
 
   const calculatedItems: OrderItemResult[] = [];
 
+  // Use centralized pricing calculator for consistent pricing across all flows
   for (const orderItem of input.items) {
     const menuItem = menuItems.get(orderItem.menuItemId);
 
@@ -164,196 +166,55 @@ export async function calculateOrderDraft(
       throw new Error(`Menu item ${orderItem.menuItemId} not found`);
     }
 
-    const appliedOptions = menuRules.get(orderItem.menuItemId) || [];
+    const appliedOptions = menuRules.get(orderItem.menuItemId);
+    const selectedChoices = orderItem.selectedOptions || [];
 
-    // Initialize item calculation
-    let basePrice = menuItem.price;
-    let adjustments = 0;
-    const formattedOptions: { name: string; choice: string; priceAdjustment: number }[] = [];
+    // Calculate using centralized logic
+    // Note: Type cast needed because both files define similar but incompatible interfaces
+    const pricingResult = calculateItemTotalPrice(
+      menuItem.price,
+      appliedOptions ? { appliedOptions: appliedOptions as any } : null,
+      selectedChoices,
+      1 // Calculate for single unit, will multiply by quantity later
+    );
 
-    // If no options selected, use base price
-    if (!orderItem.selectedOptions || orderItem.selectedOptions.length === 0) {
-      calculatedItems.push({
-        menuItemId: menuItem.id,
-        name: menuItem.name,
-        basePrice,
-        adjustments: 0,
-        finalPrice: basePrice,
-        quantity: orderItem.quantity,
-        total: basePrice * orderItem.quantity,
-        options: [],
-        specialInstructions: orderItem.specialInstructions,
-      });
-      continue;
-    }
+    // Format options for storage (map choice IDs back to names for display)
+    const formattedOptions = selectedChoices.map(selected => {
+      const option = options.get(selected.optionId);
+      const choice = option?.choices.find((c: any) => c.id === selected.choiceId);
 
-    // Build map of selected options
-    const selectedOptionsMap = new Map<string, SelectedOption>();
-    orderItem.selectedOptions.forEach(selected => {
-      selectedOptionsMap.set(`${selected.optionId}-${selected.choiceId}`, selected);
+      // Find the price breakdown for this choice from the centralized calculator
+      const choiceBreakdown = pricingResult.breakdown.choiceBreakdown.find(
+        cb => cb.choiceId === selected.choiceId
+      );
+
+      // Use the final price from the calculator (includes all cross-option adjustments)
+      const finalChoicePrice = choiceBreakdown ? choiceBreakdown.finalPrice : 0;
+
+      return {
+        name: option?.name || '',
+        choice: choice?.name || '',
+        priceAdjustment: finalChoicePrice,
+      };
     });
 
-    // Calculate direct option prices (no cross-option adjustments yet)
-    for (const selectedOption of orderItem.selectedOptions) {
-      const { optionId, choiceId, quantity: optionQuantity = 1 } = selectedOption;
+    const itemTotal = pricingResult.itemTotal * orderItem.quantity;
 
-      const appliedOption = appliedOptions.find(ao => ao.optionId === optionId);
-      if (!appliedOption) continue;
+    console.log(`✅ Item "${menuItem.name}": Base $${menuItem.price.toFixed(2)} + Modifiers $${pricingResult.modifierPrice.toFixed(2)} = $${pricingResult.itemTotal.toFixed(2)} × ${orderItem.quantity} = $${itemTotal.toFixed(2)}`);
 
-      const option = options.get(optionId);
-      if (!option) continue;
-
-      const choice = option.choices.find(c => c.id === choiceId);
-      if (!choice) continue;
-
-      const choiceAdjustment = appliedOption.choiceAdjustments.find(
-        ca => ca.choiceId === choiceId
-      );
-      if (!choiceAdjustment) continue;
-
-      // Check for fixed price adjustment (highest priority)
-      const hasFixedPrice = choiceAdjustment.adjustments?.some(
-        adj => adj.adjustmentType === 'fixed' && !adj.targetOptionId
-      );
-
-      if (hasFixedPrice) {
-        const fixedAdj = choiceAdjustment.adjustments!.find(
-          adj => adj.adjustmentType === 'fixed' && !adj.targetOptionId
-        );
-
-        if (fixedAdj) {
-          const fixedPrice = fixedAdj.value * optionQuantity;
-          adjustments += fixedPrice;
-
-          formattedOptions.push({
-            name: option.name,
-            choice: choice.name,
-            priceAdjustment: fixedPrice / optionQuantity,
-          });
-
-          console.log(`  💰 ${option.name} (${choice.name}): Fixed price $${fixedPrice.toFixed(2)}`);
-          continue;
-        }
-      }
-
-      // Calculate normal price
-      const choiceBasePrice = choice.basePrice || 0;
-      const choicePriceAdjustment = choiceAdjustment.priceAdjustment || 0;
-      let optionPrice = (choiceBasePrice + choicePriceAdjustment) * optionQuantity;
-
-      // Apply self-adjustments (non-targeting)
-      if (choiceAdjustment.adjustments) {
-        for (const adjustment of choiceAdjustment.adjustments) {
-          if (adjustment.targetOptionId) continue; // Skip cross-option adjustments for now
-          if (adjustment.adjustmentType === 'fixed') continue; // Already handled
-
-          switch (adjustment.adjustmentType) {
-            case 'multiplier':
-              optionPrice = optionPrice * adjustment.value;
-              console.log(`  ✖️  Multiplier ${adjustment.value}x: $${optionPrice.toFixed(2)}`);
-              break;
-            case 'addition':
-              optionPrice += adjustment.value * optionQuantity;
-              console.log(`  ➕ Addition +$${adjustment.value.toFixed(2)}: $${optionPrice.toFixed(2)}`);
-              break;
-          }
-        }
-      }
-
-      adjustments += optionPrice;
-
-      formattedOptions.push({
-        name: option.name,
-        choice: choice.name,
-        priceAdjustment: optionPrice / optionQuantity,
-      });
-
-      console.log(`  💵 ${option.name} (${choice.name}): $${optionPrice.toFixed(2)}`);
+    // Log any pricing errors from the calculator
+    if (pricingResult.breakdown.errors.length > 0) {
+      console.warn('⚠️ Pricing calculation errors:', pricingResult.breakdown.errors);
     }
-
-    // Process cross-option adjustments
-    for (const selectedOption of orderItem.selectedOptions) {
-      const { optionId, choiceId } = selectedOption;
-
-      const appliedOption = appliedOptions.find(ao => ao.optionId === optionId);
-      if (!appliedOption) continue;
-
-      const choiceAdjustment = appliedOption.choiceAdjustments.find(
-        ca => ca.choiceId === choiceId
-      );
-      if (!choiceAdjustment || !choiceAdjustment.adjustments) continue;
-
-      for (const adjustment of choiceAdjustment.adjustments) {
-        if (!adjustment.targetOptionId) continue; // Only process cross-option adjustments
-
-        const targetOptionId = adjustment.targetOptionId;
-        const targetChoiceId = adjustment.targetChoiceId;
-
-        // Find target in selected options
-        for (const targetOption of orderItem.selectedOptions) {
-          if (targetOption.optionId !== targetOptionId) continue;
-          if (targetChoiceId && targetOption.choiceId !== targetChoiceId) continue;
-
-          const targetQuantity = targetOption.quantity || 1;
-          const option = options.get(targetOption.optionId);
-          const choice = option?.choices.find(c => c.id === targetOption.choiceId);
-
-          if (!option || !choice) continue;
-
-          // Calculate original price of target
-          const targetAppliedOption = appliedOptions.find(ao => ao.optionId === targetOptionId);
-          const targetChoiceAdjustment = targetAppliedOption?.choiceAdjustments.find(
-            ca => ca.choiceId === targetOption.choiceId
-          );
-
-          const originalPrice = (choice.basePrice || 0) + (targetChoiceAdjustment?.priceAdjustment || 0);
-          const originalTotal = originalPrice * targetQuantity;
-
-          let adjustmentAmount = 0;
-
-          switch (adjustment.adjustmentType) {
-            case 'addition':
-              adjustmentAmount = adjustment.value * targetQuantity;
-              console.log(`  🔗 Cross-addition: +$${adjustmentAmount.toFixed(2)}`);
-              break;
-            case 'multiplier':
-              adjustmentAmount = originalTotal * (adjustment.value - 1);
-              console.log(`  🔗 Cross-multiplier ${adjustment.value}x: +$${adjustmentAmount.toFixed(2)}`);
-              break;
-            case 'fixed':
-              adjustmentAmount = (adjustment.value * targetQuantity) - originalTotal;
-              console.log(`  🔗 Cross-fixed $${adjustment.value.toFixed(2)}: +$${adjustmentAmount.toFixed(2)}`);
-              break;
-          }
-
-          adjustments += adjustmentAmount;
-
-          // Update formatted option
-          const targetOptionIndex = formattedOptions.findIndex(
-            opt => opt.name === option.name && opt.choice === choice.name
-          );
-
-          if (targetOptionIndex !== -1) {
-            formattedOptions[targetOptionIndex].priceAdjustment +=
-              adjustmentAmount / targetQuantity;
-          }
-        }
-      }
-    }
-
-    const finalPrice = basePrice + adjustments;
-    const total = finalPrice * orderItem.quantity;
-
-    console.log(`✅ Item "${menuItem.name}": Base $${basePrice.toFixed(2)} + Adjustments $${adjustments.toFixed(2)} = $${finalPrice.toFixed(2)} × ${orderItem.quantity} = $${total.toFixed(2)}`);
 
     calculatedItems.push({
       menuItemId: menuItem.id,
       name: menuItem.name,
-      basePrice,
-      adjustments,
-      finalPrice,
+      basePrice: menuItem.price,
+      adjustments: pricingResult.modifierPrice,
+      finalPrice: pricingResult.itemTotal,
       quantity: orderItem.quantity,
-      total,
+      total: itemTotal,
       options: formattedOptions,
       specialInstructions: orderItem.specialInstructions,
     });

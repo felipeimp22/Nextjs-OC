@@ -594,10 +594,11 @@ export default function OrderModal({
     setIsSubmitting(true);
 
     try {
+      // Backend recalculates prices for security - never trust frontend prices
       const formattedItems = validItems.map(item => ({
         menuItemId: item.menuItemId,
         quantity: item.quantity,
-        price: item.price,
+        // Price is recalculated on backend using centralized pricing calculator
         options: item.selectedModifiers.map(mod => ({
           name: mod.optionName,
           choice: mod.choiceName,
