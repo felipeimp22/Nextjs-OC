@@ -93,6 +93,7 @@ interface ExistingOrder {
   deliveryAddress?: string;
   specialInstructions?: string;
   prepTime?: number;
+  driverTip?: number;
   scheduledPickupTime?: string | Date;
   deliveryInfo?: {
     provider?: string;
@@ -293,7 +294,8 @@ export default function OrderModal({
       setPaymentStatus(existingOrder.paymentStatus);
       setPaymentMethod(existingOrder.paymentMethod);
       setSpecialInstructions(existingOrder.specialInstructions || '');
-      setPrepTime(existingOrder.prepTime || 30);
+      setPrepTime(typeof existingOrder.prepTime === 'number' ? existingOrder.prepTime : 30);
+      setDriverTip(existingOrder.driverTip || 0);
       if (existingOrder.scheduledPickupTime) {
         const pickupDate = typeof existingOrder.scheduledPickupTime === 'string'
           ? new Date(existingOrder.scheduledPickupTime)
@@ -735,7 +737,7 @@ export default function OrderModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('orderType')} {t('required')}
             </label>
-            <Select value={orderType} onChange={e => setOrderType(e.target.value as any)}>
+            <Select value={orderType} onChange={e => setOrderType(e.target.value as any)} disabled={isShipdayOrder}>
               <option value="dine_in">{tTypes('dineIn')}</option>
               <option value="pickup">{tTypes('pickup')}</option>
               <option value="delivery">{tTypes('delivery')}</option>
@@ -754,12 +756,9 @@ export default function OrderModal({
                 placeholder="Enter delivery address..."
                 required={true}
                 disabled={isShipdayOrder}
+                initialValue={deliveryAddress?.fullAddress}
+                initialAddress={deliveryAddress || undefined}
               />
-              {isShipdayOrder && deliveryAddress && (
-                <div className="mt-1 text-sm text-gray-600">
-                  {deliveryAddress.fullAddress}
-                </div>
-              )}
             </div>
           )}
 
