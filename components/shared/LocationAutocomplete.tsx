@@ -11,6 +11,8 @@ interface LocationAutocompleteProps {
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  initialValue?: string;
+  initialAddress?: AddressComponents;
 }
 
 export default function LocationAutocomplete({
@@ -19,6 +21,8 @@ export default function LocationAutocomplete({
   required = false,
   error,
   disabled = false,
+  initialValue,
+  initialAddress,
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -39,6 +43,15 @@ export default function LocationAutocomplete({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (initialAddress) {
+      setSelectedAddress(initialAddress);
+      setQuery(initialAddress.fullAddress);
+    } else if (initialValue) {
+      setQuery(initialValue);
+    }
+  }, [initialAddress, initialValue]);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (searchQuery.length < 3) {
@@ -70,6 +83,8 @@ export default function LocationAutocomplete({
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
+
     const value = e.target.value;
     setQuery(value);
     setSelectedAddress(null);
