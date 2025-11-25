@@ -893,5 +893,74 @@
       "updateSuccess": "Customer updated successfully",
       "updateFailed": "Failed to update customer"
     }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Business analytics and insights",
+    "loading": "Loading dashboard data...",
+    "filters": {
+      "title": "Time Period",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7days": "Last 7 Days",
+      "last30days": "Last 30 Days",
+      "thisMonth": "This Month",
+      "lastMonth": "Last Month",
+      "thisYear": "This Year",
+      "customRange": "Custom Range",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply"
+    },
+    "kpis": {
+      "totalRevenue": "Total Revenue",
+      "netRevenue": "Net Revenue",
+      "avgOrderValue": "Avg Order Value",
+      "totalOrders": "Total Orders",
+      "newCustomers": "New Customers",
+      "returningCustomers": "Returning Customers",
+      "refunds": "Refunds",
+      "refundAmount": "Refund Amount",
+      "conversionRate": "Conversion Rate",
+      "vsPrevious": "vs previous period"
+    },
+    "charts": {
+      "revenueTrends": "Revenue Trends",
+      "ordersByType": "Orders by Type",
+      "ordersByStatus": "Orders by Status",
+      "customerAcquisition": "Customer Acquisition",
+      "topCustomers": "Top Customers",
+      "peakHours": "Peak Hours",
+      "paymentMethods": "Payment Methods",
+      "revenueBreakdown": "Revenue Breakdown"
+    },
+    "orderTypes": {
+      "pickup": "Pickup",
+      "delivery": "Delivery",
+      "dineIn": "Dine In"
+    },
+    "customerMetrics": {
+      "newCustomers": "New Customers",
+      "returningCustomers": "Returning Customers",
+      "totalActive": "Total Active"
+    },
+    "topCustomersTable": {
+      "name": "Name",
+      "orders": "Orders",
+      "totalSpent": "Total Spent",
+      "lastOrder": "Last Order",
+      "noCustomers": "No customer data yet"
+    },
+    "revenueComponents": {
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "deliveryFees": "Delivery Fees",
+      "tips": "Tips",
+      "platformFees": "Platform Fees"
+    },
+    "emptyState": {
+      "noData": "No data available for this period",
+      "tryDifferentPeriod": "Try selecting a different time period"
+    }
   }
 }

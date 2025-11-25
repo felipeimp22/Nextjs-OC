@@ -1,14 +1,32 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import DashboardFilters, { TimePeriod, getDateRangeForPeriod } from '@/components/dashboard/DashboardFilters';
+import DashboardKPICards from '@/components/dashboard/DashboardKPICards';
+import RevenueChart from '@/components/dashboard/RevenueChart';
+import OrdersByTypeChart from '@/components/dashboard/OrdersByTypeChart';
+import OrdersByStatusChart from '@/components/dashboard/OrdersByStatusChart';
+import TopCustomersTable from '@/components/dashboard/TopCustomersTable';
 
 export default function RestaurantDashboard() {
   const router = useRouter();
   const params = useParams();
+  const t = useTranslations('dashboard');
   const restaurantId = params.id as string;
   const { selectedRestaurantId, selectedRestaurantName, setSelectedRestaurant } = useRestaurantStore();
+
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last7days');
+  const dateRange = getDateRangeForPeriod(selectedPeriod);
+
+  const { data, isLoading, error } = useDashboardData(
+    restaurantId,
+    dateRange.from.toISOString(),
+    dateRange.to.toISOString()
+  );
 
   useEffect(() => {
     if (!selectedRestaurantId) {
@@ -26,11 +44,89 @@ export default function RestaurantDashboard() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t('title')}</h1>
+          <p className="text-gray-400">{t('description')}</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-traces-gold-600"></div>
+          <p className="ml-4 text-gray-400">{t('loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t('title')}</h1>
+          <p className="text-gray-400">{t('description')}</p>
+        </div>
+        <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-center">
+          <p className="text-red-400">Failed to load dashboard data. Please try again.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const timezone = 'America/New_York';
+
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
-      <p className="text-gray-600">Welcome to {selectedRestaurantName}!</p>
-      <p className="text-sm text-gray-500 mt-2">Restaurant ID: {restaurantId}</p>
+    <div className="p-4 md:p-8">
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t('title')}</h1>
+        <p className="text-gray-400">{selectedRestaurantName}</p>
+      </div>
+
+      <DashboardFilters
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={setSelectedPeriod}
+      />
+
+      <DashboardKPICards
+        currentRevenue={data.currentPeriod.revenue}
+        previousRevenue={data.previousPeriod.revenue}
+        currentOrders={data.currentPeriod.orders}
+        previousOrders={data.previousPeriod.orders}
+        currentCustomers={data.currentPeriod.customers}
+        previousCustomers={data.previousPeriod.customers}
+        currencySymbol={data.restaurant.currencySymbol}
+      />
+
+      <div className="mb-6">
+        <RevenueChart
+          orders={data.currentPeriod.rawOrders}
+          dateFrom={dateRange.from}
+          dateTo={dateRange.to}
+          timezone={timezone}
+          currencySymbol={data.restaurant.currencySymbol}
+          primaryColor={data.restaurant.primaryColor}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+        <OrdersByTypeChart
+          ordersByType={data.currentPeriod.ordersByType}
+          currencySymbol={data.restaurant.currencySymbol}
+          primaryColor={data.restaurant.primaryColor}
+          secondaryColor={data.restaurant.secondaryColor}
+          accentColor={data.restaurant.accentColor}
+        />
+
+        <OrdersByStatusChart
+          ordersByStatus={data.currentPeriod.ordersByStatus}
+          primaryColor={data.restaurant.primaryColor}
+        />
+      </div>
+
+      <TopCustomersTable
+        customers={data.currentPeriod.topCustomers}
+        currencySymbol={data.restaurant.currencySymbol}
+      />
     </div>
   );
 }
