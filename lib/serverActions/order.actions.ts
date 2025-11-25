@@ -11,6 +11,7 @@ import { calculateTaxes, TaxSetting, TaxCalculationItem } from '@/lib/utils/taxC
 import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator';
 import { calculateDeliveryFee, DeliverySettings } from '@/lib/utils/deliveryFeeCalculator';
 import { DeliveryFactory } from '@/lib/delivery/DeliveryFactory';
+import { findOrCreateCustomer, addOrderToCustomerHistory, updateCustomerStats, handleOrderPaymentChange } from '@/lib/serverActions/customer.actions';
 
 interface CreateOrderInput {
   restaurantId: string;
@@ -905,6 +906,35 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
     });
 
     // ========================================
+    // CUSTOMER MANAGEMENT: Create/update customer record
+    // ========================================
+    try {
+      console.log('=== CUSTOMER MANAGEMENT (createInHouseOrder) ===');
+
+      const customerResult = await findOrCreateCustomer(
+        input.customerEmail,
+        input.customerName,
+        input.customerPhone,
+        input.restaurantId
+      );
+
+      if (customerResult.success && customerResult.data) {
+        const customer = customerResult.data;
+
+        await addOrderToCustomerHistory(customer.id, order.id);
+
+        const isPaid = input.paymentStatus === 'paid';
+        await updateCustomerStats(customer.id, total, isPaid, true);
+
+        console.log(`✅ Customer ${customer.email} updated with order ${order.orderNumber}`);
+      } else {
+        console.error('❌ Failed to create/update customer:', customerResult.error);
+      }
+    } catch (customerError: any) {
+      console.error('❌ Customer management error:', customerError.message);
+    }
+
+    // ========================================
     // SHIPDAY INTEGRATION: Create delivery if using Shipday
     // ========================================
     if (input.orderType === 'delivery' && deliveryFeeDetails?.provider === 'shipday') {
@@ -1251,6 +1281,45 @@ export async function updateInHouseOrder(input: UpdateInHouseOrderInput) {
         localDateTime: new Date(),
       },
     });
+
+    // ========================================
+    // CUSTOMER MANAGEMENT: Handle payment status changes
+    // ========================================
+    try {
+      console.log('=== CUSTOMER MANAGEMENT (updateInHouseOrder) ===');
+
+      const oldPaymentStatus = existingOrder.paymentStatus;
+      const newPaymentStatus = input.paymentStatus;
+
+      if (oldPaymentStatus !== newPaymentStatus) {
+        const customerResult = await findOrCreateCustomer(
+          input.customerEmail,
+          input.customerName,
+          input.customerPhone,
+          input.restaurantId
+        );
+
+        if (customerResult.success && customerResult.data) {
+          const customer = customerResult.data;
+
+          await handleOrderPaymentChange(
+            order.id,
+            oldPaymentStatus,
+            newPaymentStatus,
+            total,
+            customer.id
+          );
+
+          console.log(`✅ Customer stats updated for payment status change: ${oldPaymentStatus} → ${newPaymentStatus}`);
+        } else {
+          console.error('❌ Failed to find/create customer for payment update:', customerResult.error);
+        }
+      } else {
+        console.log('⏭️ No payment status change detected, skipping customer stats update');
+      }
+    } catch (customerError: any) {
+      console.error('❌ Customer management error:', customerError.message);
+    }
 
     revalidatePath(`/${input.restaurantId}/kitchen`);
     revalidatePath(`/${input.restaurantId}/orders`);

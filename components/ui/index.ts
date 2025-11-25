@@ -17,3 +17,4 @@ export {
 } from './DropdownMenu';
 export { ToastProvider, useToast } from './ToastContainer';
 export { default as Toast, type ToastType } from './Toast';
+export { Tooltip } from './Tooltip';
