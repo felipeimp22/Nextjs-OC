@@ -846,5 +846,52 @@
       "scheduled": "Scheduled",
       "shipdayOrderWarning": "This order is dispatched to Shipday and cannot be edited to avoid extra charges."
     }
+  },
+  "customers": {
+    "title": "Customers",
+    "description": "Manage your customer relationships",
+    "searchPlaceholder": "Search by name, email, or phone...",
+    "noCustomers": "No customers found",
+    "noCustomersAdjustFilters": "Try adjusting your search or filters",
+    "noCustomersYet": "Customers will appear here once they place orders",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "orderCount": "Orders",
+    "totalSpent": "Total Spent",
+    "lastOrder": "Last Order",
+    "tags": "Tags",
+    "actions": "Actions",
+    "edit": "Edit",
+    "viewOrders": "View Orders",
+    "filters": {
+      "sortBy": "Sort By",
+      "allTags": "All Tags",
+      "searchTags": "Search tags..."
+    },
+    "sortOptions": {
+      "totalSpent": "Total Spent (High to Low)",
+      "orderCount": "Order Count (High to Low)",
+      "lastOrderDate": "Last Order (Recent First)",
+      "name": "Name (A-Z)"
+    },
+    "modal": {
+      "editTitle": "Edit Customer",
+      "customerName": "Customer Name",
+      "customerNamePlaceholder": "John Doe",
+      "customerEmail": "Customer Email",
+      "customerEmailPlaceholder": "john@example.com",
+      "customerPhone": "Customer Phone",
+      "customerPhonePlaceholder": "+1 234 567 8900",
+      "tags": "Tags",
+      "tagsPlaceholder": "VIP, Regular, etc.",
+      "notes": "Notes",
+      "notesPlaceholder": "Special preferences or notes about this customer...",
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "updateSuccess": "Customer updated successfully",
+      "updateFailed": "Failed to update customer"
+    }
   }
 }

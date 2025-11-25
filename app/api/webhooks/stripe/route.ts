@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PaymentFactory } from '@/lib/payment/PaymentFactory';
 import { StripePaymentProvider } from '@/lib/payment/providers/StripePaymentProvider';
 import prisma  from '@/lib/prisma';
+import { EmailFactory } from '@/lib/email';
+import { OrderConfirmationCustomerTemplate, OrderConfirmationRestaurantTemplate } from '@/lib/email/templates';
 
 import Stripe from 'stripe';
 
@@ -144,6 +146,98 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       platformFee: transaction.platformFee,
       restaurantAmount: transaction.restaurantAmount,
     });
+
+    // Send email notifications to customer and restaurant
+    try {
+      console.log('=== EMAIL NOTIFICATIONS (Stripe Payment Success) ===');
+
+      const restaurant = await prisma.restaurant.findUnique({
+        where: { id: restaurantId! },
+        include: { financialSettings: true },
+      });
+
+      if (!restaurant) {
+        console.error('Restaurant not found for email notification');
+        return;
+      }
+
+      const emailProvider = await EmailFactory.getProvider();
+      const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
+
+      const deliveryAddressStr = updatedOrder.customerAddress
+        ? (updatedOrder.customerAddress as any).address || (updatedOrder.customerAddress as any).fullAddress
+        : undefined;
+
+      // Send email to customer
+      const customerEmailHtml = OrderConfirmationCustomerTemplate({
+        customerName: updatedOrder.customerName,
+        orderNumber: updatedOrder.orderNumber,
+        restaurantName: restaurant.name,
+        restaurantPhone: restaurant.phone,
+        orderType: updatedOrder.orderType,
+        items: (updatedOrder.items as any[]).map((item: any) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price * item.quantity,
+        })),
+        subtotal: updatedOrder.subtotal,
+        tax: updatedOrder.tax,
+        deliveryFee: updatedOrder.deliveryFee,
+        tip: updatedOrder.tip,
+        total: updatedOrder.total,
+        currencySymbol,
+        deliveryAddress: deliveryAddressStr,
+        specialInstructions: updatedOrder.specialInstructions || undefined,
+      });
+
+      await emailProvider.sendEmail({
+        to: updatedOrder.customerEmail,
+        subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
+        html: customerEmailHtml,
+        from: process.env.NEXT_EMAIL_FROM || `${restaurant.name} <noreply@orderchop.com>`,
+      });
+
+      console.log(`✅ Customer email sent to ${updatedOrder.customerEmail}`);
+
+      // Send email to restaurant
+      const restaurantEmailHtml = OrderConfirmationRestaurantTemplate({
+        orderNumber: updatedOrder.orderNumber,
+        restaurantName: restaurant.name,
+        customerName: updatedOrder.customerName,
+        customerEmail: updatedOrder.customerEmail,
+        customerPhone: updatedOrder.customerPhone,
+        orderType: updatedOrder.orderType,
+        items: (updatedOrder.items as any[]).map((item: any) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price * item.quantity,
+          options: item.options,
+          specialInstructions: item.specialInstructions,
+        })),
+        subtotal: updatedOrder.subtotal,
+        tax: updatedOrder.tax,
+        deliveryFee: updatedOrder.deliveryFee,
+        tip: updatedOrder.tip,
+        total: updatedOrder.total,
+        currencySymbol,
+        paymentStatus: updatedOrder.paymentStatus,
+        paymentMethod: updatedOrder.paymentMethod,
+        deliveryAddress: deliveryAddressStr,
+        specialInstructions: updatedOrder.specialInstructions || undefined,
+      });
+
+      await emailProvider.sendEmail({
+        to: restaurant.email,
+        subject: `New Order - ${updatedOrder.orderNumber}`,
+        html: restaurantEmailHtml,
+        from: process.env.NEXT_EMAIL_FROM || 'OrderChop <noreply@orderchop.com>',
+      });
+
+      console.log(`✅ Restaurant email sent to ${restaurant.email}`);
+    } catch (emailError: any) {
+      console.error('❌ Email notification error:', emailError.message);
+      // Don't fail the webhook if email sending fails
+    }
   } catch (error: any) {
     console.error(`❌ Failed to process payment for order ${orderId}:`, error.message);
     throw error;

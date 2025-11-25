@@ -21,7 +21,7 @@ import {
 import { useSignOut, useCurrentUser } from '@/hooks/useAuth';
 import { useUserPermissions } from '@/hooks/usePermissions';
 import { useRestaurantStore } from '@/stores/useRestaurantStore';
-import { Toggle } from '@/components/ui';
+import { Toggle, Tooltip } from '@/components/ui';
 
 interface PrivateSidebarProps {
   isCollapsed: boolean;
@@ -46,8 +46,7 @@ export default function PrivateSidebar({ isCollapsed, setIsCollapsed }: PrivateS
     { icon: ShoppingCart, label: t('orders'), path: `/${restaurantId}/orders`, permission: 'orders' },
     { icon: ChefHat, label: t('kitchen'), path: `/${restaurantId}/kitchen`, permission: 'kitchen' },
     { icon: Users, label: t('customers'), path: `/${restaurantId}/customers`, permission: 'customers' },
-    { icon: Megaphone, label: t('marketing'), path: `/${restaurantId}/marketing`, permission: 'marketing' },
-    { icon: BarChart3, label: t('analytics'), path: `/${restaurantId}/analytics`, permission: 'analytics' },
+    { icon: Megaphone, label: t('marketing'), path: `/${restaurantId}/marketing`, permission: 'marketing', disabled: true },
     { icon: Settings, label: t('settings'), path: `/${restaurantId}/settings`, permission: 'settings' },
   ];
 
@@ -110,6 +109,23 @@ export default function PrivateSidebar({ isCollapsed, setIsCollapsed }: PrivateS
         {filteredMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path;
+          const isDisabled = item.disabled;
+
+          if (isDisabled) {
+            return (
+              <Tooltip key={item.path} content="Coming Soon">
+                <div
+                  className={`flex items-center py-3 ${
+                    isCollapsed ? 'px-0 justify-center' : 'px-5'
+                  } text-gray-400 cursor-not-allowed`}
+                  title={isCollapsed ? item.label : ''}
+                >
+                  <Icon className={`w-5 h-5 ${!isCollapsed && 'mr-3'}`} />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </div>
+              </Tooltip>
+            );
+          }
 
           return (
             <Link

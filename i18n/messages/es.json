@@ -835,5 +835,52 @@
     },
     "edit": "Editar",
     "actions": "Acciones"
+  },
+  "customers": {
+    "title": "Clientes",
+    "description": "Gestiona tus relaciones con clientes",
+    "searchPlaceholder": "Buscar por nombre, email o teléfono...",
+    "noCustomers": "No se encontraron clientes",
+    "noCustomersAdjustFilters": "Intenta ajustar tu búsqueda o filtros",
+    "noCustomersYet": "Los clientes aparecerán aquí una vez que realicen pedidos",
+    "name": "Nombre",
+    "email": "Email",
+    "phone": "Teléfono",
+    "orderCount": "Pedidos",
+    "totalSpent": "Total Gastado",
+    "lastOrder": "Último Pedido",
+    "tags": "Etiquetas",
+    "actions": "Acciones",
+    "edit": "Editar",
+    "viewOrders": "Ver Pedidos",
+    "filters": {
+      "sortBy": "Ordenar Por",
+      "allTags": "Todas las Etiquetas",
+      "searchTags": "Buscar etiquetas..."
+    },
+    "sortOptions": {
+      "totalSpent": "Total Gastado (Mayor a Menor)",
+      "orderCount": "Cantidad de Pedidos (Mayor a Menor)",
+      "lastOrderDate": "Último Pedido (Más Reciente)",
+      "name": "Nombre (A-Z)"
+    },
+    "modal": {
+      "editTitle": "Editar Cliente",
+      "customerName": "Nombre del Cliente",
+      "customerNamePlaceholder": "Juan Pérez",
+      "customerEmail": "Email del Cliente",
+      "customerEmailPlaceholder": "juan@ejemplo.com",
+      "customerPhone": "Teléfono del Cliente",
+      "customerPhonePlaceholder": "+34 123 456 789",
+      "tags": "Etiquetas",
+      "tagsPlaceholder": "VIP, Regular, etc.",
+      "notes": "Notas",
+      "notesPlaceholder": "Preferencias especiales o notas sobre este cliente...",
+      "cancel": "Cancelar",
+      "save": "Guardar Cambios",
+      "saving": "Guardando...",
+      "updateSuccess": "Cliente actualizado exitosamente",
+      "updateFailed": "Error al actualizar cliente"
+    }
   }
 }

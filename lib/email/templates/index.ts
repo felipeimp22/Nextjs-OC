@@ -1,6 +1,10 @@
 export { InvitationTemplate } from './invitation';
 export { AccessRequestTemplate } from './accessRequest';
 export { AccessApprovedTemplate } from './accessApproved';
+export { OrderConfirmationCustomerTemplate } from './orderConfirmationCustomer';
+export { OrderConfirmationRestaurantTemplate } from './orderConfirmationRestaurant';
 export type { InvitationTemplateProps } from './invitation';
 export type { AccessRequestTemplateProps } from './accessRequest';
 export type { AccessApprovedTemplateProps } from './accessApproved';
+export type { OrderConfirmationCustomerTemplateProps } from './orderConfirmationCustomer';
+export type { OrderConfirmationRestaurantTemplateProps } from './orderConfirmationRestaurant';
