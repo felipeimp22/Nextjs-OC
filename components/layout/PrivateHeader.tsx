@@ -23,6 +23,7 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
   const tSettings = useTranslations('settings');
   const tMenu = useTranslations('menu');
   const tOrders = useTranslations('orders');
+  const tCustomers = useTranslations('customers');
   const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
@@ -59,6 +60,12 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
       return {
         title: tOrders('title'),
         subtitle: tOrders('description'),
+      };
+    }
+    if (pathname?.includes('/customers')) {
+      return {
+        title: tCustomers('title'),
+        subtitle: tCustomers('description'),
       };
     }
     if (pathname?.includes('/settings')) {
