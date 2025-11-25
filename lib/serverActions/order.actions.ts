@@ -12,6 +12,8 @@ import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator
 import { calculateDeliveryFee, DeliverySettings } from '@/lib/utils/deliveryFeeCalculator';
 import { DeliveryFactory } from '@/lib/delivery/DeliveryFactory';
 import { findOrCreateCustomer, addOrderToCustomerHistory, updateCustomerStats, handleOrderPaymentChange } from '@/lib/serverActions/customer.actions';
+import { EmailFactory } from '@/lib/email';
+import { OrderConfirmationCustomerTemplate, OrderConfirmationRestaurantTemplate } from '@/lib/email/templates';
 
 interface CreateOrderInput {
   restaurantId: string;
@@ -1068,6 +1070,92 @@ export async function createInHouseOrder(input: CreateInHouseOrderInput) {
     } catch (receivableError: any) {
       console.error('❌ Failed to create platform receivable:', receivableError.message);
       // Don't fail the order if receivable creation fails
+    }
+
+    // ========================================
+    // EMAIL NOTIFICATIONS: Send emails to customer and restaurant
+    // ========================================
+    try {
+      console.log('=== EMAIL NOTIFICATIONS (createInHouseOrder) ===');
+
+      const emailProvider = await EmailFactory.getProvider();
+      const currencySymbol = restaurant.financialSettings?.currencySymbol || '$';
+
+      const deliveryAddressStr = input.deliveryAddress
+        ? typeof input.deliveryAddress === 'string'
+          ? input.deliveryAddress
+          : input.deliveryAddress.address || input.deliveryAddress.fullAddress
+        : undefined;
+
+      // Send email to customer
+      const customerEmailHtml = OrderConfirmationCustomerTemplate({
+        customerName: input.customerName,
+        orderNumber: order.orderNumber,
+        restaurantName: restaurant.name,
+        restaurantPhone: restaurant.phone,
+        orderType: input.orderType,
+        items: orderItems.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price * item.quantity,
+        })),
+        subtotal,
+        tax,
+        deliveryFee,
+        tip: 0,
+        total,
+        currencySymbol,
+        deliveryAddress: deliveryAddressStr,
+        specialInstructions: input.specialInstructions,
+      });
+
+      await emailProvider.sendEmail({
+        to: input.customerEmail,
+        subject: `Order Confirmed - ${order.orderNumber}`,
+        html: customerEmailHtml,
+        from: process.env.NEXT_EMAIL_FROM || `${restaurant.name} <noreply@orderchop.com>`,
+      });
+
+      console.log(`✅ Customer email sent to ${input.customerEmail}`);
+
+      // Send email to restaurant
+      const restaurantEmailHtml = OrderConfirmationRestaurantTemplate({
+        orderNumber: order.orderNumber,
+        restaurantName: restaurant.name,
+        customerName: input.customerName,
+        customerEmail: input.customerEmail,
+        customerPhone: input.customerPhone,
+        orderType: input.orderType,
+        items: orderItems.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price * item.quantity,
+          options: item.options as any,
+          specialInstructions: item.specialInstructions,
+        })),
+        subtotal,
+        tax,
+        deliveryFee,
+        tip: 0,
+        total,
+        currencySymbol,
+        paymentStatus: input.paymentStatus,
+        paymentMethod: input.paymentMethod,
+        deliveryAddress: deliveryAddressStr,
+        specialInstructions: input.specialInstructions,
+      });
+
+      await emailProvider.sendEmail({
+        to: restaurant.email,
+        subject: `New Order - ${order.orderNumber}`,
+        html: restaurantEmailHtml,
+        from: process.env.NEXT_EMAIL_FROM || 'OrderChop <noreply@orderchop.com>',
+      });
+
+      console.log(`✅ Restaurant email sent to ${restaurant.email}`);
+    } catch (emailError: any) {
+      console.error('❌ Email notification error:', emailError.message);
+      // Don't fail the order if email sending fails
     }
 
     revalidatePath(`/${input.restaurantId}/kitchen`);
