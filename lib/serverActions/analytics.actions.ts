@@ -61,7 +61,14 @@ export async function getDashboardData(
       prisma.restaurant.findUnique({
         where: { id: restaurantId },
         select: {
-          settings: true,
+          primaryColor: true,
+          secondaryColor: true,
+          accentColor: true,
+          financialSettings: {
+            select: {
+              currencySymbol: true,
+            },
+          },
         },
       }),
     ]);
@@ -128,10 +135,10 @@ export async function getDashboardData(
           customers: previousCustomerMetrics,
         },
         restaurant: {
-          currencySymbol: restaurant?.settings?.currencySymbol || '$',
-          primaryColor: restaurant?.settings?.brandColors?.primary || '#282e59',
-          secondaryColor: restaurant?.settings?.brandColors?.secondary || '#d4af37',
-          accentColor: restaurant?.settings?.brandColors?.accent || '#c7a146',
+          currencySymbol: restaurant?.financialSettings?.currencySymbol || '$',
+          primaryColor: restaurant?.primaryColor || '#282e59',
+          secondaryColor: restaurant?.secondaryColor || '#d4af37',
+          accentColor: restaurant?.accentColor || '#c7a146',
         },
       },
     };
