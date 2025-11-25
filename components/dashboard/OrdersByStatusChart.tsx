@@ -48,13 +48,13 @@ export default function OrdersByStatusChart({
       const total = chartData.reduce((sum, item) => sum + item.value, 0);
       const percentage = ((payload[0].value / total) * 100).toFixed(1);
       return (
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-semibold mb-1">{payload[0].name}</p>
-          <p className="text-gray-300 text-sm">
-            Orders: <span className="text-white font-medium">{payload[0].value}</span>
+        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+          <p className="text-gray-900 font-semibold mb-1">{payload[0].name}</p>
+          <p className="text-gray-600 text-sm">
+            Orders: <span className="text-gray-900 font-medium">{payload[0].value}</span>
           </p>
-          <p className="text-gray-300 text-sm">
-            Percentage: <span className="text-white font-medium">{percentage}%</span>
+          <p className="text-gray-600 text-sm">
+            Percentage: <span className="text-gray-900 font-medium">{percentage}%</span>
           </p>
         </div>
       );
@@ -63,8 +63,8 @@ export default function OrdersByStatusChart({
   };
 
   return (
-    <Card variant="elevated" padding="md">
-      <h3 className="text-lg font-semibold text-white mb-4">{t('ordersByStatus')}</h3>
+    <Card variant="elevated" padding="md" className="bg-white border-gray-200 shadow-sm">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('ordersByStatus')}</h3>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -86,7 +86,7 @@ export default function OrdersByStatusChart({
             </Pie>
             <Tooltip content={<CustomTooltip />} />
             <Legend
-              wrapperStyle={{ fontSize: '12px', color: '#9CA3AF' }}
+              wrapperStyle={{ fontSize: '12px', color: '#6b7280' }}
               iconType="circle"
             />
           </PieChart>

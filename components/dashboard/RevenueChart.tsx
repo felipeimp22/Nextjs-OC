@@ -30,9 +30,9 @@ export default function RevenueChart({
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-lg">
-          <p className="text-gray-300 text-sm mb-1">{payload[0].payload.label}</p>
-          <p className="text-white font-bold">
+        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+          <p className="text-gray-600 text-sm mb-1">{payload[0].payload.label}</p>
+          <p className="text-gray-900 font-bold">
             {formatCurrencyValue(payload[0].value, currencySymbol)}
           </p>
         </div>
@@ -42,8 +42,8 @@ export default function RevenueChart({
   };
 
   return (
-    <Card variant="elevated" padding="md">
-      <h3 className="text-lg font-semibold text-white mb-4">{t('revenueTrends')}</h3>
+    <Card variant="elevated" padding="md" className="bg-white border-gray-200 shadow-sm">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('revenueTrends')}</h3>
       <div className="h-[300px] md:h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
@@ -53,14 +53,14 @@ export default function RevenueChart({
                 <stop offset="95%" stopColor={primaryColor} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
               dataKey="date"
-              stroke="#9CA3AF"
+              stroke="#6b7280"
               style={{ fontSize: '12px' }}
             />
             <YAxis
-              stroke="#9CA3AF"
+              stroke="#6b7280"
               style={{ fontSize: '12px' }}
               tickFormatter={(value) => formatCurrencyValue(value, currencySymbol, 0)}
             />

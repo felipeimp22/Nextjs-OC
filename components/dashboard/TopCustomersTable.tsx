@@ -23,22 +23,22 @@ export default function TopCustomersTable({ customers, currencySymbol }: TopCust
   const t = useTranslations('dashboard');
 
   return (
-    <Card variant="elevated" padding="md">
-      <h3 className="text-lg font-semibold text-white mb-4">{t('charts.topCustomers')}</h3>
+    <Card variant="elevated" padding="md" className="bg-white border-gray-200 shadow-sm">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('charts.topCustomers')}</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
-            <tr className="border-b border-gray-700">
-              <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider pb-3">
+            <tr className="border-b border-gray-200">
+              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">
                 {t('topCustomersTable.name')}
               </th>
-              <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider pb-3">
+              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">
                 {t('topCustomersTable.orders')}
               </th>
-              <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider pb-3">
+              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">
                 {t('topCustomersTable.totalSpent')}
               </th>
-              <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider pb-3">
+              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">
                 {t('topCustomersTable.lastOrder')}
               </th>
             </tr>
@@ -46,26 +46,26 @@ export default function TopCustomersTable({ customers, currencySymbol }: TopCust
           <tbody>
             {customers.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-gray-400">
+                <td colSpan={4} className="py-8 text-center text-gray-500">
                   {t('topCustomersTable.noCustomers')}
                 </td>
               </tr>
             ) : (
               customers.map((customer) => (
-                <tr key={customer.id} className="border-b border-gray-700/50 last:border-0">
+                <tr key={customer.id} className="border-b border-gray-100 last:border-0">
                   <td className="py-3">
                     <div>
-                      <p className="text-sm font-medium text-white">{customer.name}</p>
-                      <p className="text-xs text-gray-400">{customer.email}</p>
+                      <p className="text-sm font-medium text-gray-900">{customer.name}</p>
+                      <p className="text-xs text-gray-500">{customer.email}</p>
                     </div>
                   </td>
-                  <td className="py-3 text-sm text-gray-300">
+                  <td className="py-3 text-sm text-gray-700">
                     {customer.orderCount}
                   </td>
-                  <td className="py-3 text-sm font-medium text-white">
+                  <td className="py-3 text-sm font-medium text-gray-900">
                     {formatCurrencyValue(customer.totalSpent, currencySymbol)}
                   </td>
-                  <td className="py-3 text-sm text-gray-400">
+                  <td className="py-3 text-sm text-gray-500">
                     {customer.lastOrderDate
                       ? formatRelativeTime(customer.lastOrderDate)
                       : '-'}

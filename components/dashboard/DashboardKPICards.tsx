@@ -31,26 +31,26 @@ function KPICard({ title, value, change, icon, iconColor }: KPICardProps) {
   const t = useTranslations('dashboard.kpis');
 
   return (
-    <Card variant="elevated" padding="md" className="flex flex-col h-full">
+    <Card variant="elevated" padding="md" className="flex flex-col h-full bg-white border-gray-200 shadow-sm hover:shadow-md">
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-lg ${iconColor}`}>
           {icon}
         </div>
       </div>
       <div className="flex-1">
-        <p className="text-sm text-gray-400 mb-1">{title}</p>
-        <p className="text-2xl md:text-3xl font-bold text-white mb-2">{value}</p>
+        <p className="text-sm text-gray-600 mb-1">{title}</p>
+        <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{value}</p>
         {change && (
           <div className="flex items-center gap-1">
             {change.isPositive ? (
-              <ArrowUp className="w-4 h-4 text-green-500" />
+              <ArrowUp className="w-4 h-4 text-green-600" />
             ) : (
-              <ArrowDown className="w-4 h-4 text-red-500" />
+              <ArrowDown className="w-4 h-4 text-red-600" />
             )}
-            <span className={`text-sm ${change.isPositive ? 'text-green-500' : 'text-red-500'}`}>
+            <span className={`text-sm font-medium ${change.isPositive ? 'text-green-600' : 'text-red-600'}`}>
               {formatPercentage(change.value, 1)}
             </span>
-            <span className="text-sm text-gray-400 ml-1">{t('vsPrevious')}</span>
+            <span className="text-sm text-gray-500 ml-1">{t('vsPrevious')}</span>
           </div>
         )}
       </div>

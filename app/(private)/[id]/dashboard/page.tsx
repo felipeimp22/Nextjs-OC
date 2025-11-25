@@ -47,13 +47,9 @@ export default function RestaurantDashboard() {
   if (isLoading) {
     return (
       <div className="p-4 md:p-8">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t('title')}</h1>
-          <p className="text-gray-400">{t('description')}</p>
-        </div>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-traces-gold-600"></div>
-          <p className="ml-4 text-gray-400">{t('loading')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-navy"></div>
+          <p className="ml-4 text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -62,12 +58,8 @@ export default function RestaurantDashboard() {
   if (error || !data) {
     return (
       <div className="p-4 md:p-8">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t('title')}</h1>
-          <p className="text-gray-400">{t('description')}</p>
-        </div>
-        <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-center">
-          <p className="text-red-400">Failed to load dashboard data. Please try again.</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+          <p className="text-red-600">Failed to load dashboard data. Please try again.</p>
         </div>
       </div>
     );
@@ -77,11 +69,6 @@ export default function RestaurantDashboard() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t('title')}</h1>
-        <p className="text-gray-400">{selectedRestaurantName}</p>
-      </div>
-
       <DashboardFilters
         selectedPeriod={selectedPeriod}
         onPeriodChange={setSelectedPeriod}
