@@ -883,5 +883,74 @@
       "updateSuccess": "Cliente atualizado com sucesso",
       "updateFailed": "Falha ao atualizar cliente"
     }
+  },
+  "dashboard": {
+    "title": "Painel",
+    "description": "Análises e insights de negócios",
+    "loading": "Carregando dados do painel...",
+    "filters": {
+      "title": "Período de Tempo",
+      "today": "Hoje",
+      "yesterday": "Ontem",
+      "last7days": "Últimos 7 Dias",
+      "last30days": "Últimos 30 Dias",
+      "thisMonth": "Este Mês",
+      "lastMonth": "Mês Passado",
+      "thisYear": "Este Ano",
+      "customRange": "Intervalo Personalizado",
+      "from": "De",
+      "to": "Até",
+      "apply": "Aplicar"
+    },
+    "kpis": {
+      "totalRevenue": "Receita Total",
+      "netRevenue": "Receita Líquida",
+      "avgOrderValue": "Valor Médio do Pedido",
+      "totalOrders": "Total de Pedidos",
+      "newCustomers": "Novos Clientes",
+      "returningCustomers": "Clientes Recorrentes",
+      "refunds": "Reembolsos",
+      "refundAmount": "Valor Reembolsado",
+      "conversionRate": "Taxa de Conversão",
+      "vsPrevious": "vs período anterior"
+    },
+    "charts": {
+      "revenueTrends": "Tendências de Receita",
+      "ordersByType": "Pedidos por Tipo",
+      "ordersByStatus": "Pedidos por Status",
+      "customerAcquisition": "Aquisição de Clientes",
+      "topCustomers": "Melhores Clientes",
+      "peakHours": "Horários de Pico",
+      "paymentMethods": "Métodos de Pagamento",
+      "revenueBreakdown": "Detalhamento da Receita"
+    },
+    "orderTypes": {
+      "pickup": "Retirada",
+      "delivery": "Entrega",
+      "dineIn": "No Local"
+    },
+    "customerMetrics": {
+      "newCustomers": "Novos Clientes",
+      "returningCustomers": "Clientes Recorrentes",
+      "totalActive": "Total Ativo"
+    },
+    "topCustomersTable": {
+      "name": "Nome",
+      "orders": "Pedidos",
+      "totalSpent": "Total Gasto",
+      "lastOrder": "Último Pedido",
+      "noCustomers": "Ainda não há dados de clientes"
+    },
+    "revenueComponents": {
+      "subtotal": "Subtotal",
+      "tax": "Impostos",
+      "deliveryFees": "Taxas de Entrega",
+      "tips": "Gorjetas",
+      "platformFees": "Taxas da Plataforma"
+    },
+    "emptyState": {
+      "noData": "Nenhum dado disponível para este período",
+      "tryDifferentPeriod": "Tente selecionar um período diferente"
+    }
   }
 }

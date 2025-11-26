@@ -24,6 +24,7 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
   const tMenu = useTranslations('menu');
   const tOrders = useTranslations('orders');
   const tCustomers = useTranslations('customers');
+  const tDashboard = useTranslations('dashboard');
   const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
@@ -72,6 +73,12 @@ export default function PrivateHeader({ title, subtitle, onMenuClick }: PrivateH
       return {
         title: t('settings'),
         subtitle: tSettings('description'),
+      };
+    }
+    if (pathname?.includes('/dashboard')) {
+      return {
+        title: tDashboard('title'),
+        subtitle: tDashboard('description'),
       };
     }
     return {
