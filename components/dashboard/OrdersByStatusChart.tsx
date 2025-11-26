@@ -10,16 +10,16 @@ interface OrdersByStatusChartProps {
   primaryColor: string;
 }
 
+// Align colors with kitchen stages (DEFAULT_STAGES in kitchen.actions.ts)
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#f59e0b', // Orange
-  confirmed: '#3b82f6', // Blue
-  preparing: '#8b5cf6', // Purple
-  ready: '#10b981', // Emerald
-  out_for_delivery: '#06b6d4', // Cyan
-  outForDelivery: '#06b6d4', // Cyan (alternative key)
-  delivered: '#22c55e', // Green
-  completed: '#10b981', // Emerald
-  cancelled: '#ef4444', // Red
+  pending: '#EAB308', // Yellow
+  confirmed: '#3B82F6', // Blue
+  preparing: '#8B5CF6', // Purple
+  ready: '#10B981', // Emerald
+  out_for_delivery: '#F59E0B', // Orange
+  outForDelivery: '#F59E0B', // Orange (alternative key)
+  delivered: '#059669', // Dark Green
+  completed: '#22C55E', // Green
 };
 
 export default function OrdersByStatusChart({
@@ -29,8 +29,8 @@ export default function OrdersByStatusChart({
   const t = useTranslations('dashboard.charts');
   const statusT = useTranslations('orders.statusOptions');
 
-  // Define all possible statuses to show (even if count is 0)
-  const allStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'completed', 'cancelled'];
+  // Use the same statuses as the kitchen stages (aligned with DEFAULT_STAGES in kitchen.actions.ts)
+  const allStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'completed'];
 
   const chartData = allStatuses.map((status) => {
     const count = ordersByStatus[status] || 0;
@@ -47,12 +47,15 @@ export default function OrdersByStatusChart({
       value: count,
       status,
     };
-  }).filter(item => item.value > 0); // Only show statuses with orders
+  });
+
+  // Filter for pie chart display (only non-zero values)
+  const displayData = chartData.filter(item => item.value > 0);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const total = chartData.reduce((sum, item) => sum + item.value, 0);
-      const percentage = ((payload[0].value / total) * 100).toFixed(1);
+      const total = displayData.reduce((sum, item) => sum + item.value, 0);
+      const percentage = total > 0 ? ((payload[0].value / total) * 100).toFixed(1) : '0.0';
       return (
         <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
           <p className="text-gray-900 font-semibold mb-1">{payload[0].name}</p>
@@ -73,7 +76,7 @@ export default function OrdersByStatusChart({
   return (
     <Card variant="elevated" padding="md" className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
       <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('ordersByStatus')}</h3>
-      {chartData.length === 0 ? (
+      {displayData.length === 0 ? (
         <div className="h-[320px] flex items-center justify-center">
           <p className="text-gray-400 text-sm">No orders yet</p>
         </div>
@@ -82,7 +85,7 @@ export default function OrdersByStatusChart({
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={chartData}
+                data={displayData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -92,7 +95,7 @@ export default function OrdersByStatusChart({
                 dataKey="value"
                 paddingAngle={2}
               >
-                {chartData.map((entry, index) => (
+                {displayData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={STATUS_COLORS[entry.status] || STATUS_COLORS[entry.status.replace('_', '')] || '#6b7280'}
