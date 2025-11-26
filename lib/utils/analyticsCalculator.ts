@@ -131,11 +131,26 @@ export function calculateOrdersByType(orders: Order[]): OrdersByType {
 }
 
 export function calculateOrdersByStatus(orders: Order[]): OrdersByStatus {
-  const statusCounts: OrdersByStatus = {};
+  // Initialize all kitchen statuses to 0 to ensure we always return all statuses
+  const statusCounts: OrdersByStatus = {
+    pending: 0,
+    confirmed: 0,
+    preparing: 0,
+    ready: 0,
+    out_for_delivery: 0,
+    delivered: 0,
+    completed: 0,
+  };
 
+  // Count actual orders by status
   orders.forEach((order) => {
     const status = order.status;
-    statusCounts[status] = (statusCounts[status] || 0) + 1;
+    if (statusCounts.hasOwnProperty(status)) {
+      statusCounts[status]++;
+    } else {
+      // Handle any unexpected statuses (like 'cancelled')
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    }
   });
 
   return statusCounts;
