@@ -42,34 +42,38 @@ export default function RevenueChart({
   };
 
   return (
-    <Card variant="elevated" padding="md" className="bg-white border-gray-200 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('revenueTrends')}</h3>
-      <div className="h-[300px] md:h-[350px]">
+    <Card variant="elevated" padding="md" className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('revenueTrends')}</h3>
+      <div className="h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
             <defs>
               <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={primaryColor} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={primaryColor} stopOpacity={0} />
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
             <XAxis
               dataKey="date"
               stroke="#6b7280"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '12px', fontWeight: 500 }}
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis
               stroke="#6b7280"
               style={{ fontSize: '12px' }}
               tickFormatter={(value) => formatCurrencyValue(value, currencySymbol, 0)}
+              tickLine={false}
+              axisLine={false}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '5 5' }} />
             <Area
               type="monotone"
               dataKey="value"
-              stroke={primaryColor}
-              strokeWidth={2}
+              stroke="#10b981"
+              strokeWidth={2.5}
               fillOpacity={1}
               fill="url(#colorRevenue)"
             />

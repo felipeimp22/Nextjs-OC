@@ -31,26 +31,30 @@ function KPICard({ title, value, change, icon, iconColor }: KPICardProps) {
   const t = useTranslations('dashboard.kpis');
 
   return (
-    <Card variant="elevated" padding="md" className="flex flex-col h-full bg-white border-gray-200 shadow-sm hover:shadow-md">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-lg ${iconColor}`}>
+    <Card variant="elevated" padding="md" className="flex flex-col h-full bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:border-gray-300">
+      <div className="flex items-start justify-between mb-3">
+        <div className={`p-3 rounded-xl ${iconColor}`}>
           {icon}
         </div>
       </div>
       <div className="flex-1">
-        <p className="text-sm text-gray-600 mb-1">{title}</p>
-        <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{value}</p>
+        <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+        <p className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{value}</p>
         {change && (
-          <div className="flex items-center gap-1">
-            {change.isPositive ? (
-              <ArrowUp className="w-4 h-4 text-green-600" />
-            ) : (
-              <ArrowDown className="w-4 h-4 text-red-600" />
-            )}
-            <span className={`text-sm font-medium ${change.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              {formatPercentage(change.value, 1)}
-            </span>
-            <span className="text-sm text-gray-500 ml-1">{t('vsPrevious')}</span>
+          <div className="flex items-center gap-1.5 mt-auto">
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-md ${
+              change.isPositive ? 'bg-green-50' : 'bg-red-50'
+            }`}>
+              {change.isPositive ? (
+                <ArrowUp className="w-3.5 h-3.5 text-green-600" />
+              ) : (
+                <ArrowDown className="w-3.5 h-3.5 text-red-600" />
+              )}
+              <span className={`text-sm font-semibold ${change.isPositive ? 'text-green-700' : 'text-red-700'}`}>
+                {formatPercentage(change.value, 1)}
+              </span>
+            </div>
+            <span className="text-xs text-gray-500">{t('vsPrevious')}</span>
           </div>
         )}
       </div>
@@ -94,29 +98,29 @@ export default function DashboardKPICards({
       title: t('totalRevenue'),
       value: formatCurrencyValue(currentRevenue.totalRevenue, currencySymbol),
       change: revenueChange,
-      icon: <DollarSign className="w-6 h-6 text-white" />,
-      iconColor: 'bg-green-500/20',
+      icon: <DollarSign className="w-6 h-6 text-emerald-600" />,
+      iconColor: 'bg-emerald-50',
     },
     {
       title: t('totalOrders'),
       value: currentOrders.totalOrders.toString(),
       change: ordersChange,
-      icon: <ShoppingCart className="w-6 h-6 text-white" />,
-      iconColor: 'bg-blue-500/20',
+      icon: <ShoppingCart className="w-6 h-6 text-blue-600" />,
+      iconColor: 'bg-blue-50',
     },
     {
       title: t('avgOrderValue'),
       value: formatCurrencyValue(currentRevenue.averageOrderValue, currencySymbol),
       change: aovChange,
-      icon: <TrendingUp className="w-6 h-6 text-white" />,
-      iconColor: 'bg-purple-500/20',
+      icon: <TrendingUp className="w-6 h-6 text-purple-600" />,
+      iconColor: 'bg-purple-50',
     },
     {
       title: t('newCustomers'),
       value: currentCustomers.newCustomers.toString(),
       change: newCustomersChange,
-      icon: <Users className="w-6 h-6 text-white" />,
-      iconColor: 'bg-orange-500/20',
+      icon: <Users className="w-6 h-6 text-orange-600" />,
+      iconColor: 'bg-orange-50',
     },
   ];
 
