@@ -19,7 +19,7 @@ export default function RestaurantDashboard() {
   const restaurantId = params.id as string;
   const { selectedRestaurantId, selectedRestaurantName, setSelectedRestaurant } = useRestaurantStore();
 
-  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last7days');
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last30days');
   const dateRange = getDateRangeForPeriod(selectedPeriod);
 
   const { data, isLoading, error } = useDashboardData(
