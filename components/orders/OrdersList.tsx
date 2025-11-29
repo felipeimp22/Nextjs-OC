@@ -94,12 +94,80 @@ export default function OrdersList({ orders, currencySymbol, onEdit }: OrdersLis
   };
 
   const filteredOrders = orders.filter((order) => {
+    // Search filter
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customerPhone.includes(searchQuery);
-    return matchesSearch;
+
+    // Status filter
+    const matchesStatus = !filterStatus || order.status === filterStatus;
+
+    // Order type filter
+    const matchesOrderType = !filterOrderType || order.orderType === filterOrderType;
+
+    // Payment status filter
+    const matchesPaymentStatus = !filterPaymentStatus || order.paymentStatus === filterPaymentStatus;
+
+    // Date range filter
+    let matchesDateRange = true;
+    const orderDate = new Date(order.createdAt);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (filterDateRange) {
+      switch (filterDateRange) {
+        case 'today':
+          matchesDateRange = orderDate >= today;
+          break;
+        case 'yesterday':
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const dayBeforeYesterday = new Date(yesterday);
+          dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 1);
+          matchesDateRange = orderDate >= dayBeforeYesterday && orderDate < yesterday;
+          break;
+        case 'last7days':
+          const last7Days = new Date(today);
+          last7Days.setDate(last7Days.getDate() - 7);
+          matchesDateRange = orderDate >= last7Days;
+          break;
+        case 'last30days':
+          const last30Days = new Date(today);
+          last30Days.setDate(last30Days.getDate() - 30);
+          matchesDateRange = orderDate >= last30Days;
+          break;
+        case 'thisMonth':
+          const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          matchesDateRange = orderDate >= firstDayOfMonth;
+          break;
+        case 'lastMonth':
+          const firstDayOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          const firstDayOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          matchesDateRange = orderDate >= firstDayOfLastMonth && orderDate < firstDayOfThisMonth;
+          break;
+      }
+    }
+
+    // Custom date range filter
+    if (customDateFrom && customDateTo) {
+      const fromDate = new Date(customDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      const toDate = new Date(customDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      matchesDateRange = orderDate >= fromDate && orderDate <= toDate;
+    } else if (customDateFrom) {
+      const fromDate = new Date(customDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      matchesDateRange = orderDate >= fromDate;
+    } else if (customDateTo) {
+      const toDate = new Date(customDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      matchesDateRange = orderDate <= toDate;
+    }
+
+    return matchesSearch && matchesStatus && matchesOrderType && matchesPaymentStatus && matchesDateRange;
   });
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
