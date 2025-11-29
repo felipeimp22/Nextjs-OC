@@ -18,8 +18,7 @@
  */
 
 import { calculateTaxes, TaxSetting, TaxCalculationItem } from './taxCalculator';
-import { calculateDeliveryFee, DeliveryPricingTier, GeoLocation, checkDeliveryDistance } from './distance';
-import { DeliveryFactory } from '../delivery';
+import { calculateDeliveryFee as calculateDeliveryFeeUtil, DeliverySettings } from './deliveryFeeCalculator';
 
 export interface MenuItem {
   id: string;
@@ -104,16 +103,19 @@ export interface OrderDraftInput {
   tip?: number;
 
   // Location data (for delivery)
-  restaurantLocation?: GeoLocation;
-  customerLocation?: GeoLocation;
+  restaurantAddress?: string;
+  customerAddress?: string;
+  customerLocation?: { lat: number; lng: number };
   deliveryDistance?: number;
 
   // Settings (usually fetched from DB)
   taxSettings?: TaxSetting[];
-  deliveryPricingTiers?: DeliveryPricingTier[];
+  deliverySettings?: DeliverySettings;
   globalFee?: GlobalFee;
-  distanceUnit?: 'km' | 'miles';
-  useDeliveryProvider?: boolean; // Use external provider for estimate
+  restaurantName?: string;
+  currencySymbol?: string;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 export interface OrderDraftResult {
@@ -397,56 +399,45 @@ export async function calculateOrderDraft(
   let deliveryFeeCents = 0;
   let deliveryDetails: any = {};
 
-  if (input.orderType === 'delivery') {
-    if (input.useDeliveryProvider && input.restaurantLocation && input.customerLocation) {
-      // Use external delivery provider for estimate
-      try {
-        const deliveryProvider = await DeliveryFactory.getProvider();
-        const estimate = await deliveryProvider.getEstimate({
-          pickupAddress: input.restaurantLocation as any, // Type cast for simplicity
-          deliveryAddress: input.customerLocation as any,
-        });
+  if (input.orderType === 'delivery' && input.deliverySettings && input.restaurantAddress && input.customerAddress) {
+    try {
+      const currencySymbol = input.currencySymbol || '$';
+      const subtotalBeforeDelivery = subtotal + toDollars(taxCents);
 
-        deliveryFeeCents = toCents(estimate.fee);
-        deliveryDetails = {
-          distance: estimate.distance,
-          provider: estimate.provider,
-        };
+      // Use coordinates if available for optimization, otherwise use address
+      const deliveryAddressOrCoords = input.deliverySettings.driverProvider === 'shipday'
+        ? input.customerAddress
+        : (input.customerLocation
+            ? { longitude: input.customerLocation.lng, latitude: input.customerLocation.lat }
+            : input.customerAddress);
 
-        console.log(`🚚 Delivery (${estimate.provider}): $${estimate.fee.toFixed(2)}`);
-      } catch (error) {
-        console.warn('⚠️ Delivery provider estimate failed, using manual calculation');
-      }
-    }
-
-    // Fallback to manual calculation
-    if (deliveryFeeCents === 0 && input.deliveryPricingTiers && input.deliveryPricingTiers.length > 0) {
-      let distance = input.deliveryDistance || 0;
-
-      // Calculate distance if locations provided
-      if (!distance && input.restaurantLocation && input.customerLocation) {
-        const distanceResult = checkDeliveryDistance(
-          input.restaurantLocation,
-          input.customerLocation,
-          100, // Large radius for estimation
-          input.distanceUnit || 'miles'
-        );
-        distance = distanceResult.distance;
-      }
-
-      const feeResult = calculateDeliveryFee(
-        distance,
-        input.deliveryPricingTiers,
-        input.distanceUnit || 'miles'
+      const deliveryResult = await calculateDeliveryFeeUtil(
+        input.restaurantAddress,
+        deliveryAddressOrCoords,
+        input.deliverySettings,
+        currencySymbol,
+        input.restaurantName,
+        input.customerName,
+        input.customerPhone,
+        subtotalBeforeDelivery
       );
 
-      deliveryFeeCents = toCents(feeResult.totalFee);
-      deliveryDetails = {
-        distance: feeResult.distance,
-        tierUsed: feeResult.tierUsed,
-      };
+      if (deliveryResult.error) {
+        console.warn(`⚠️ Delivery fee calculation failed: ${deliveryResult.error}`);
+      } else {
+        deliveryFeeCents = toCents(deliveryResult.deliveryFee);
+        deliveryDetails = {
+          distance: deliveryResult.distance,
+          distanceUnit: deliveryResult.distanceUnit,
+          provider: deliveryResult.provider,
+          tierUsed: deliveryResult.tierUsed,
+          withinRadius: deliveryResult.withinRadius,
+        };
 
-      console.log(`🚚 Delivery: $${feeResult.totalFee.toFixed(2)} (${feeResult.tierUsed})`);
+        console.log(`🚚 Delivery (${deliveryResult.provider}): $${deliveryResult.deliveryFee.toFixed(2)}`);
+      }
+    } catch (error: any) {
+      console.error('❌ Delivery fee calculation error:', error.message);
     }
   }
 

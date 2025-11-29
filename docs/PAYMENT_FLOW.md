@@ -41,6 +41,31 @@ When payment succeeds, Stripe sends webhook:
   - `paymentProvider`: 'stripe'
   - `status`: 'succeeded'
 
+## Application Fee Collection (Shipday Deliveries)
+
+### Important: Driver Tip Included
+
+For Shipday deliveries, the platform collects:
+- Platform fee (based on GlobalFee settings)
+- Delivery fee (to pay Shipday)
+- **Driver tip** (to pay Shipday who pays driver)
+
+```typescript
+// Shipday delivery application fee calculation
+if (isShipdayDelivery) {
+  const driverTipCents = Math.round((order.driverTip || 0) * 100);
+  applicationFeeAmount = platformFeeInCents + deliveryFeeInCents + driverTipCents;
+}
+```
+
+### Currency Note
+All fees are in the restaurant's configured currency. No conversion is needed.
+GlobalFee values (threshold, aboveFlat) are set in restaurant's currency.
+
+For example:
+- US restaurant (USD): `aboveFlat: 1.95` means $1.95 USD
+- Brazilian restaurant (BRL): `aboveFlat: 1.95` means R$1.95 BRL
+
 ## Platform Fee Structure
 
 ```typescript
