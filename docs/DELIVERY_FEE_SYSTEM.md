@@ -332,16 +332,17 @@ const straightLineDistance = calculateHaversineDistance(origin, destination);
 │  │ Restaurant Collects via Stripe:                  │    │
 │  │ • Subtotal                                       │    │
 │  │ • Tax                                            │    │
-│  │ • Tip (if applicable)                            │    │
+│  │ • Customer Tip (optional)                        │    │
 │  └──────────────────────────────────────────────────┘    │
 │                                                            │
 │  ┌──────────────────────────────────────────────────┐    │
 │  │ Platform Collects:                               │    │
 │  │ • Platform Fee                                   │    │
 │  │ • Delivery Fee (full amount)                     │    │
+│  │ • Driver Tip (full amount)                       │    │
 │  │   ↓                                              │    │
-│  │   Platform pays Shipday                          │    │
-│  │   Platform keeps margin (if any)                 │    │
+│  │   Platform pays Shipday (delivery fee + driver   │    │
+│  │   tip), Shipday pays the driver                  │    │
 │  └──────────────────────────────────────────────────┘    │
 │                                                            │
 └────────────────────────────────────────────────────────────┘
@@ -352,19 +353,22 @@ const straightLineDistance = calculateHaversineDistance(origin, destination);
 **For Stripe Integration:**
 ```javascript
 // LOCAL DELIVERY
-const restaurantAmount = subtotal + tax + deliveryFee + tip;
+const restaurantAmount = subtotal + tax + deliveryFee + customerTip + driverTip;
 const platformAmount = platformFee;
 
 // SHIPDAY DELIVERY
-const restaurantAmount = subtotal + tax + tip;
-const platformAmount = platformFee + deliveryFee;
-// Platform then pays Shipday separately
+const restaurantAmount = subtotal + tax + customerTip;
+const platformAmount = platformFee + deliveryFee + driverTip;
+// Platform then pays Shipday (deliveryFee + driverTip) separately
 ```
 
 **Why Different Collection?**
 
-- **Local**: Restaurant owns the delivery operation, keeps delivery fee
-- **Shipday**: Platform facilitates third-party delivery, collects fee to pay Shipday
+- **Local**: Restaurant owns the delivery operation, keeps delivery fee and driver tips
+- **Shipday**: Platform facilitates third-party delivery, collects delivery fee AND driver tip to pay Shipday (who then pays the driver)
+
+**Currency Note:**
+All values are in the restaurant's configured currency. No currency conversion is needed when calculating fees.
 
 ---
 

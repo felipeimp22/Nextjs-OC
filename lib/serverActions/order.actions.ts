@@ -5,7 +5,6 @@ import { auth } from '@/lib/auth';
 import { PaymentFactory } from '@/lib/payment/PaymentFactory';
 import { StripePaymentProvider } from '@/lib/payment/providers/StripePaymentProvider';
 import { calculateOrderDraft, OrderDraftInput, OrderItemInput } from '@/lib/utils/orderDraftCalculator';
-import { convertPlatformFeeToLocal } from '@/lib/utils/currencyConverter';
 import { revalidatePath } from 'next/cache';
 import { calculateTaxes, TaxSetting, TaxCalculationItem } from '@/lib/utils/taxCalculator';
 import { calculateGlobalFee, GlobalFeeSettings } from '@/lib/utils/feeCalculator';
@@ -80,24 +79,32 @@ export async function createOrderDraft(input: CreateOrderInput) {
       }])
     );
 
+    const restaurantAddress = `${restaurant.street}, ${restaurant.city}, ${restaurant.state} ${restaurant.zipCode}`;
+
     const draftInput: OrderDraftInput = {
       restaurantId: input.restaurantId,
       items: input.items,
       orderType: input.orderType,
       tip: input.tip,
       taxSettings: restaurant.financialSettings?.taxes as any[],
-      deliveryPricingTiers: restaurant.deliverySettings?.pricingTiers as any[],
+      deliverySettings: restaurant.deliverySettings as any,
       globalFee: restaurant.financialSettings?.globalFee as any,
-      distanceUnit: restaurant.deliverySettings?.distanceUnit as 'km' | 'miles' | undefined,
+      restaurantName: restaurant.name,
+      currencySymbol: restaurant.financialSettings?.currencySymbol || '$',
+      restaurantAddress,
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
     };
 
     if (input.orderType === 'delivery' && input.customerLocation) {
-      draftInput.restaurantLocation = {
-        lat: restaurant.geoLat || 0,
-        lng: restaurant.geoLng || 0,
-      };
       draftInput.customerLocation = input.customerLocation;
       draftInput.deliveryDistance = input.deliveryDistance;
+      // For delivery, we need the full address string
+      if (input.customerAddress) {
+        draftInput.customerAddress = typeof input.customerAddress === 'string'
+          ? input.customerAddress
+          : `${input.customerAddress.street || ''}, ${input.customerAddress.city || ''}, ${input.customerAddress.state || ''} ${input.customerAddress.zipCode || ''}`.trim();
+      }
     }
 
     const orderDraft = await calculateOrderDraft(
@@ -108,16 +115,11 @@ export async function createOrderDraft(input: CreateOrderInput) {
     );
 
     const currency = restaurant.financialSettings?.currency || 'USD';
-    const platformFeeInLocalCurrency = convertPlatformFeeToLocal(
-      orderDraft.platformFee,
-      currency
-    );
 
     return {
       success: true,
       data: {
         ...orderDraft,
-        platformFeeInLocalCurrency,
         currency,
         currencySymbol: restaurant.financialSettings?.currencySymbol || '$',
       },
@@ -263,15 +265,18 @@ export async function createPaymentIntent(orderId: string) {
       paymentIntentOptions.connectedAccountId = financialSettings.stripeAccountId;
 
       // Calculate application fee based on delivery provider
-      // For Shipday deliveries: Platform collects both platform fee AND delivery fee (to pay Shipday)
-      // For local deliveries: Platform collects only platform fee (restaurant keeps delivery fee)
+      // For Shipday deliveries: Platform collects platform fee + delivery fee + driver tip (to pay Shipday)
+      // For local deliveries: Platform collects only platform fee (restaurant keeps delivery fee + tips)
       let applicationFeeAmount = platformFeeInCents;
 
-      if (isShipdayDelivery && deliveryFeeInCents > 0) {
-        applicationFeeAmount = platformFeeInCents + deliveryFeeInCents;
-        console.log(`💰 Shipday delivery detected - Platform collecting delivery fee`);
+      if (isShipdayDelivery) {
+        const driverTipCents = Math.round((order.driverTip || 0) * 100);
+        applicationFeeAmount = platformFeeInCents + deliveryFeeInCents + driverTipCents;
+
+        console.log(`💰 Shipday delivery - Platform collecting:`);
         console.log(`   Platform Fee: $${order.platformFee.toFixed(2)}`);
-        console.log(`   Delivery Fee: $${order.deliveryFee.toFixed(2)}`);
+        console.log(`   Delivery Fee: $${(order.deliveryFee || 0).toFixed(2)}`);
+        console.log(`   Driver Tip: $${(order.driverTip || 0).toFixed(2)}`);
         console.log(`   Total Application Fee: $${(applicationFeeAmount / 100).toFixed(2)}`);
       } else if (deliveryFeeInCents > 0) {
         console.log(`💰 Local delivery - Restaurant keeps delivery fee of $${order.deliveryFee.toFixed(2)}`);
