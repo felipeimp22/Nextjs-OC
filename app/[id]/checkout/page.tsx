@@ -10,6 +10,9 @@ import { getPublicRestaurantData } from '@/lib/serverActions/order.actions';
 import CheckoutForm from '@/components/store/CheckoutForm';
 import PaymentForm from '@/components/store/PaymentForm';
 import { useToast } from '@/components/ui/ToastContainer';
+import { CheckoutSteps } from '@/components/checkout/CheckoutSteps';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import type { AddressComponents } from '@/lib/utils/mapbox';
 
 interface CustomerInfo {
@@ -33,7 +36,7 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  const [step, setStep] = useState<'info' | 'payment'>('info');
+  const [step, setStep] = useState<'info' | 'payment' | 'confirmation'>('info');
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [clientSecret, setClientSecret] = useState<string>('');
   const [stripePromise, setStripePromise] = useState<any>(null);
@@ -174,62 +177,21 @@ export default function CheckoutPage() {
 
     const { clientSecret, publicKey, accountType, stripeAccountId } = paymentResult.data;
 
-    console.log('🔑 Payment Intent Details:', {
-      hasClientSecret: !!clientSecret,
-      clientSecretPrefix: clientSecret?.substring(0, 10),
-      hasPublicKey: !!publicKey,
-      publicKeyPrefix: publicKey?.substring(0, 20),
-      publicKeyFull: publicKey,
-      accountType,
-      stripeAccountId: stripeAccountId || 'platform',
-    });
-
-    if (!clientSecret) {
-      showToast('error', 'Missing payment client secret');
-      console.error('❌ No client secret in payment result:', paymentResult.data);
-      return;
-    }
-
-    if (!publicKey) {
-      showToast('error', 'Missing Stripe publishable key');
-      console.error('❌ No publishable key in payment result:', paymentResult.data);
-      return;
-    }
-
-    // Validate client secret format
-    if (!clientSecret.startsWith('pi_') && !clientSecret.includes('_secret_')) {
-      showToast('error', 'Invalid payment client secret format');
-      console.error('❌ Invalid client secret format:', clientSecret.substring(0, 20));
-      return;
-    }
-
-    // Validate publishable key format
-    if (!publicKey.startsWith('pk_test_') && !publicKey.startsWith('pk_live_')) {
-      showToast('error', 'Invalid Stripe publishable key format');
-      console.error('❌ Invalid publishable key format:', publicKey.substring(0, 20));
+    if (!clientSecret || !publicKey) {
+      showToast('error', 'Payment configuration error');
       return;
     }
 
     setClientSecret(clientSecret);
 
-    console.log('🔄 Loading Stripe.js with:', {
-      keyType: publicKey.startsWith('pk_test_') ? 'TEST' : 'LIVE',
-      keyPrefix: publicKey.substring(0, 20),
-      stripeAccount: stripeAccountId || 'none (using platform)',
-    });
-
-    // Pass stripeAccount when using connected account (Direct Charges)
     const stripe = await loadStripe(publicKey, stripeAccountId ? {
       stripeAccount: stripeAccountId,
     } : {});
 
     if (!stripe) {
       showToast('error', 'Failed to initialize Stripe');
-      console.error('❌ loadStripe returned null for key:', publicKey.substring(0, 20));
       return;
     }
-
-    console.log('✅ Stripe.js loaded successfully');
 
     setStripePromise(stripe);
     setStep('payment');
@@ -237,8 +199,8 @@ export default function CheckoutPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-navy"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
     );
   }
@@ -247,19 +209,39 @@ export default function CheckoutPage() {
     return null;
   }
 
+  const { primary: primaryColor, secondary: secondaryColor } = restaurant.colors;
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header with restaurant branding */}
       <div
-        className="py-6 px-4 shadow-md"
-        style={{ backgroundColor: restaurant.colors.primary }}
+        className="py-4 px-4 shadow-md"
+        style={{ backgroundColor: primaryColor }}
       >
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">Checkout</h1>
-          <p className="text-white/90 mt-1">{restaurant.name}</p>
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/${restaurantId}/store`}
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Back to Store</span>
+            </Link>
+            <div className="flex-1 text-center">
+              <h1 className="text-xl md:text-2xl font-bold text-white">
+                Checkout
+              </h1>
+              <p className="text-white/80 text-sm">{restaurant.name}</p>
+            </div>
+            <div className="w-20" /> {/* Spacer for centering */}
+          </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Checkout Steps Indicator */}
+        <CheckoutSteps currentStep={step} />
+
         {step === 'info' ? (
           <CheckoutForm
             orderType={orderType}
@@ -279,6 +261,9 @@ export default function CheckoutPage() {
                 clientSecret,
                 appearance: {
                   theme: 'stripe',
+                  variables: {
+                    colorPrimary: primaryColor,
+                  },
                 },
               }}
             >
