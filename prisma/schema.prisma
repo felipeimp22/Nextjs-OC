@@ -358,6 +358,7 @@ model Order {
   tax Float
   taxBreakdown Json? // Detailed tax breakdown
   tip Float @default(0)
+  driverTip Float @default(0) // Tip for delivery driver (Shipday, etc.)
   deliveryFee Float @default(0)
   platformFee Float @default(0)
   total Float
@@ -368,6 +369,10 @@ model Order {
 
   // Special instructions
   specialInstructions String?
+
+  // Kitchen prep and scheduling
+  prepTime Int? // Preparation time in minutes
+  scheduledPickupTime DateTime? // When order should be ready for pickup/delivery
 
   // Timezone and local time (DEPRECATED - Use StoreHours.timezone instead)
   timezone String? // DEPRECATED: Use restaurant.storeHours.timezone
@@ -727,6 +732,43 @@ model Transaction {
   @@index([orderId])
   @@index([restaurantId])
   @@map("transactions")
+}
+
+// ==================== PLATFORM RECEIVABLES ====================
+
+model PlatformReceivable {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  orderId String @db.ObjectId
+
+  // Fee breakdown
+  platformFee Float @default(0) // Platform service fee
+  deliveryFee Float @default(0) // Delivery fee (when using Shipday)
+  driverTip Float @default(0) // Driver tip (when using Shipday)
+  totalOwed Float // Total amount restaurant owes platform
+
+  // Payment tracking
+  status String @default("pending") // pending, paid, overdue, waived
+  paidAmount Float @default(0)
+  remainingBalance Float
+
+  // Metadata
+  orderType String // pickup, delivery, dine_in
+  deliveryProvider String? // shipday, local, null
+  notes String?
+
+  // Settlement information
+  settledAt DateTime?
+  settlementId String? // Reference to settlement/invoice batch
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId, status])
+  @@index([orderId])
+  @@index([status])
+  @@map("platform_receivables")
 }
 
 // Update Restaurant model to include settings relations
