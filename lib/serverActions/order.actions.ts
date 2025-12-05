@@ -395,6 +395,7 @@ export async function getPublicRestaurantData(restaurantId: string) {
         financialSettings: true,
         deliverySettings: true,
         storeHours: true,
+        storeConfig: true,
       },
     });
 
@@ -429,6 +430,7 @@ export async function getPublicRestaurantData(restaurantId: string) {
       currencySymbol: restaurant.financialSettings?.currencySymbol || '$',
       deliveryEnabled: restaurant.deliverySettings?.enabled || false,
       storeHours: restaurant.storeHours,
+      storeConfig: restaurant.storeConfig,
     };
 
     return { success: true, data: publicData };

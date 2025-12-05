@@ -477,6 +477,7 @@ model Restaurant {
   financialSettings FinancialSettings?
   deliverySettings  DeliverySettings?
   storeHours        StoreHours?
+  storeConfig       StoreConfig?
   rolePermissions   RolePermissions[]
   kitchenStages     KitchenStage[] @relation("KitchenStages")
 
@@ -666,6 +667,57 @@ type SpecialClosure {
   isFullDay Boolean @default(true)
   open String?
   close String?
+}
+
+// ==================== STORE CONFIG (Website Configuration) ====================
+
+model StoreConfig {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  restaurantId String @db.ObjectId
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // SEO Configuration
+  metaTitle String?
+  metaDescription String?
+  metaKeywords String[] @default([])
+  ogImage String?
+
+  // Featured Items Configuration
+  featuredItemsEnabled Boolean @default(true)
+  featuredItemsTitle String?
+  featuredItems FeaturedItem[]
+
+  // Special Items (Carousel) Configuration
+  specialsEnabled Boolean @default(true)
+  specialsTitle String?
+  specialItems SpecialItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId])
+  @@map("store_configs")
+}
+
+// Featured item configuration (embedded)
+type FeaturedItem {
+  type String @default("item") // item, category
+  itemId String? @db.ObjectId // MenuItem ID if type is item
+  categoryId String? @db.ObjectId // MenuCategory ID if type is category
+}
+
+// Special item for carousel (embedded)
+type SpecialItem {
+  id String @default(uuid())
+  type String @default("item") // item, category, custom
+  itemId String? @db.ObjectId // MenuItem ID if type is item
+  categoryId String? @db.ObjectId // MenuCategory ID if type is category
+  title String
+  description String?
+  image String? // Custom image or uses item image
+  ctaText String? // Call to action button text
+  order Int @default(0)
 }
 
 // ==================== USER ROLES & PERMISSIONS ====================

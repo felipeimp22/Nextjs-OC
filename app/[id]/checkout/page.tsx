@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { useCartStore } from '@/stores/useCartStore';
@@ -26,6 +27,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const restaurantId = params.id as string;
   const { showToast } = useToast();
+  const t = useTranslations('checkout');
 
   const { items, clearCart } = useCartStore();
 
@@ -225,11 +227,11 @@ export default function CheckoutPage() {
               className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Back to Store</span>
+              <span className="hidden sm:inline">{t('backToStore')}</span>
             </Link>
             <div className="flex-1 text-center">
               <h1 className="text-xl md:text-2xl font-bold text-white">
-                Checkout
+                {t('title')}
               </h1>
               <p className="text-white/80 text-sm">{restaurant.name}</p>
             </div>

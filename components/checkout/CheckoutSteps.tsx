@@ -1,4 +1,7 @@
+'use client';
+
 import { Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 interface CheckoutStepsProps {
@@ -6,13 +9,16 @@ interface CheckoutStepsProps {
   primaryColor?: string;
 }
 
-const steps = [
-  { id: 'info', label: 'Information', order: 1 },
-  { id: 'payment', label: 'Payment', order: 2 },
-  { id: 'confirmation', label: 'Confirmation', order: 3 },
-] as const;
+const stepIds = ['info', 'payment', 'confirmation'] as const;
 
 export function CheckoutSteps({ currentStep, primaryColor = '#282e59' }: CheckoutStepsProps) {
+  const t = useTranslations('checkout.steps');
+
+  const steps = stepIds.map((id, index) => ({
+    id,
+    label: t(id),
+    order: index + 1,
+  }));
   const currentStepOrder = steps.find((s) => s.id === currentStep)?.order || 1;
 
   return (

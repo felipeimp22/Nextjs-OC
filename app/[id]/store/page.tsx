@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Head from 'next/head';
+import { useTranslations } from 'next-intl';
 import { getPublicRestaurantData } from '@/lib/serverActions/order.actions';
 import { useCartStore } from '@/stores/useCartStore';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,6 +26,7 @@ export default function StorePage() {
   const restaurantId = params.id as string;
   const isMobile = useIsMobile();
   const { showToast } = useToast();
+  const t = useTranslations('store');
 
   const [restaurant, setRestaurant] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,15 +141,74 @@ export default function StorePage() {
     );
   };
 
+  // Get featured items from storeConfig
+  const featuredItems = useMemo(() => {
+    if (!restaurant?.storeConfig?.featuredItemsEnabled) return [];
+    if (!restaurant?.storeConfig?.featuredItems?.length) return [];
+
+    const items: any[] = [];
+    for (const featured of restaurant.storeConfig.featuredItems) {
+      if (featured.type === 'item' && featured.itemId) {
+        const item = restaurant.items.find((i: any) => i.id === featured.itemId);
+        if (item) items.push(item);
+      } else if (featured.type === 'category' && featured.categoryId) {
+        const categoryItems = restaurant.items.filter(
+          (i: any) => i.categoryId === featured.categoryId
+        );
+        items.push(...categoryItems);
+      }
+    }
+    return items;
+  }, [restaurant?.storeConfig, restaurant?.items]);
+
+  // Get special items from storeConfig
+  const specialItems = useMemo(() => {
+    if (!restaurant?.storeConfig?.specialsEnabled) return [];
+    if (!restaurant?.storeConfig?.specialItems?.length) return [];
+
+    return restaurant.storeConfig.specialItems.map((special: any) => {
+      let image = special.image;
+      let linkTo = null;
+
+      if (special.type === 'item' && special.itemId) {
+        const item = restaurant.items.find((i: any) => i.id === special.itemId);
+        if (item) {
+          image = image || item.image;
+          linkTo = { type: 'item', id: special.itemId };
+        }
+      } else if (special.type === 'category' && special.categoryId) {
+        const category = restaurant.categories.find((c: any) => c.id === special.categoryId);
+        if (category) {
+          image = image || category.image;
+          linkTo = { type: 'category', id: special.categoryId };
+        }
+      }
+
+      return {
+        id: special.id,
+        title: special.title,
+        description: special.description || '',
+        image,
+        ctaText: special.ctaText || t('orderNow'),
+        linkTo,
+      };
+    }).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+  }, [restaurant?.storeConfig, restaurant?.items, restaurant?.categories, t]);
+
+  // SEO metadata
+  const seoTitle = restaurant?.storeConfig?.metaTitle || restaurant?.name;
+  const seoDescription = restaurant?.storeConfig?.metaDescription || restaurant?.description;
+  const seoImage = restaurant?.storeConfig?.ogImage || restaurant?.logo;
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div 
+          <div
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
             style={{ borderColor: '#282e59' }}
           />
-          <p className="text-gray-500">Loading restaurant...</p>
+          <p className="text-gray-500">{t('loading')}</p>
         </div>
       </div>
     );
@@ -156,17 +218,45 @@ export default function StorePage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Restaurant not found</h1>
-          <p className="text-gray-600">The restaurant you're looking for doesn't exist.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('notFound')}</h1>
+          <p className="text-gray-600">{t('notFoundDescription')}</p>
         </div>
       </div>
     );
   }
 
   const { primary: primaryColor, secondary: secondaryColor } = restaurant.colors;
+  const featuredSectionTitle = restaurant?.storeConfig?.featuredItemsTitle || t('featuredItems');
+  const specialsSectionTitle = restaurant?.storeConfig?.specialsTitle || t('specials');
+
+  // Handle special item CTA click
+  const handleSpecialCtaClick = (special: any) => {
+    if (special.linkTo?.type === 'item') {
+      // Scroll to item (find its category and scroll there)
+      const item = restaurant.items.find((i: any) => i.id === special.linkTo.id);
+      if (item) {
+        handleSelectCategory(item.categoryId);
+      }
+    } else if (special.linkTo?.type === 'category') {
+      handleSelectCategory(special.linkTo.id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* SEO Head */}
+      <Head>
+        <title>{seoTitle}</title>
+        {seoDescription && <meta name="description" content={seoDescription} />}
+        {restaurant?.storeConfig?.metaKeywords?.length > 0 && (
+          <meta name="keywords" content={restaurant.storeConfig.metaKeywords.join(', ')} />
+        )}
+        {seoImage && <meta property="og:image" content={seoImage} />}
+        <meta property="og:title" content={seoTitle} />
+        {seoDescription && <meta property="og:description" content={seoDescription} />}
+        <meta property="og:type" content="website" />
+      </Head>
+
       {/* Hero Section */}
       <div ref={heroRef}>
         <StoreHeroSection restaurant={restaurant} />
@@ -213,26 +303,32 @@ export default function StorePage() {
       <div className={`max-w-7xl mx-auto ${isMobile ? '' : 'flex gap-8 px-4'}`}>
         {/* Left Column - Menu */}
         <div className={isMobile ? 'w-full pb-24' : 'flex-1'}>
-          {/* Specials Carousel */}
-          <div ref={specialsRef} className="py-6">
-            <StoreSpecialsCarousel
-              specials={[]} // Using sample data from component
+          {/* Specials Carousel - Only show if enabled and has items */}
+          {specialItems.length > 0 && (
+            <div ref={specialsRef} className="py-6">
+              <StoreSpecialsCarousel
+                specials={specialItems}
+                title={specialsSectionTitle}
+                primaryColor={primaryColor}
+                secondaryColor={secondaryColor}
+                onCtaClick={handleSpecialCtaClick}
+              />
+            </div>
+          )}
+
+          {/* Featured Items - Only show if enabled and has items */}
+          {featuredItems.length > 0 && (
+            <StoreFeaturedSection
+              items={getFilteredItems(featuredItems)}
+              title={featuredSectionTitle}
+              menuRules={restaurant.menuRules}
+              options={restaurant.options}
+              currencySymbol={restaurant.currencySymbol}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
-              onCtaClick={(special) => console.log('CTA clicked:', special)}
+              onAddToCart={handleAddToCart}
             />
-          </div>
-
-          {/* Featured Items */}
-          <StoreFeaturedSection
-            items={getFilteredItems(restaurant.items)}
-            menuRules={restaurant.menuRules}
-            options={restaurant.options}
-            currencySymbol={restaurant.currencySymbol}
-            primaryColor={primaryColor}
-            secondaryColor={secondaryColor}
-            onAddToCart={handleAddToCart}
-          />
+          )}
 
           {/* Menu Sections by Category */}
           {restaurant.categories.map((category: any) => {

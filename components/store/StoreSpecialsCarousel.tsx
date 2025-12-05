@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Special {
@@ -9,6 +10,7 @@ interface Special {
   description: string;
   image?: string;
   ctaText?: string;
+  linkTo?: { type: string; id: string } | null;
 }
 
 interface StoreSpecialsCarouselProps {
@@ -16,36 +18,18 @@ interface StoreSpecialsCarouselProps {
   primaryColor: string;
   secondaryColor: string;
   onCtaClick?: (special: Special) => void;
+  title?: string;
 }
 
-// Sample specials data for demonstration
-const sampleSpecials: Special[] = [
-  {
-    id: '1',
-    title: 'NEW DISH COMING SOON!',
-    description: 'This dish is a bowl of fresh salmon (Salmon Don), elegantly assembled and perfect for those who love pure flavor and soft texture.',
-    ctaText: 'order now',
-  },
-  {
-    id: '2',
-    title: 'WEEKEND SPECIAL',
-    description: 'Get 20% off on all combo meals this weekend. Perfect for family gatherings!',
-    ctaText: 'view deals',
-  },
-  {
-    id: '3',
-    title: 'LOYALTY REWARDS',
-    description: 'Join our loyalty program and earn points on every order. Redeem for free items!',
-    ctaText: 'join now',
-  },
-];
-
 export default function StoreSpecialsCarousel({
-  specials = sampleSpecials,
+  specials,
   primaryColor,
   secondaryColor,
   onCtaClick,
+  title,
 }: StoreSpecialsCarouselProps) {
+  const t = useTranslations('store');
+  const displayTitle = title || t('specials');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -73,13 +57,13 @@ export default function StoreSpecialsCarousel({
     goToSlide((currentIndex + 1) % specials.length);
   };
 
-  if (specials.length === 0) return null;
+  if (!specials || specials.length === 0) return null;
 
   const currentSpecial = specials[currentIndex];
 
   return (
     <div className="relative">
-      <h2 className="text-xl font-bold text-gray-900 mb-4 px-4">Specials</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4 px-4">{displayTitle}</h2>
       
       <div className="relative overflow-hidden rounded-2xl mx-4">
         {/* Background gradient */}

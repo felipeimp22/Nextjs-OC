@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import StoreProductCard from './StoreProductCard';
 
 interface StoreFeaturedSectionProps {
@@ -21,19 +22,19 @@ export default function StoreFeaturedSection({
   primaryColor,
   secondaryColor,
   onAddToCart,
-  title = 'Featured Items',
+  title,
 }: StoreFeaturedSectionProps) {
-  // Get first 6 items for featured section (or items marked as featured)
-  const featuredItems = items.slice(0, 6);
+  const t = useTranslations('store');
+  const displayTitle = title || t('featuredItems');
 
-  if (featuredItems.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <div className="py-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-4 px-4">{title}</h2>
-      
+      <h2 className="text-xl font-bold text-gray-900 mb-4 px-4">{displayTitle}</h2>
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">
-        {featuredItems.map((item) => (
+        {items.map((item) => (
           <StoreProductCard
             key={item.id}
             item={item}

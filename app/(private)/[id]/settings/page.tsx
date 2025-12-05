@@ -10,8 +10,9 @@ import { FinancialSettings } from '@/components/settings/FinancialSettings';
 import { DeliverySettings } from '@/components/settings/DeliverySettings';
 import { StoreHoursSettings } from '@/components/settings/StoreHoursSettings';
 import { UsersSettings } from '@/components/settings/UsersSettings';
+import { WebsiteConfigSettings } from '@/components/settings/WebsiteConfigSettings';
 
-type Tab = 'general' | 'financial' | 'delivery' | 'hours' | 'users';
+type Tab = 'general' | 'financial' | 'delivery' | 'hours' | 'users' | 'website';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -43,6 +44,7 @@ export default function SettingsPage() {
     { id: 'delivery', label: t('tabs.delivery') },
     { id: 'hours', label: t('tabs.hours') },
     { id: 'users', label: t('tabs.users') },
+    { id: 'website', label: t('tabs.website') },
   ];
 
   return (
@@ -60,6 +62,7 @@ export default function SettingsPage() {
         {activeTab === 'delivery' && <DeliverySettings restaurantId={restaurantId} />}
         {activeTab === 'hours' && <StoreHoursSettings restaurantId={restaurantId} />}
         {activeTab === 'users' && <UsersSettings restaurantId={restaurantId} />}
+        {activeTab === 'website' && <WebsiteConfigSettings restaurantId={restaurantId} />}
       </div>
     </div>
   );
