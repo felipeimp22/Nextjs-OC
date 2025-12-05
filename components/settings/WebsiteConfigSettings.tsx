@@ -350,15 +350,43 @@ export function WebsiteConfigSettings({ restaurantId }: WebsiteConfigSettingsPro
               </div>
 
               {/* Mini Specials Carousel */}
-              {specialsEnabled && specialItems.length > 0 && (
+              {specialsEnabled && (
                 <div className="px-3 pb-2">
+                  <p className="text-[10px] font-semibold text-gray-600 mb-1">{specialsTitle || t('specialItems')}</p>
                   <div
                     className="rounded-lg p-3 text-white text-xs"
                     style={{ backgroundColor: colors.primaryColor }}
                   >
-                    <p className="font-semibold">{specialItems[0]?.title || 'Special Offer'}</p>
-                    <p className="text-white/80 text-[10px] mt-1 truncate">{specialItems[0]?.description || 'Description...'}</p>
+                    {specialItems.length > 0 ? (
+                      <>
+                        <p className="font-semibold">{specialItems[0]?.title || 'Special Offer'}</p>
+                        <p className="text-white/80 text-[10px] mt-1 truncate">{specialItems[0]?.description || 'Description...'}</p>
+                        {specialItems[0]?.ctaText && (
+                          <div
+                            className="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-medium"
+                            style={{ backgroundColor: colors.secondaryColor }}
+                          >
+                            {specialItems[0].ctaText}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-semibold opacity-60">Special Promotion</p>
+                        <p className="text-white/60 text-[10px] mt-1">Add specials to display here</p>
+                      </>
+                    )}
                   </div>
+                  {specialItems.length > 1 && (
+                    <div className="flex justify-center gap-1 mt-2">
+                      {specialItems.slice(0, 3).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-gray-600' : 'bg-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -534,12 +562,16 @@ export function WebsiteConfigSettings({ restaurantId }: WebsiteConfigSettingsPro
                     />
                   </div>
                   {showItemDropdown && filteredItems.length > 0 && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
                       {filteredItems.map((item: any) => (
                         <button
                           key={item.id}
-                          onClick={() => addFeaturedItem(item)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            addFeaturedItem(item);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm cursor-pointer"
                         >
                           {item.name}
                         </button>
@@ -564,12 +596,16 @@ export function WebsiteConfigSettings({ restaurantId }: WebsiteConfigSettingsPro
                     />
                   </div>
                   {showCategoryDropdown && filteredCategories.length > 0 && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
                       {filteredCategories.map((category: any) => (
                         <button
                           key={category.id}
-                          onClick={() => addFeaturedCategory(category)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            addFeaturedCategory(category);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm cursor-pointer"
                         >
                           {category.name}
                         </button>
@@ -816,8 +852,8 @@ export function WebsiteConfigSettings({ restaurantId }: WebsiteConfigSettingsPro
       {/* Click outside handlers */}
       {(showItemDropdown || showCategoryDropdown) && (
         <div
-          className="fixed inset-0 z-0"
-          onClick={() => {
+          className="fixed inset-0 z-40"
+          onMouseDown={() => {
             setShowItemDropdown(false);
             setShowCategoryDropdown(false);
           }}
